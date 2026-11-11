@@ -67,6 +67,8 @@ export function settingsScreen() {
     row('Tema', segmented([{ id: 'auto', label: 'Automático' }, { id: 'light', label: 'Claro' }, { id: 'dark', label: 'Escuro' }], s.theme, async v => { await saveSettings({ theme: v }); applyTheme(); }, 'Tema')),
     row('Lembrete de peso', h('button.switch', { role: 'switch', 'aria-checked': String(s.weightReminder), 'aria-label': 'Lembrete de peso', onclick: () => saveSettings({ weightReminder: !s.weightReminder }) }, h('span')),
       'Mostra um cartão em Hoje até você se pesar'),
+    row('Sugerir trocas mais leves', h('button.switch', { role: 'switch', 'aria-checked': String(s.showSwaps !== false), 'aria-label': 'Sugerir trocas mais leves', onclick: () => saveSettings({ showSwaps: s.showSwaps === false }) }, h('span')),
+      'Mostra opções com menos calorias e o motivo, ao registrar e em Hoje'),
     row('Meta de líquidos', select([1500, 2000, 2500, 3000, 3500].map(v => ({ id: String(v), label: `${dec1(v / 1000)} L` })), String(s.waterGoal), v => saveSettings({ waterGoal: Number(v) }), 'Meta de líquidos')));
 
   const file = h('input', { type: 'file', accept: 'application/json,.json', hidden: true, onchange: async e => {

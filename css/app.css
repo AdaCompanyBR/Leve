@@ -236,6 +236,32 @@ input::placeholder { color: var(--ink-3); }
 .liq-ml { font: 650 16px var(--font-num); font-variant-numeric: tabular-nums; }
 .muted .liq-name, .muted .liq-ml, .liq-types-sum .muted { opacity: .6; }
 .liquids .week-day { padding: 0; }
+
+/* ---------- Trocas ---------- */
+.swap-box { margin-top: 16px; padding: 14px 16px; border-radius: 18px; background: var(--accent-soft); }
+.swap-title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--accent-ink); }
+.swap-title .icon, .swap-to .icon { width: 18px; height: 18px; flex: none; }
+.swap-reason { font-size: 15px; margin-top: 6px; line-height: 1.4; }
+.swap-alts { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.swap-alt { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; width: 100%; text-align: left; min-height: 48px; padding: 8px 12px; border-radius: 13px; background: var(--surface); }
+.swap-alt .icon { grid-row: 1 / span 2; grid-column: 2; width: 18px; height: 18px; color: var(--ink-3); }
+.swap-name { font-weight: 600; font-size: 15px; grid-column: 1; }
+.swap-save { grid-column: 1; }
+.swap-save { color: var(--accent-ink); font-size: 13px; font-weight: 600; }
+.swap-note { color: var(--ink-2); font-size: 12px; margin-top: 8px; }
+.swap-days { margin: 10px 0 -6px; }
+.swap-days > li + li { border-top: 1px solid var(--line); }
+.swap-day { display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: left; padding: 12px 0; border-radius: 10px; }
+.swap-from { font-weight: 650; display: flex; flex-direction: column; }
+.swap-sub { color: var(--ink-2); font-size: 13px; font-weight: 400; }
+.swap-to { display: flex; align-items: flex-start; gap: 6px; color: var(--accent-ink); font-size: 14px; font-weight: 600; }
+.swap-to b { font-weight: 600; }
+.swap-why { color: var(--ink-2); font-size: 14px; line-height: 1.4; }
+.swap-drink { padding: 12px 0; }
+.swap-drink .swap-why { margin-top: 4px; }
+.swap-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.swap-tags li { padding: 6px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-ink); font-size: 13px; font-weight: 600; }
+@media (hover: hover) { .swap-alt:not(.static):hover { filter: brightness(.98); } .swap-day:hover .swap-from { color: var(--accent-ink); } }
 .liquids .week-day:disabled { cursor: default; }
 .liq-goal-ctl { margin-top: 14px; }
 @media (hover: hover) { .liq-size:hover { filter: brightness(.97); } }

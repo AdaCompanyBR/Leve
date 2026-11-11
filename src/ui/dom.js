@@ -41,6 +41,7 @@ export const ICONS = {
   more: '<circle cx="5.500" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18.500" cy="12" r="1.2" fill="currentColor"/>',
   search: '<circle cx="11" cy="11" r="6.500"/><path d="M16 16l4 4"/>',
   check: '<path d="M5 12.500l4.500 4.500L19 7.500"/>',
+  swap: '<path d="M7 4l-3 3 3 3M4 7h12M17 20l3-3-3-3M20 17H8"/>',
 };
 export const icon = (name, cls) => svg(ICONS[name], cls);
 

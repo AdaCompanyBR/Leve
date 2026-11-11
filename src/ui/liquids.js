@@ -2,6 +2,7 @@
 import { h, icon, int, dec1, parseNum, toast, haptic, field, segmented } from './dom.js';
 import { ui, go } from './state.js';
 import { state, addDrink, removeDrink, restoreDrink, clearLegacyWater, dayDrinks, liquidsOn, saveSettings } from '../store.js';
+import { drinkSwaps } from './swaps.js';
 import { DRINKS, SIZES, drinkById, byType, weekSeries } from '../lib/hydration.js';
 import { todayISO, addDays, fmtDate, toISO } from '../lib/dates.js';
 
@@ -79,6 +80,15 @@ export function liquidsScreen() {
       h('ul.liq-rows', rows)]
       : h('div.empty.small', h('p.empty-title', 'Nada registrado neste dia'), h('p.empty-text', 'Escolha o tipo de bebida e toque na quantidade.')));
 
+  // ----- Trocas -----
+  const dSwaps = drinkSwaps(items);
+  const swapsCard = dSwaps.length ? h('section.card.swaps-card', { 'aria-label': 'Para a próxima vez' },
+    h('h3', 'Para a próxima vez'),
+    h('ul.swap-days', dSwaps.map(d => h('li.swap-drink',
+      h('p.swap-from', d.label),
+      h('p.swap-why', d.reason),
+      h('ul.swap-tags', d.alts.map(a => h('li', a))))))) : null;
+
   // ----- Semana -----
   const w = weekSeries(state.drinks, state.water, goal, date);
   const maxMl = Math.max(goal * 1.25, ...w.days.map(d => d.ml));
@@ -110,5 +120,5 @@ export function liquidsScreen() {
         h('button.icon-btn', { 'aria-label': 'Próximo dia', disabled: isToday, onclick: () => go('liquidos', { date: addDays(date, 1) }) }, icon('next')))),
     h('div.liquids-grid',
       h('div.col', heroCard, addCard),
-      h('div.col', listCard, weekCard, goalCard)));
+      h('div.col', listCard, swapsCard, weekCard, goalCard)));
 }

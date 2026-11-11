@@ -28,4 +28,5 @@ O onboarding faz uma pergunta por tela e termina na revelação do plano.
 - Comer menos que a meta não vira crédito para os dias seguintes; só o excesso é redistribuído.
 - O gasto adaptativo exige 14 dias entre a primeira e a última pesagem da janela, pelo menos 4 pesagens e registros em 70% dos dias. Só propõe mudança se a diferença for de 5% ou mais.
 - Na aba Líquidos entra só o volume. Calorias de bebidas (suco, leite, refrigerante, álcool) se registram no diário, com valores da TACO; o atalho leva à busca. Bebida alcoólica não conta para a meta de líquidos.
+- Trocas mais leves: só aparecem quando a alternativa economiza pelo menos 15% e 15 kcal na mesma quantidade. Os números vêm da TACO; água é zero e refrigerante zero aparece como "quase sem calorias", sem número. O texto explica o motivo, sem culpa, e a sugestão vale "para a próxima vez": nada é trocado sem a pessoa registrar. Desliga em Ajustes.
 - Para menores de 18 anos o app não mostra faixa de IMC adulta, peso sugerido, meta calórica nem projeção.

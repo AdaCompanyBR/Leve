@@ -1,14 +1,14 @@
 // Service worker do Leve: o app abre e funciona sem internet.
 // Ao publicar mudanças, aumente VERSION para os aparelhos buscarem os arquivos novos.
-const VERSION = 'leve-v2';
+const VERSION = 'leve-v3';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css', './data/taco.json',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
   './src/app.js', './src/db.js', './src/store.js',
   './src/lib/adaptive.js', './src/lib/budget.js', './src/lib/calc.js', './src/lib/dates.js', './src/lib/hydration.js',
-  './src/lib/parser.js', './src/lib/portions.js', './src/lib/search.js', './src/lib/trend.js',
+  './src/lib/parser.js', './src/lib/portions.js', './src/lib/search.js', './src/lib/swaps.js', './src/lib/trend.js',
   './src/ui/dom.js', './src/ui/food.js', './src/ui/liquids.js', './src/ui/log.js', './src/ui/onboarding.js',
-  './src/ui/progress.js', './src/ui/ring.js', './src/ui/settings.js', './src/ui/state.js', './src/ui/today.js',
+  './src/ui/progress.js', './src/ui/ring.js', './src/ui/settings.js', './src/ui/state.js', './src/ui/swaps.js', './src/ui/today.js',
 ];
 
 self.addEventListener('install', event => {

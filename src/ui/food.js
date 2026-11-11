@@ -5,6 +5,7 @@ import { search } from '../lib/search.js';
 import { toGrams, nutrientsFor } from '../lib/portions.js';
 import { state, addEntries, updateEntry, removeEntry, toggleFavorite, saveFood, foodById } from '../store.js';
 import { ui, MEAL_SHORT, mealByClock } from './state.js';
+import { swapsForFood, swapBox, swapSheet } from './swaps.js';
 
 const SOURCE = { taco: 'TACO', off: 'Open Food Facts', manual: 'Cadastrado por você' };
 export const sourceOf = food => (food.id.startsWith('t') ? SOURCE.taco : SOURCE[food.source] ?? SOURCE.manual);
@@ -24,10 +25,12 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
     food = { id: entry.foodId ?? 'x', n: entry.name, k: entry.kcal * r, p: entry.p * r, c: entry.c * r, f: entry.f * r, source: 'manual' };
   }
   const v = { qty: entry?.qty ?? qty ?? (food.serving ? food.serving : 100), unit: entry?.unit ?? unit ?? 'g', meal: entry?.meal ?? meal ?? ui.meal ?? mealByClock() };
-  const kcalEl = h('span.sheet-kcal'), gramsEl = h('p.field-hint', { 'aria-live': 'polite' }), macrosEl = h('div');
+  const kcalEl = h('span.sheet-kcal'), gramsEl = h('p.field-hint', { 'aria-live': 'polite' }), macrosEl = h('div'), swapEl = h('div');
   const qtyInput = h('input', { inputmode: 'decimal', value: fmtQty(v.qty), autocomplete: 'off', autofocus: true });
   const unitSel = unitOptions(h('select', { 'aria-label': 'Unidade' }), v.unit);
-  let current;
+  let current, swapTimer;
+  // Abre a alternativa com a mesma quantidade em gramas, na mesma refeição.
+  const pick = (alt, grams) => { sheet.close(); setTimeout(() => foodSheet(alt, { qty: grams, unit: 'g', meal: v.meal }), 280); };
 
   function update() {
     v.qty = parseNum(qtyInput.value); v.unit = unitSel.value;
@@ -38,6 +41,8 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
     kcalEl.textContent = int(n.kcal);
     gramsEl.textContent = g.exact ? '' : `≈ ${int(g.grams)} g${g.known ? '' : '. Medida genérica: para mais precisão, informe em gramas.'}`;
     macrosEl.replaceChildren(macroLine(n));
+    clearTimeout(swapTimer);
+    swapTimer = setTimeout(() => swapEl.replaceChildren(swapBox(ok ? swapsForFood(food, g.grams) : null, pick, entry ? 'Para a próxima vez' : 'Opção mais leve') ?? ''), 150);
     save.disabled = !ok;
   }
   const save = h('button.btn.primary.block', { onclick: async () => {
@@ -45,7 +50,8 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
     const row = { foodId: food.id, name: food.n, qty: v.qty, unit: v.unit, meal: v.meal, ...current };
     if (entry) await updateEntry(entry.id, row); else await addEntries([{ ...row, date: ui.date }]);
     haptic(12); sheet.close();
-    toast(entry ? 'Item atualizado' : `${int(current.kcal)} kcal adicionadas`);
+    const s = entry ? null : swapsForFood(food, current.grams);
+    toast(entry ? 'Item atualizado' : `${int(current.kcal)} kcal adicionadas`, s ? { label: 'Ver troca', run: () => swapSheet(food.n, s, (f, g) => foodSheet(f, { qty: g, unit: 'g', meal: v.meal })) } : undefined);
   } }, entry ? 'Salvar alterações' : 'Adicionar ao diário');
   qtyInput.addEventListener('input', update);
   unitSel.addEventListener('change', update);
@@ -62,6 +68,7 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
       macrosEl,
       h('div.qty-row', field('Quantidade', qtyInput), field('Unidade', unitSel)),
       gramsEl,
+      swapEl,
       h('div.field', h('label', 'Refeição'), segmented(MEAL_SHORT, v.meal, id => { v.meal = id; }, 'Refeição')),
       h('div.chip-row',
         food.id !== 'x' ? favBtn : null,

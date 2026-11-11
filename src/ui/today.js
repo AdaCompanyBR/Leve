@@ -2,6 +2,7 @@
 import { h, icon, int, dec1, parseNum, portionText, openSheet, toast, haptic, field } from './dom.js';
 import { createRing } from './ring.js';
 import { foodSheet, undoToast } from './food.js';
+import { daySwaps, swapSheet } from './swaps.js';
 import { ui, go } from './state.js';
 import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
@@ -179,6 +180,19 @@ export function todayScreen() {
         : h('p.card-sub', 'Você chegou à meta de hoje. Se a fome apertar, água, chá e vegetais folhosos pesam pouco no saldo.'));
   }
 
+  // ----- Trocas para a próxima vez -----
+  const swaps = daySwaps(entries);
+  const swapsCard = swaps.length ? h('section.card.swaps-card', { 'aria-label': 'Trocas para a próxima vez' },
+    h('h3', 'Trocas para a próxima vez'),
+    h('p.card-sub', 'Opções com menos calorias para itens deste dia, e o motivo de cada uma.'),
+    h('ul.swap-days', swaps.map(({ entry: e, s }) => {
+      const best = s.alts[0];
+      return h('li', h('button.swap-day', { onclick: () => swapSheet(e.name, s, (f, g) => foodSheet(f, { qty: g, unit: 'g', meal: e.meal })) },
+        h('span.swap-from', e.name, h('span.swap-sub', `${portion(e)}, ${int(e.kcal)} kcal`)),
+        h('span.swap-to', icon('swap'), h('span', best.label.replace(/,\s*/g, ' '), h('b', best.kcal == null ? ': quase sem calorias' : `: ${int(best.saved)} kcal a menos`))),
+        h('span.swap-why', s.reason)));
+    }))) : null;
+
   // ----- Lembrete de peso -----
   const needsWeight = isToday && state.settings.weightReminder && !state.weights.some(w => w.date === date);
   const weightCard = needsWeight ? h('button.card.nudge', { onclick: () => weightSheet() },
@@ -194,5 +208,5 @@ export function todayScreen() {
     h('div.today-grid',
       h('div.col.col-hero', ringCard, macrosCard),
       h('div.col.col-meals', weightCard, mealsCard),
-      h('div.col.col-side', waterCard, fitsCard)));
+      h('div.col.col-side', waterCard, swapsCard, fitsCard)));
 }

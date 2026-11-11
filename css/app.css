@@ -206,7 +206,7 @@ input::placeholder { color: var(--ink-3); }
 .water-val b { color: var(--ink); font: 700 17px var(--font-num); }
 .water-actions { display: flex; gap: 10px; margin-top: 16px; }
 .water-actions .icon { width: 20px; height: 20px; }
-.water-more { display: block; margin: 6px auto -8px; font-size: 14px; }
+.water-links { display: flex; justify-content: space-between; margin: 6px 2px -8px; font-size: 14px; }
 
 /* ---------- Líquidos ---------- */
 .liquids-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
@@ -216,14 +216,21 @@ input::placeholder { color: var(--ink-3); }
 .liq-unit { color: var(--ink-2); font: 650 18px var(--font-num); }
 .liq-bar { height: 12px; margin-top: 16px; }
 .liq-types { margin-top: 12px; }
-.liq-sizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.liq-sizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
 .liq-size { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 64px; border-radius: var(--r-ctl); background: var(--accent-soft); color: var(--accent-ink); transition: transform .25s var(--ease); }
 .liq-size:active { transform: scale(.95); }
 .liq-size b { font: 700 20px/1.1 var(--font-num); }
 .liq-size span { font-size: 12px; font-weight: 600; opacity: .85; }
-.liq-custom { display: flex; align-items: flex-end; gap: 10px; margin-top: 14px; }
-.liq-custom .field { flex: 1; margin: 0; }
-.liq-custom .btn { min-height: 50px; }
+.liq-exact { margin-top: 14px; }
+.liq-or { color: var(--ink-2); font-size: 13px; text-align: center; margin-top: 14px; }
+.liq-edit { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 52px; text-align: left; border-radius: 10px; }
+@media (hover: hover) { .liq-edit:hover .liq-name { color: var(--accent-ink); } }
+.drink-form .big-field { margin-top: 10px; }
+.drink-preview { min-height: 1.4em; }
+.drink-preview.error { color: var(--ink); font-weight: 600; }
+.drink-presets { margin-top: 12px; }
+.drink-presets .chip, .drink-types .chip { min-height: 40px; }
+.drink-types { margin-top: 0; }
 .link.inline { display: inline; min-height: 0; font-size: inherit; padding: 0; }
 .liq-types-sum { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 4px; font-size: 14px; color: var(--ink-2); }
 .liq-types-sum b { color: var(--ink); font: 650 14px var(--font-num); margin-left: 6px; }

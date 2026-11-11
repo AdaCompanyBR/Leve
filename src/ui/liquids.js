@@ -1,14 +1,15 @@
 // Tela Líquidos: total do dia, registro por tipo de bebida, lista do dia e semana.
-import { h, icon, int, dec1, parseNum, toast, haptic, field, segmented } from './dom.js';
+import { h, icon, int, dec1, toast, haptic, segmented } from './dom.js';
 import { ui, go } from './state.js';
 import { state, addDrink, removeDrink, restoreDrink, clearLegacyWater, dayDrinks, liquidsOn, saveSettings } from '../store.js';
 import { drinkSwaps } from './swaps.js';
+import { drinkSheet } from './drink.js';
 import { DRINKS, SIZES, drinkById, byType, weekSeries } from '../lib/hydration.js';
 import { todayISO, addDays, fmtDate, toISO } from '../lib/dates.js';
 
 export const GOALS = [1500, 2000, 2500, 3000, 3500];
 const liters = ml => `${dec1(ml / 1000)} L`;
-const amount = ml => (ml >= 1000 ? liters(ml) : `${int(ml)} ml`);
+const amount = ml => `${int(ml)} ml`;
 const clock = ts => new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
 async function add(date, type, ml) {
@@ -30,25 +31,22 @@ export function liquidsScreen() {
   const left = goal - total;
   const heroCard = h('section.card.liq-hero', { 'aria-label': 'Total do dia' },
     h('span.stat-label', isToday ? 'Hoje' : fmtDate(date)),
-    h('div.liq-now', h('span.liq-num', dec1(total / 1000)), h('span.liq-unit', `de ${liters(goal)}`)),
+    h('div.liq-now', h('span.liq-num', int(total)), h('span.liq-unit', `ml de ${int(goal)} ml`)),
     h('div.bar.liq-bar', { role: 'progressbar', 'aria-label': 'Líquidos do dia', 'aria-valuemin': 0, 'aria-valuemax': goal, 'aria-valuenow': total, 'aria-valuetext': `${liters(total)} de ${liters(goal)}` },
       h('span', { style: { width: pct + '%' } })),
     h('p.card-sub', left > 0 ? `Faltam ${amount(left)} para a meta${isToday ? ' de hoje' : ''}.` : 'Meta de líquidos atingida.'),
     other > 0 ? h('p.fine', `${amount(other)} de bebida alcoólica aparecem na lista, mas não contam para a meta.`) : null);
 
   // ----- Adicionar -----
-  const custom = h('input', { type: 'text', inputmode: 'numeric', placeholder: 'Ex.: 180', autocomplete: 'off', 'aria-describedby': 'liq-custom-hint' });
-  const submitCustom = e => { e.preventDefault(); const ml = parseNum(custom.value); add(date, type.id, ml).then(() => { if (ml > 0 && ml <= 5000) custom.value = ''; }); };
   const addCard = h('section.card.liq-add', { 'aria-label': 'Adicionar bebida' },
     h('h3', 'Adicionar'),
+    h('button.btn.primary.block.liq-exact', { type: 'button', onclick: () => drinkSheet({ date, type: type.id }) }, icon('plus'), 'Registrar valor exato'),
+    h('p.liq-or', 'ou toque num tamanho rápido'),
     h('div.chip-row.liq-types', { role: 'group', 'aria-label': 'Tipo de bebida' },
       DRINKS.map(d => h('button.chip', { type: 'button', 'aria-pressed': String(d.id === type.id), onclick: () => go('liquidos', { drinkType: d.id }) }, d.label))),
     h('div.liq-sizes', { role: 'group', 'aria-label': `Quantidade de ${type.label.toLowerCase()}` },
       SIZES.map(ml => h('button.liq-size', { type: 'button', onclick: () => add(date, type.id, ml), 'aria-label': `Adicionar ${ml} ml de ${type.label.toLowerCase()}` },
         h('b', int(ml)), h('span', 'ml')))),
-    h('form.liq-custom', { onsubmit: submitCustom },
-      field('Outra quantidade (ml)', custom),
-      h('button.btn.tonal', { type: 'submit' }, icon('plus'), 'Adicionar')),
     h('p.fine', { id: 'liq-custom-hint' },
       !type.hydrates ? 'Bebida alcoólica fica registrada, mas não conta para a meta de líquidos. ' : '',
       type.food ? ['Aqui entra só o volume. ', h('button.link.inline', { type: 'button', onclick: () => go('registrar', { query: type.food }) }, `Registrar as calorias de ${type.label.toLowerCase()}`), '.']
@@ -65,9 +63,10 @@ export function liquidsScreen() {
       h('span.liq-ml', `${int(legacy)} ml`),
       h('button.icon-btn.small', { 'aria-label': `Apagar ${int(legacy)} ml de água (registro anterior)`, onclick: () => clearLegacyWater(date) }, icon('trash'))) : null,
     ...items.map(d => h('li.liq-row' + (drinkById(d.type).hydrates ? '' : '.muted'),
-      h('span.liq-time', sameDay(d.ts) ? clock(d.ts) : '—'),
-      h('span.liq-name', drinkById(d.type).label),
-      h('span.liq-ml', `${int(d.ml)} ml`),
+      h('button.liq-edit', { type: 'button', onclick: () => drinkSheet({ drink: d }), 'aria-label': `${drinkById(d.type).label}${d.note ? `, ${d.note}` : ''}, ${int(d.ml)} ml${sameDay(d.ts) ? `, às ${clock(d.ts)}` : ''}. Editar` },
+        h('span.liq-time', sameDay(d.ts) ? clock(d.ts) : '—'),
+        h('span.liq-name', drinkById(d.type).label, d.note ? h('span.liq-sub', d.note) : null),
+        h('span.liq-ml', `${int(d.ml)} ml`)),
       h('button.icon-btn.small', { 'aria-label': `Apagar ${int(d.ml)} ml de ${drinkById(d.type).label.toLowerCase()}`,
         onclick: async () => { await removeDrink(d.id); toast('Bebida apagada', { label: 'Desfazer', run: () => restoreDrink(d) }); } }, icon('trash')))),
   ].filter(Boolean);

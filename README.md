@@ -8,7 +8,7 @@ Diário de calorias e peso em português do Brasil, feito para uma pessoa só. �
 
 - **Registro por frase.** Escreva "2 ovos mexidos e um pão francês"; o app separa itens, quantidades e calorias e mostra tudo para você confirmar antes de salvar.
 - **Gasto adaptativo.** Com 14 dias ou mais de registros e pesagens, calcula o seu gasto real e propõe uma nova meta. Você aceita ou recusa.
-- **Aba Líquidos.** Água, café, chá, suco, leite e outras bebidas, com tamanhos rápidos, lista do dia, semana e meta diária. Bebida alcoólica fica registrada, mas não conta para a meta.
+- **Aba Líquidos.** Água, café, chá, suco, leite e outras bebidas. Registro com o valor exato em ml ou litros ("473", "1,25 L"), tipo, nome opcional, data e horário; tamanhos rápidos para o dia a dia; toque num registro para corrigir. Lista do dia, semana e meta diária. Bebida alcoólica fica registrada, mas não conta para a meta.
 - **Trocas mais leves.** Ao abrir um alimento, depois de registrar e no cartão "Trocas para a próxima vez" em Hoje, o app mostra opções com menos calorias e o motivo (suco de uva → água ou refrigerante zero, batata frita → batata cozida, picanha → patinho ou frango). As calorias das alternativas vêm da TACO, na mesma quantidade. Dá para desligar em Ajustes.
 - **Peso tendência.** Média móvel exponencial que esconde a oscilação diária de água.
 - **Data de chegada** com o controle "e se eu comer 200 kcal a menos?".

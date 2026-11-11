@@ -136,12 +136,17 @@ export async function removeWeight(date) { state.weights = state.weights.filter(
 // Líquidos: cada bebida é um item; `water` guarda o total antigo por dia, de antes da aba Líquidos.
 export const liquidsOn = date => dayTotal(state.drinks, state.water, date);
 export const dayDrinks = date => state.drinks.filter(d => d.date === date).sort((a, b) => a.ts - b.ts);
-export async function addDrink(date, type, ml) {
-  const row = { id: uid(), date, type, ml: Math.round(ml), ts: Date.now() };
+export async function addDrink(date, type, ml, extra = {}) {
+  const row = { id: uid(), date, type, ml: Math.round(ml), ts: Date.now(), ...extra };
   state.drinks = [...state.drinks, row];
   await kv('drinks', state.drinks);
   emit();
   return row;
+}
+export async function updateDrink(id, patch) {
+  state.drinks = state.drinks.map(d => (d.id === id ? { ...d, ...patch } : d));
+  await kv('drinks', state.drinks);
+  emit();
 }
 export async function removeDrink(id) {
   state.drinks = state.drinks.filter(d => d.id !== id);

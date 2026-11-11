@@ -31,3 +31,18 @@ test('líquidos: semana conta dias na meta e média dos dias com registro', () =
 test('líquidos: tipo desconhecido vira "Outro"', () => {
   assert.equal(drinkById('xyz').id, 'outro');
 });
+
+test('líquidos: quantidade exata em ml ou litros', async () => {
+  const { parseAmount } = await import('../src/lib/hydration.js');
+  assert.equal(parseAmount('350'), 350);
+  assert.equal(parseAmount('1,5', 'L'), 1500);
+  assert.equal(parseAmount('0.33', 'l'), 330);
+  assert.equal(parseAmount('1,5 L'), 1500);
+  assert.equal(parseAmount('473ml', 'L'), 473);
+  assert.equal(parseAmount('2 litros'), 2000);
+  assert.equal(parseAmount('237,5'), 238);
+  assert.ok(Number.isNaN(parseAmount('')));
+  assert.ok(Number.isNaN(parseAmount('0')));
+  assert.ok(Number.isNaN(parseAmount('abc')));
+  assert.ok(Number.isNaN(parseAmount('6', 'L')));
+});

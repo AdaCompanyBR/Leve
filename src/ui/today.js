@@ -3,6 +3,7 @@ import { h, icon, int, dec1, parseNum, portionText, openSheet, toast, haptic, fi
 import { createRing } from './ring.js';
 import { foodSheet, undoToast } from './food.js';
 import { daySwaps, swapSheet } from './swaps.js';
+import { drinkSheet } from './drink.js';
 import { ui, go } from './state.js';
 import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
@@ -160,12 +161,14 @@ export function todayScreen() {
   const ml = liquidsOn(date).total, goal = state.settings.waterGoal;
   const canRemove = (state.water[date] ?? 0) > 0 || dayDrinks(date).some(d => d.type === 'agua');
   const waterCard = h('section.card.water', { 'aria-label': 'Líquidos' },
-    h('div.water-head', h('h3', 'Líquidos'), h('span.water-val', h('b', dec1(ml / 1000)), ` de ${dec1(goal / 1000)} L`)),
+    h('div.water-head', h('h3', 'Líquidos'), h('span.water-val', h('b', int(ml)), ` de ${int(goal)} ml`)),
     h('div.bar', { role: 'progressbar', 'aria-label': 'Líquidos', 'aria-valuemin': 0, 'aria-valuemax': goal, 'aria-valuenow': ml }, h('span', { style: { width: Math.min(100, (ml / goal) * 100) + '%' } })),
     h('div.water-actions',
       h('button.btn.tonal', { disabled: !canRemove, 'aria-label': `Remover um copo de água`, onclick: () => removeWater(date, GLASS) }, icon('minus')),
       h('button.btn.tonal.grow', { onclick: () => { haptic(); addDrink(date, 'agua', GLASS); } }, icon('drop'), `Água ${GLASS} ml`)),
-    h('button.link.water-more', { onclick: () => go('liquidos', { date }) }, 'Café, chá, suco e outros'));
+    h('div.water-links',
+      h('button.link', { onclick: () => drinkSheet({ date }) }, 'Valor exato'),
+      h('button.link', { onclick: () => go('liquidos', { date }) }, 'Ver líquidos')));
 
   // ----- O que cabe? -----
   let fitsCard = null;

@@ -62,3 +62,20 @@ export function weekSeries(drinks, legacy, goal, today) {
   };
 }
 
+
+/** Limite por registro, em ml. */
+export const MAX_ML = 5000;
+
+/**
+ * Converte o que a pessoa digitou em ml. Aceita vírgula ou ponto, e "ml" ou "L" no texto
+ * ("1,5 L", "350ml", "0.33"). Sem unidade no texto, usa `unit`. Devolve NaN se não for válido.
+ */
+export function parseAmount(text, unit = 'ml') {
+  const s = String(text ?? '').trim().toLowerCase().replace(/\s+/g, '');
+  const m = s.match(/^(\d+(?:[.,]\d+)?|[.,]\d+)(ml|l|litros?)?$/);
+  if (!m) return NaN;
+  const n = parseFloat(m[1].replace(',', '.'));
+  const u = m[2] ? (m[2] === 'ml' ? 'ml' : 'l') : unit.toLowerCase();
+  const ml = Math.round(u === 'l' ? n * 1000 : n);
+  return ml > 0 && ml <= MAX_ML ? ml : NaN;
+}

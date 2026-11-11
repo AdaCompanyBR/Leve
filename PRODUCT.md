@@ -9,7 +9,7 @@ Responder, em poucos segundos, três perguntas: quanto ainda posso comer hoje, e
 ## Telas
 1. **Hoje.** Anel de calorias, macros, refeições, água, "O que cabe?". Setas levam a dias anteriores.
 2. **Registrar.** Um campo só. Com número ou mais de um item, vira frase; sem isso, é busca. Abaixo: recentes, favoritos e modelos.
-3. **Líquidos.** Total do dia e meta, bebida por tipo com tamanhos rápidos ou quantidade livre, registros do dia com apagar e desfazer, semana e meta diária.
+3. **Líquidos.** Total do dia em ml exatos e meta, registro com valor exato (ml ou litros, sem arredondar), tipo, nome, data e horário, ou tamanhos rápidos; registros editáveis, registros do dia com apagar e desfazer, semana e meta diária.
 4. **Progresso.** Peso real e tendência, projeção, "e se", saldo da semana, gasto adaptativo, pesagens.
 5. **Ajustes.** Plano, dados, meta, tema, backup, aviso de saúde.
 

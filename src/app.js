@@ -13,7 +13,7 @@ import { reload } from './store.js';
 import * as auth from './auth.js';
 import * as bio from './biometric.js';
 import * as sync from './sync.js';
-import { lockScreen, newPasswordSheet, afterLogin } from './ui/account.js';
+import { lockScreen, newPasswordSheet, afterLogin, loginSheet, logoutSheet } from './ui/account.js';
 
 const root = document.getElementById('app');
 const TABS = [
@@ -31,9 +31,23 @@ function buildShell() {
   const nav = h('nav.nav', { 'aria-label': 'Principal' },
     h('div.brand', h('span.brand-mark', { 'aria-hidden': 'true' }), h('span.brand-name', 'Leve')),
     h('div.nav-items', TABS.map(t => h('button.nav-item', { 'data-tab': t.id, onclick: () => go(t.id, (t.id === 'hoje' || t.id === 'liquidos') && ui.tab === t.id ? { date: todayISO() } : {}) }, icon(t.icon), h('span', t.label)))),
-    h('p.nav-foot', 'Seus dados ficam só neste aparelho.'));
+    h('div.nav-foot'));
   root.replaceChildren(h('a.skip', { href: '#conteudo' }, 'Pular para o conteúdo'), nav, main);
   return { main, nav };
+}
+
+/** Rodapé do menu: entrar ou sair da conta. */
+function paintAccount(foot) {
+  if (!auth.configured()) return foot.replaceChildren(h('p', 'Seus dados ficam só neste aparelho.'));
+  const s = auth.current();
+  foot.replaceChildren(s
+    ? h('div.nav-account',
+      h('span.nav-account-label', 'Conectado como'),
+      h('span.nav-account-email', { title: s.user?.email ?? '' }, s.user?.email ?? 'sua conta'),
+      h('button.nav-item.nav-logout', { type: 'button', onclick: logoutSheet }, icon('logout'), h('span', 'Sair')))
+    : h('div.nav-account',
+      h('p', 'Seus dados estão só neste aparelho.'),
+      h('button.btn.primary.nav-login', { type: 'button', onclick: () => loginSheet({ mode: 'entrar' }) }, icon('settings'), 'Entrar')));
 }
 
 function render() {
@@ -44,6 +58,7 @@ function render() {
   }
   onboardingOpen = false;
   shell ??= buildShell();
+  paintAccount(shell.nav.querySelector('.nav-foot'));
   const tab = TABS.find(t => t.id === ui.tab) ?? TABS[0];
   shell.nav.querySelectorAll('.nav-item').forEach(b => { const on = b.dataset.tab === tab.id; b.classList.toggle('active', on); on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'); });
   const changed = lastTab !== tab.id;
@@ -98,7 +113,7 @@ function open() {
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
   setNavigator(render);
   subscribe(render);
-  auth.onAuth(() => { if (state.profile) render(); });
+  auth.onAuth(() => { if (state.profile) render(); else if (shell) paintAccount(shell.nav.querySelector('.nav-foot')); });
   render();
   // Pede ao navegador para não apagar os dados sob pressão de espaço.
   navigator.storage?.persist?.().catch(() => {});

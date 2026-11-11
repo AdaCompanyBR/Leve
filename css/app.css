@@ -555,6 +555,12 @@ input::placeholder { color: var(--ink-3); }
   .nav-item.active { background: var(--accent-soft); }
   .nav-item:hover:not(.active) { background: var(--surface-2); }
   .nav-foot { display: block; margin-top: auto; padding: 0 12px; color: var(--ink-2); font-size: 13px; }
+  .nav-account { display: flex; flex-direction: column; gap: 2px; }
+  .nav-account p { margin-bottom: 10px; }
+  .nav-account-label { font-size: 12px; }
+  .nav-account-email { color: var(--ink); font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 8px; }
+  .nav-foot .nav-logout { margin: 0 -12px; width: calc(100% + 24px); }
+  .nav-login { width: 100%; min-height: 44px; font-size: 15px; }
   .main { padding: 36px 40px 56px; max-width: 1280px; width: 100%; }
   .screen-head { margin-bottom: 24px; }
   .screen-head h1 { font-size: 40px; }

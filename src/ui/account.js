@@ -238,7 +238,7 @@ export function accountCard({ row }) {
       h('button.btn.ghost', { onclick: logoutSheet }, 'Sair')));
 }
 
-function logoutSheet() {
+export function logoutSheet() {
   const pending = sync.getStatus().pending;
   const sheet = openSheet({ title: 'Sair da conta?', content: [
     h('p.sheet-text', pending

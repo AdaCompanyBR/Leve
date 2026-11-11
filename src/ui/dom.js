@@ -41,6 +41,7 @@ export const ICONS = {
   more: '<circle cx="5.500" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18.500" cy="12" r="1.2" fill="currentColor"/>',
   search: '<circle cx="11" cy="11" r="6.500"/><path d="M16 16l4 4"/>',
   check: '<path d="M5 12.500l4.500 4.500L19 7.500"/>',
+  logout: '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M19 12H9"/>',
   face: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1M12 9.5v3.500h-1M9.500 16c1.500 1 3.500 1 5 0"/>',
   swap: '<path d="M7 4l-3 3 3 3M4 7h12M17 20l3-3-3-3M20 17H8"/>',
 };

@@ -1,0 +1,11 @@
+{
+  "name": "leve",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Leve: PWA pessoal de emagrecimento, sem build e sem backend",
+  "scripts": {
+    "test": "node --test",
+    "start": "node scripts/serve.mjs"
+  }
+}

@@ -1,13 +1,13 @@
 // Service worker do Leve: o app abre e funciona sem internet.
 // Ao publicar mudanças, aumente VERSION para os aparelhos buscarem os arquivos novos.
-const VERSION = 'leve-v5';
+const VERSION = 'leve-v6';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css', './data/taco.json',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
-  './src/app.js', './src/db.js', './src/store.js',
+  './src/app.js', './src/db.js', './src/store.js', './src/config.js', './src/auth.js', './src/biometric.js', './src/sync.js',
   './src/lib/adaptive.js', './src/lib/budget.js', './src/lib/calc.js', './src/lib/dates.js', './src/lib/estimate.js', './src/lib/recipes.js', './src/lib/hydration.js',
-  './src/lib/parser.js', './src/lib/portions.js', './src/lib/search.js', './src/lib/swaps.js', './src/lib/trend.js',
-  './src/ui/dom.js', './src/ui/drink.js', './src/ui/estimate.js', './src/ui/food.js', './src/ui/liquids.js', './src/ui/log.js', './src/ui/onboarding.js',
+  './src/lib/parser.js', './src/lib/portions.js', './src/lib/search.js', './src/lib/syncrules.js', './src/lib/swaps.js', './src/lib/trend.js',
+  './src/ui/account.js', './src/ui/dom.js', './src/ui/drink.js', './src/ui/estimate.js', './src/ui/food.js', './src/ui/liquids.js', './src/ui/log.js', './src/ui/onboarding.js',
   './src/ui/progress.js', './src/ui/ring.js', './src/ui/settings.js', './src/ui/state.js', './src/ui/swaps.js', './src/ui/today.js',
 ];
 

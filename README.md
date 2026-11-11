@@ -1,6 +1,6 @@
 # Leve
 
-Diário de calorias e peso em português do Brasil, feito para uma pessoa só. É um PWA: instala no iPhone, no Android e no computador, funciona sem internet e guarda tudo apenas no aparelho. Não tem login nem servidor.
+Diário de calorias e peso em português do Brasil, feito para uma pessoa só. É um PWA: instala no iPhone, no Android e no computador e funciona sem internet. Sem conta, guarda tudo só no aparelho; com conta (opcional, via Supabase), sincroniza entre aparelhos e entra com Face ID ou digital.
 
 > O Leve não substitui médico ou nutricionista. As metas são estimativas baseadas em fórmulas populacionais.
 
@@ -47,7 +47,36 @@ Depois da primeira abertura com internet, o app funciona offline. Só a busca de
 
 ## Seus dados
 
-Tudo fica no IndexedDB do navegador, neste aparelho. Cada aparelho tem os seus dados. Para fazer backup ou trocar de aparelho, use **Ajustes > Exportar JSON** e **Importar JSON**. Limpar os dados do navegador ou desinstalar o app apaga os registros, então exporte um backup de vez em quando.
+Sem conta, tudo fica no IndexedDB do navegador, só neste aparelho. Para backup ou para trocar de aparelho, use **Ajustes > Exportar JSON** e **Importar JSON**.
+
+Com conta (veja abaixo), os dados ficam neste aparelho **e** na nuvem da sua conta, e aparecem em qualquer aparelho em que você entrar. O app continua funcionando sem internet: as mudanças esperam numa fila e sobem quando a conexão volta. Se o mesmo registro mudar em dois aparelhos, vale a mudança mais recente.
+
+## Conta e sincronização (Supabase)
+
+O login usa o [Supabase](https://supabase.com) (plano gratuito): ele guarda as senhas com segurança e cada conta só enxerga os próprios dados (Row Level Security). Enquanto `src/config.js` estiver vazio, o app funciona como antes, sem login.
+
+1. Crie uma conta em supabase.com e um projeto novo (região São Paulo, `sa-east-1`, fica mais perto).
+2. Em **SQL Editor > New query**, cole todo o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**.
+3. Em **Authentication > URL Configuration**, coloque em **Site URL** o endereço do app (`https://adacompanybr.github.io/Leve/`) e adicione o mesmo endereço em **Redirect URLs**. É para onde voltam os links de confirmação e de troca de senha.
+4. Em **Authentication > Sign In / Providers > Email**: deixe **Confirm email** ligado se quiser que a conta só funcione depois de clicar no link do e-mail, ou desligue para entrar na hora.
+5. Em **Project Settings > API**, copie **Project URL** e a chave **anon public** para `src/config.js` e publique (push na `main`). A chave anon é pública por natureza; quem protege os dados são as regras do passo 2.
+
+### Entrar com Face ID ou digital
+
+Depois do primeiro login num aparelho, o app oferece **Entrar com Face ID ou digital** (também em **Ajustes > Conta**). Usa o padrão WebAuthn, o mesmo das passkeys:
+
+- **iPhone com iOS 18 ou mais novo, Chrome no Android e no computador:** a sessão da conta fica cifrada com uma chave que só é liberada pelo rosto ou pela digital.
+- **Aparelhos sem a extensão PRF:** o Face ID funciona como trava da tela do app, e a sessão fica guardada sem cifra.
+- Em qualquer caso, os dados já baixados ficam no armazenamento do navegador deste aparelho, como antes. O Face ID protege a abertura do app e o acesso à conta, não substitui o bloqueio do celular.
+- Se o Face ID falhar, **Usar e-mail e senha** sempre funciona.
+
+### Primeiro login num aparelho que já tinha dados
+
+O que já existia no aparelho é juntado com a nuvem. Se os dois tiverem o mesmo registro (por exemplo, o perfil), vale o da nuvem; o que só existia no aparelho sobe. Num celular novo, use **Já tenho conta** na primeira tela em vez de responder o cadastro.
+
+### Sair
+
+**Ajustes > Conta > Sair** pergunta se os dados devem ser apagados deste aparelho (recomendado em aparelho compartilhado) ou mantidos. Os dados continuam na nuvem. **Apagar tudo**, com a conta conectada, apaga também da nuvem.
 
 ## Estrutura
 
@@ -68,6 +97,10 @@ src/lib/               funções puras, todas com testes
   recipes.js           receitas típicas calculadas com a TACO
   estimate.js          média de produtos parecidos (Open Food Facts)
 src/store.js, src/db.js   estado e IndexedDB
+src/auth.js, src/sync.js  conta (Supabase Auth) e sincronização
+src/biometric.js       Face ID / digital (WebAuthn)
+src/config.js          endereço e chave do Supabase
+supabase/schema.sql    tabela e regras da nuvem
 src/ui/                telas e componentes
 tests/                 node --test
 ```

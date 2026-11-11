@@ -3,6 +3,8 @@ import { h, icon, int, dec1, parseNum, reducedMotion, haptic } from './dom.js';
 import { ACTIVITY, PACES, plan, ageOn } from '../lib/calc.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
 import { saveProfile } from '../store.js';
+import { configured } from '../auth.js';
+import { loginSheet } from './account.js';
 
 export function onboarding(root) {
   const data = { name: '', sex: null, birthDate: '', heightCm: null, weightKg: null, activity: null, pace: null };
@@ -58,7 +60,8 @@ export function onboarding(root) {
       s.sub ? h('p.ob-sub', s.sub) : null,
       body,
       h('p.ob-err', { id: 'ob-err', role: 'alert' }),
-      s.auto ? null : h('button.btn.primary.block', { type: 'submit' }, 'Continuar'));
+      s.auto ? null : h('button.btn.primary.block', { type: 'submit' }, 'Continuar'),
+      step === 0 && configured() ? h('button.link.ob-login', { type: 'button', onclick: () => loginSheet({ mode: 'entrar' }) }, 'Já tenho conta: entrar e trazer meus dados') : null);
     root.replaceChildren(h('div.ob',
       h('header.ob-top',
         step > 0 ? h('button.icon-btn', { 'aria-label': 'Voltar', onclick: back }, icon('back')) : h('span.icon-btn.placeholder'),

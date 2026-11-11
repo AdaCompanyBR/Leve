@@ -9,6 +9,11 @@ import { liquidsScreen } from './ui/liquids.js';
 import { progressScreen } from './ui/progress.js';
 import { settingsScreen, applyTheme } from './ui/settings.js';
 import { todayISO } from './lib/dates.js';
+import { reload } from './store.js';
+import * as auth from './auth.js';
+import * as bio from './biometric.js';
+import * as sync from './sync.js';
+import { lockScreen, newPasswordSheet, afterLogin } from './ui/account.js';
 
 const root = document.getElementById('app');
 const TABS = [
@@ -71,10 +76,29 @@ async function start() {
       'Pode ser o modo de navegação privada, que bloqueia o armazenamento, ou a primeira abertura sem internet. Abra em uma janela normal, com conexão, e tente de novo.')));
     return;
   }
+  sync.setReloader(async () => { await reload(); applyTheme(); });
+  if (!auth.configured()) return open();
+  // Links do e-mail (confirmar conta, trocar senha) chegam com a sessão no endereço.
+  const redirect = auth.fromRedirect();
+  if (redirect) {
+    open();
+    if (redirect.type === 'recovery') newPasswordSheet();
+    await afterLogin({ quiet: redirect.type === 'recovery' });
+    return;
+  }
+  // Face ID ligado: nada aparece antes do rosto ou da digital.
+  if (bio.enabled()) return lockScreen(root, () => { open(); sync.start(); });
+  if (auth.restorePlain()) { open(); sync.start(); return; }
+  open();
+}
+
+function open() {
+  shell = null; lastTab = null;
   applyTheme();
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
   setNavigator(render);
   subscribe(render);
+  auth.onAuth(() => { if (state.profile) render(); });
   render();
   // Pede ao navegador para não apagar os dados sob pressão de espaço.
   navigator.storage?.persist?.().catch(() => {});

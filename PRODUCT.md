@@ -1,7 +1,7 @@
 # Leve: decisões de produto
 
 ## Para quem
-Uma pessoa só, adulta, que quer emagrecer sem se punir. Usa o celular na cozinha e na mesa, e o computador de vez em quando. Não quer criar conta.
+Uma pessoa só, adulta, que quer emagrecer sem se punir. Usa o celular na cozinha e na mesa, e o computador de vez em quando. Não é obrigada a criar conta: sem conta, tudo fica no aparelho. Com conta, usa o mesmo diário no celular e no computador.
 
 ## O trabalho do app
 Responder, em poucos segundos, três perguntas: quanto ainda posso comer hoje, estou indo na direção certa, e quando chego.
@@ -30,4 +30,5 @@ O onboarding faz uma pergunta por tela e termina na revelação do plano.
 - Na aba Líquidos entra só o volume. Calorias de bebidas (suco, leite, refrigerante, álcool) se registram no diário, com valores da TACO; o atalho leva à busca. Bebida alcoólica não conta para a meta de líquidos.
 - Estimativas: receitas típicas somam ingredientes da TACO em quantidades de um preparo comum e mostram a conta; a média online usa a mediana de pelo menos 3 produtos do Open Food Facts cujo nome bate com o pedido, primeiro do Brasil. As duas aparecem como "Estimativa" e com "≈", nunca como valor exato.
 - Trocas mais leves: só aparecem quando a alternativa economiza pelo menos 15% e 15 kcal na mesma quantidade. Os números vêm da TACO; água é zero e refrigerante zero aparece como "quase sem calorias", sem número. O texto explica o motivo, sem culpa, e a sugestão vale "para a próxima vez": nada é trocado sem a pessoa registrar. Desliga em Ajustes.
+- Conta: e-mail e senha (mínimo 8 caracteres) no Supabase; Face ID ou digital é opcional e vale por aparelho. Sincronização registro a registro, vale a mudança mais recente; o primeiro login num aparelho dá preferência ao que já está na nuvem. O app nunca exige internet para registrar.
 - Para menores de 18 anos o app não mostra faixa de IMC adulta, peso sugerido, meta calórica nem projeção.

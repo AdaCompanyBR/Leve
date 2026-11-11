@@ -33,14 +33,20 @@ const kv = (key, value) => db.put('kv', { key, value });
 const reindex = () => { state.index = makeIndex([...state.foods.filter(f => !f.hidden), ...state.taco, ...state.recipes]); };
 
 export async function load() {
-  const [kvs, entries, weights, foods, templates, taco] = await Promise.all([
-    db.getAll('kv'), db.getAll('entries'), db.getAll('weights'), db.getAll('foods'), db.getAll('templates'),
+  const [kvs, entries, weights, foods, templates, drinks, taco] = await Promise.all([
+    db.getAll('kv'), db.getAll('entries'), db.getAll('weights'), db.getAll('foods'), db.getAll('templates'), db.getAll('drinks'),
     fetch('./data/taco.json').then(r => { if (!r.ok) throw new Error('taco'); return r.json(); }),
   ]);
   const map = Object.fromEntries(kvs.map(r => [r.key, r.value]));
+  // Versões antigas guardavam as bebidas numa lista só; agora cada uma é um registro.
+  if (Array.isArray(map.drinks)) {
+    await db.bulkPut('drinks', map.drinks);
+    await db.del('kv', 'drinks');
+    drinks.push(...map.drinks.filter(d => !drinks.some(x => x.id === d.id)));
+  }
   Object.assign(state, {
     ready: true, profile: map.profile ?? null, settings: { ...DEFAULT_SETTINGS, ...map.settings }, entries, weights, foods, templates,
-    favorites: map.favorites ?? [], water: map.water ?? {}, drinks: map.drinks ?? [], adaptive: map.adaptive ?? { declinedTdee: null }, taco,
+    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
   });
   state.recipes = buildRecipeFoods(taco);
   registerServings([...state.recipes, ...state.foods]);
@@ -143,18 +149,19 @@ export const dayDrinks = date => state.drinks.filter(d => d.date === date).sort(
 export async function addDrink(date, type, ml, extra = {}) {
   const row = { id: uid(), date, type, ml: Math.round(ml), ts: Date.now(), ...extra };
   state.drinks = [...state.drinks, row];
-  await kv('drinks', state.drinks);
+  await db.put('drinks', row);
   emit();
   return row;
 }
 export async function updateDrink(id, patch) {
   state.drinks = state.drinks.map(d => (d.id === id ? { ...d, ...patch } : d));
-  await kv('drinks', state.drinks);
+  const row = state.drinks.find(d => d.id === id);
+  if (row) await db.put('drinks', JSON.parse(JSON.stringify(row)));
   emit();
 }
 export async function removeDrink(id) {
   state.drinks = state.drinks.filter(d => d.id !== id);
-  await kv('drinks', state.drinks);
+  await db.del('drinks', id);
   emit();
 }
 export async function clearLegacyWater(date) {
@@ -163,7 +170,7 @@ export async function clearLegacyWater(date) {
   await kv('water', state.water);
   emit();
 }
-export async function restoreDrink(row) { state.drinks = [...state.drinks, row]; await kv('drinks', state.drinks); emit(); }
+export async function restoreDrink(row) { state.drinks = [...state.drinks, row]; await db.put('drinks', row); emit(); }
 /** Tira `ml` de água do dia: primeiro do último copo de água registrado, depois do total antigo. */
 export async function removeWater(date, ml) {
   const last = dayDrinks(date).filter(d => d.type === 'agua').pop();
@@ -206,12 +213,14 @@ export async function importData(data) {
   await db.clearAll();
   await Promise.all([
     db.bulkPut('entries', data.entries), db.bulkPut('weights', data.weights), db.bulkPut('foods', data.foods ?? []),
-    db.bulkPut('templates', data.templates ?? []),
-    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'drinks', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
+    db.bulkPut('templates', data.templates ?? []), db.bulkPut('drinks', data.drinks ?? []),
+    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
   ]);
   await load();
   emit();
 }
+/** Relê tudo do aparelho (depois de baixar mudanças da nuvem). */
+export async function reload() { await load(); emit(); }
 export async function wipe() {
   await db.clearAll();
   await load();

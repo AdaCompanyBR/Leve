@@ -244,6 +244,27 @@ input::placeholder { color: var(--ink-3); }
 .muted .liq-name, .muted .liq-ml, .liq-types-sum .muted { opacity: .6; }
 .liquids .week-day { padding: 0; }
 
+/* ---------- Conta ---------- */
+.auth-form .segmented { margin-top: 16px; }
+.pw-wrap { position: relative; }
+.pw-wrap input { width: 100%; padding-right: 96px; }
+.pw-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); min-height: 40px; padding: 0 12px; border-radius: 10px; color: var(--accent-ink); font-size: 14px; font-weight: 650; }
+.forgot { display: block; margin: 8px 0 0 auto; font-size: 14px; }
+.ob-login { display: block; margin: 18px auto 0; font-size: 15px; }
+.account-email { color: var(--ink-2); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+.sync-status { margin-top: 2px; }
+.logout-actions { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.logout-actions .btn.block { margin-top: 6px; }
+.lock { min-height: 100dvh; display: grid; place-items: center; padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px); }
+.lock-body { width: 100%; max-width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.lock-mark { display: block; width: 56px; height: 56px; border-radius: 50%; border: 12px solid var(--accent); border-right-color: var(--track); transform: rotate(35deg); }
+.lock h1 { font-size: 34px; font-weight: 750; letter-spacing: -.02em; margin-top: 18px; }
+.lock-sub { color: var(--ink-2); margin-top: 6px; }
+.lock .btn.block { margin-top: 36px; }
+.lock .btn .icon { width: 22px; height: 22px; }
+.lock-msg { color: var(--ink-2); font-size: 14px; min-height: 1.4em; margin-top: 12px; }
+.lock .link { margin-top: 8px; font-size: 15px; }
+
 /* ---------- Estimativa ---------- */
 .est-cta { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; margin-top: 12px; padding: 14px 16px; border-radius: 20px; background: var(--accent-soft); color: var(--accent-ink); }
 .est-cta > span { flex: 1; display: flex; flex-direction: column; gap: 2px; }

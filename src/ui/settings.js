@@ -3,6 +3,8 @@ import { h, int, dec1, parseNum, segmented, field, toast, confirmSheet, openShee
 import { state, getPlan, saveProfile, saveSettings, exportData, importData, wipe } from '../store.js';
 import { ACTIVITY, PACES, validateGoal, healthyRange } from '../lib/calc.js';
 import { todayISO } from '../lib/dates.js';
+import { accountCard } from './account.js';
+import * as auth from '../auth.js';
 
 export function applyTheme() {
   const t = state.settings.theme;
@@ -81,7 +83,7 @@ export function settingsScreen() {
     e.target.value = '';
   } });
   const dataCard = h('section.card.set-card', { 'aria-label': 'Seus dados' }, h('h3', 'Seus dados'),
-    h('p.card-sub', 'Tudo fica guardado só neste aparelho. Exporte um backup de vez em quando, ou para levar os dados a outro aparelho.'),
+    h('p.card-sub', auth.current() ? 'Seus dados ficam neste aparelho e na nuvem da sua conta. O backup em JSON continua disponível.' : 'Tudo fica guardado só neste aparelho. Exporte um backup de vez em quando, ou entre numa conta para usar em outros aparelhos.'),
     h('div.data-actions',
       h('button.btn.tonal', { onclick: () => {
         const blob = new Blob([JSON.stringify(exportData(), null, 2)], { type: 'application/json' });
@@ -89,7 +91,7 @@ export function settingsScreen() {
         document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast('Backup exportado');
       } }, 'Exportar JSON'),
       h('button.btn.tonal', { onclick: () => file.click() }, 'Importar JSON'), file,
-      h('button.btn.ghost', { onclick: () => confirmSheet({ title: 'Apagar tudo?', message: 'Perfil, diário, pesagens, favoritos e modelos serão apagados deste aparelho. Não dá para desfazer.', confirmLabel: 'Apagar tudo', onConfirm: async () => { await wipe(); applyTheme(); } }) }, 'Apagar tudo')));
+      h('button.btn.ghost', { onclick: () => confirmSheet({ title: 'Apagar tudo?', message: auth.current() ? 'Perfil, diário, pesagens, favoritos e modelos serão apagados deste aparelho e da nuvem da sua conta, em todos os aparelhos. Não dá para desfazer.' : 'Perfil, diário, pesagens, favoritos e modelos serão apagados deste aparelho. Não dá para desfazer.', confirmLabel: 'Apagar tudo', onConfirm: async () => { await wipe(); applyTheme(); } }) }, 'Apagar tudo')));
 
   const about = h('section.card.about', { 'aria-label': 'Sobre' },
     h('p.about-notice', { role: 'note' }, h('b', 'O Leve não substitui médico ou nutricionista. '), 'As metas são estimativas baseadas em fórmulas populacionais. Gestantes, lactantes e pessoas com condições de saúde devem seguir orientação profissional.'),
@@ -98,5 +100,5 @@ export function settingsScreen() {
 
   return h('div.screen.settings',
     h('header.screen-head', h('div', h('p.screen-date', 'Perfil'), h('h1', 'Ajustes'))),
-    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', prefCard, dataCard, about)));
+    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', accountCard({ row }), prefCard, dataCard, about)));
 }

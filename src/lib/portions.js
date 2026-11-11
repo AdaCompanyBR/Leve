@@ -16,10 +16,19 @@ const BY_UNIT = {
 
 const DEFAULT = { unidade: 100, fatia: 30, 'colher de sopa': 15, 'colher de sobremesa': 10, 'colher de chá': 5, concha: 130, copo: 200, 'xícara': 200, 'pedaço': 100, 'porção': 100 };
 
+// Porções de receitas típicas: "1 sanduíche" vale a porção da receita, não o valor genérico.
+const SERVINGS = new Map();
+const SERVING_UNITS = ['unidade', 'porção', 'fatia', 'copo', 'xícara', 'pedaço'];
+export function registerServings(foods) {
+  for (const f of foods) if (f.serving) SERVINGS.set(norm(f.n), { unit: f.servingUnit, grams: f.serving });
+}
+
 /** Gramas de 1 unidade da medida para o alimento. `known` é falso quando caiu no valor genérico. */
 export function gramsPerUnit(foodName, unit) {
   if (unit === 'g' || unit === 'ml') return { grams: 1, exact: true, known: true };
   const name = norm(foodName);
+  const sv = SERVINGS.get(name);
+  if (sv && (unit === sv.unit || SERVING_UNITS.includes(unit))) return { grams: sv.grams, exact: false, known: true };
   const hit = (BY_UNIT[unit] ?? []).find(([key]) => name.includes(key));
   if (hit) return { grams: hit[1], exact: false, known: true };
   return { grams: DEFAULT[unit] ?? 100, exact: false, known: unit !== 'unidade' && unit !== 'pedaço' && unit !== 'porção' };

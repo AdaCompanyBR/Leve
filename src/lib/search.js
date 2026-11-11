@@ -44,7 +44,8 @@ function lev1(a, b) {
 const matchTok = (q, t) => (q === t ? 1 : t.startsWith(q) && q.length >= 3 ? 0.85 : lev1(q, t) ? 0.7 : 0);
 
 export function makeIndex(foods) {
-  return foods.map(food => ({ food, toks: tokens(food.n), raw: norm(food.n) }));
+  // `alias` (receitas típicas) entra na busca, mas não pesa como nome comprido.
+  return foods.map(food => ({ food, toks: tokens(food.alias ? `${food.n} ${food.alias}` : food.n), len: tokens(food.n).length, raw: norm(food.n) }));
 }
 
 function expand(query) {
@@ -80,7 +81,7 @@ export function search(index, query, limit = 8) {
     let score = got / totalW;
     if (score < 0.34) continue;
     if (firstHit) score += 0.25;
-    score -= Math.max(0, entry.toks.length - q.length) * 0.02; // nomes mais curtos primeiro
+    score -= Math.max(0, (entry.len ?? entry.toks.length) - q.length) * 0.02; // nomes mais curtos primeiro
     const isRaw = entry.toks.includes('cru');
     if (!wantsRaw && isRaw && !/fruta|verdura|hortalic/i.test(entry.food.g ?? '')) score -= 0.12;
     if (!wantsRaw && COOKED.some(c => entry.toks.includes(stem(c)))) score += 0.03;

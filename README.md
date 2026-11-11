@@ -14,6 +14,7 @@ Diário de calorias e peso em português do Brasil, feito para uma pessoa só. �
 - **Data de chegada** com o controle "e se eu comer 200 kcal a menos?".
 - **Orçamento semanal.** O excesso de um dia é diluído nos dias seguintes, sem passar do piso calórico.
 - **O que cabe?** Sugestões que cabem nas calorias restantes do dia.
+- **Estimativa para o que não tem código de barras.** Pratos comuns que a TACO não traz prontos (sanduíche natural, misto quente, pizza, lasanha, prato feito, açaí, tapioca, sushi e outros) entram como receitas típicas, com calorias somadas dos ingredientes da TACO e a conta à mostra. Para o resto, "Estimar calorias" calcula a média (mediana) de produtos parecidos no Open Food Facts. Tudo marcado como estimativa e editável.
 - **Código de barras** com busca no Open Food Facts e cache local.
 - **Travas de segurança.** Nunca abaixo de 1.200 kcal (mulheres) ou 1.500 kcal (homens), déficit máximo de 25% do gasto, peso-alvo só dentro do IMC 18,5 a 24,9, e nenhum plano de déficit para menores de 18 anos.
 
@@ -64,6 +65,8 @@ src/lib/               funções puras, todas com testes
   portions.js          medidas caseiras
   hydration.js         tipos de bebida e somas de líquidos
   swaps.js             trocas mais leves e o motivo de cada uma
+  recipes.js           receitas típicas calculadas com a TACO
+  estimate.js          média de produtos parecidos (Open Food Facts)
 src/store.js, src/db.js   estado e IndexedDB
 src/ui/                telas e componentes
 tests/                 node --test
@@ -86,7 +89,7 @@ O plano pedia Vite, React, TypeScript, Tailwind, Dexie, Motion, vite-plugin-pwa 
 ## O que ainda não foi testado em aparelho real
 
 - **Leitor de código de barras pela câmera.** O fluxo foi escrito com `BarcodeDetector` e, onde ele não existe (Safari no iPhone, Firefox), carrega a biblioteca `barcode-detector` do jsDelivr na primeira vez. Isso não pôde ser testado no ambiente de construção. Digitar os números do código sempre funciona.
-- **Consulta ao Open Food Facts.** Escrita conforme a API v2 pública, sem teste contra o serviço real.
+- **Consulta ao Open Food Facts** (código de barras e média de produtos parecidos). Escrita conforme a API pública, testada com respostas simuladas, sem teste contra o serviço real.
 - **Instalação no iPhone e no Android**, vibração e safe areas.
 
 ## Limites conhecidos

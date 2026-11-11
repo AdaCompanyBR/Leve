@@ -6,9 +6,16 @@ import { toGrams, nutrientsFor } from '../lib/portions.js';
 import { state, addEntries, updateEntry, removeEntry, toggleFavorite, saveFood, foodById } from '../store.js';
 import { ui, MEAL_SHORT, mealByClock } from './state.js';
 import { swapsForFood, swapBox, swapSheet } from './swaps.js';
+import { estimateSheet, recipeDetails } from './estimate.js';
 
-const SOURCE = { taco: 'TACO', off: 'Open Food Facts', manual: 'Cadastrado por você' };
-export const sourceOf = food => (food.id.startsWith('t') ? SOURCE.taco : SOURCE[food.source] ?? SOURCE.manual);
+const SOURCE = { taco: 'TACO', off: 'Open Food Facts', manual: 'Cadastrado por você', receita: 'Estimativa: receita típica com valores da TACO' };
+export const sourceOf = food => (food.source === 'media' ? `Estimativa: média de ${food.count} produtos do Open Food Facts`
+  : /^t\d/.test(food.id) ? SOURCE.taco : SOURCE[food.source] ?? SOURCE.manual);
+
+/** Abre a estimativa de calorias. Sem `onFood`, o alimento escolhido abre para registrar. */
+export function openEstimate(query, onFood = food => foodSheet(food)) {
+  return estimateSheet(query, { onPick: food => (food.manual ? manualFoodSheet({ n: food.n }) : onFood(food)) });
+}
 const unitOptions = (sel, value) => { UNIT_LIST.forEach(u => sel.append(h('option', { value: u, selected: u === value }, u))); return sel; };
 const fmtQty = q => String(Math.round(q * 100) / 100).replace('.', ',');
 
@@ -24,7 +31,8 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
     const r = 100 / (entry.grams || 100);
     food = { id: entry.foodId ?? 'x', n: entry.name, k: entry.kcal * r, p: entry.p * r, c: entry.c * r, f: entry.f * r, source: 'manual' };
   }
-  const v = { qty: entry?.qty ?? qty ?? (food.serving ? food.serving : 100), unit: entry?.unit ?? unit ?? 'g', meal: entry?.meal ?? meal ?? ui.meal ?? mealByClock() };
+  const byServing = !qty && food.servingUnit && UNIT_LIST.includes(food.servingUnit);
+  const v = { qty: entry?.qty ?? qty ?? (byServing ? 1 : food.serving ? food.serving : 100), unit: entry?.unit ?? unit ?? (byServing ? food.servingUnit : 'g'), meal: entry?.meal ?? meal ?? ui.meal ?? mealByClock() };
   const kcalEl = h('span.sheet-kcal'), gramsEl = h('p.field-hint', { 'aria-live': 'polite' }), macrosEl = h('div'), swapEl = h('div');
   const qtyInput = h('input', { inputmode: 'decimal', value: fmtQty(v.qty), autocomplete: 'off', autofocus: true });
   const unitSel = unitOptions(h('select', { 'aria-label': 'Unidade' }), v.unit);
@@ -64,10 +72,12 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
     title: food.n,
     content: [
       h('p.sheet-source', `${sourceOf(food)}. ${int(food.k)} kcal por 100 g`),
+      food.source === 'media' ? h('p.sheet-source', `A maioria dos produtos fica entre ${int(food.low)} e ${int(food.high)} kcal por 100 g.`) : null,
       h('div.sheet-kcal-row', kcalEl, h('span.sheet-kcal-unit', 'kcal')),
       macrosEl,
       h('div.qty-row', field('Quantidade', qtyInput), field('Unidade', unitSel)),
       gramsEl,
+      food.ingredients ? recipeDetails(food) : null,
       swapEl,
       h('div.field', h('label', 'Refeição'), segmented(MEAL_SHORT, v.meal, id => { v.meal = id; }, 'Refeição')),
       h('div.chip-row',
@@ -115,14 +125,26 @@ export function phraseSheet(text) {
 
   function row(it) {
     if (!it.food) {
-      return h('div.phrase-item.missing',
+      const missing = h('div.phrase-item.missing',
         h('p.phrase-raw', `“${it.raw}”`),
-        h('p.phrase-miss', 'Não encontramos este alimento na tabela. Tente outro nome na busca ou cadastre manualmente.'));
+        h('p.phrase-miss', 'Não encontramos este alimento na tabela.'),
+        h('button.btn.tonal.compact', { type: 'button', onclick: () => openEstimate(it.query, food => {
+          it.food = food; it.matches = [food]; it.skip = false;
+          if (food.servingUnit && UNIT_LIST.includes(food.servingUnit) && !it.explicitUnit) it.unit = food.servingUnit;
+          missing.replaceWith(row(it)); compute();
+        }) }, 'Estimar calorias'));
+      return missing;
     }
     const kcal = h('span.phrase-kcal'), grams = h('span.phrase-grams');
     const paint = () => { compute(); kcal.textContent = `${int(it.n.kcal)} kcal`; grams.textContent = it.g.exact ? '' : `≈ ${int(it.g.grams)} g${it.g.known ? '' : ' (medida genérica, confira)'}`; };
-    const foodSel = h('select.phrase-food', { 'aria-label': `Alimento para “${it.raw}”`, onchange: e => { it.food = it.matches[e.target.selectedIndex]; paint(); } },
-      it.matches.map(f => h('option', f.n)));
+    const foodSel = h('select.phrase-food', { 'aria-label': `Alimento para “${it.raw}”`, onchange: e => {
+      if (e.target.selectedIndex === it.matches.length) {
+        e.target.selectedIndex = it.matches.indexOf(it.food);
+        return openEstimate(it.query, food => { it.matches = [food, ...it.matches.filter(m => m.id !== food.id)]; it.food = food; el.replaceWith(row(it)); compute(); });
+      }
+      it.food = it.matches[e.target.selectedIndex]; paint();
+    } },
+      it.matches.map(f => h('option', { selected: f === it.food }, f.n)), h('option', 'Nenhum destes: estimar calorias…'));
     const qty = h('input', { inputmode: 'decimal', value: fmtQty(it.qty), 'aria-label': 'Quantidade', oninput: e => { it.qty = parseNum(e.target.value); paint(); } });
     const unit = unitOptions(h('select', { 'aria-label': 'Unidade', onchange: e => { it.unit = e.target.value; paint(); } }), it.unit);
     const el = h('div.phrase-item',
@@ -154,10 +176,10 @@ export function phraseSheet(text) {
 export function manualFoodSheet(prefill = {}) {
   const inputs = {
     n: h('input', { value: prefill.n ?? '', maxlength: 60, autocomplete: 'off', autofocus: true, required: true }),
-    k: h('input', { inputmode: 'decimal', required: true }),
-    p: h('input', { inputmode: 'decimal', placeholder: '0' }),
-    c: h('input', { inputmode: 'decimal', placeholder: '0' }),
-    f: h('input', { inputmode: 'decimal', placeholder: '0' }),
+    k: h('input', { inputmode: 'decimal', required: true, value: prefill.k != null ? fmtQty(prefill.k) : '' }),
+    p: h('input', { inputmode: 'decimal', placeholder: '0', value: prefill.p ? fmtQty(prefill.p) : '' }),
+    c: h('input', { inputmode: 'decimal', placeholder: '0', value: prefill.c ? fmtQty(prefill.c) : '' }),
+    f: h('input', { inputmode: 'decimal', placeholder: '0', value: prefill.f ? fmtQty(prefill.f) : '' }),
   };
   const err = h('p.ob-err', { role: 'alert' });
   const sheet = openSheet({

@@ -7,6 +7,8 @@ import { estimateTdee, shouldPropose } from './lib/adaptive.js';
 import { addDays, todayISO } from './lib/dates.js';
 import { makeIndex } from './lib/search.js';
 import { dayTotal } from './lib/hydration.js';
+import { buildRecipeFoods } from './lib/recipes.js';
+import { registerServings } from './lib/portions.js';
 
 export const MEALS = [
   { id: 'cafe', label: 'Café da manhã' },
@@ -19,7 +21,7 @@ const DEFAULT_SETTINGS = { theme: 'auto', weightReminder: true, waterGoal: 2000,
 
 export const state = {
   ready: false, profile: null, settings: { ...DEFAULT_SETTINGS }, entries: [], weights: [], foods: [], templates: [],
-  favorites: [], water: {}, drinks: [], adaptive: { declinedTdee: null }, taco: [], index: [],
+  favorites: [], water: {}, drinks: [], adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
 };
 
 const listeners = new Set();
@@ -28,7 +30,7 @@ const emit = () => listeners.forEach(fn => fn());
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 const kv = (key, value) => db.put('kv', { key, value });
-const reindex = () => { state.index = makeIndex([...state.foods.filter(f => !f.hidden), ...state.taco]); };
+const reindex = () => { state.index = makeIndex([...state.foods.filter(f => !f.hidden), ...state.taco, ...state.recipes]); };
 
 export async function load() {
   const [kvs, entries, weights, foods, templates, taco] = await Promise.all([
@@ -40,11 +42,13 @@ export async function load() {
     ready: true, profile: map.profile ?? null, settings: { ...DEFAULT_SETTINGS, ...map.settings }, entries, weights, foods, templates,
     favorites: map.favorites ?? [], water: map.water ?? {}, drinks: map.drinks ?? [], adaptive: map.adaptive ?? { declinedTdee: null }, taco,
   });
+  state.recipes = buildRecipeFoods(taco);
+  registerServings([...state.recipes, ...state.foods]);
   reindex();
 }
 
 // ---------- Consultas ----------
-export const foodById = id => state.taco.find(f => f.id === id) ?? state.foods.find(f => f.id === id) ?? null;
+export const foodById = id => state.taco.find(f => f.id === id) ?? state.recipes.find(f => f.id === id) ?? state.foods.find(f => f.id === id) ?? null;
 export const latestWeight = () => {
   const s = [...state.weights].sort((a, b) => a.date.localeCompare(b.date));
   return s.length ? s[s.length - 1].kg : state.profile?.weightKg;
@@ -177,6 +181,7 @@ export async function saveFood(food) {
   const row = { ...food, id: food.id ?? 'c' + uid() };
   state.foods = [...state.foods.filter(f => f.id !== row.id), row];
   await db.put('foods', row);
+  registerServings([row]);
   reindex();
   emit();
   return row;

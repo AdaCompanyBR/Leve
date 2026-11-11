@@ -1,6 +1,6 @@
 // Tela Registrar: campo único (frase livre e busca), código de barras, recentes, favoritos e modelos.
 import { h, icon, int, portionText, segmented, toast, confirmSheet } from './dom.js';
-import { foodSheet, phraseSheet, manualFoodSheet, barcodeSheet, sourceOf } from './food.js';
+import { foodSheet, phraseSheet, manualFoodSheet, barcodeSheet, sourceOf, openEstimate } from './food.js';
 import { ui, MEAL_SHORT, mealByClock, go } from './state.js';
 import { state, recents, foodById, addEntries, removeTemplate, totals } from '../store.js';
 import { search } from '../lib/search.js';
@@ -8,8 +8,11 @@ import { parsePhrase } from '../lib/parser.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
 
 const foodRow = (food, opts = {}, sub) => h('li', h('button.food-row', { onclick: () => foodSheet(food, opts) },
-  h('span.food-text', h('span.food-name', food.n), h('span.food-sub', sub ?? sourceOf(food))),
-  h('span.food-kcal', h('b', int(food.k)), ' kcal/100 g')));
+  h('span.food-text', h('span.food-name', food.n), h('span.food-sub', sub ?? (food.servingKcal ? `Receita típica, ${food.servingUnit} ≈ ${int(food.serving)} g` : sourceOf(food)))),
+  food.servingKcal ? h('span.food-kcal', h('b', `≈ ${int(food.servingKcal)}`), ` kcal/${food.servingUnit}`) : h('span.food-kcal', h('b', int(food.k)), ' kcal/100 g')));
+
+const estimateCta = q => h('button.est-cta', { type: 'button', onclick: () => openEstimate(q) },
+  icon('search'), h('span', h('b', `Não achou? Estimar calorias de “${q}”`), h('span', 'Receita típica e média de produtos parecidos')), icon('next'));
 
 export function logScreen() {
   ui.meal ??= mealByClock();
@@ -47,13 +50,18 @@ export function logScreen() {
     const parsed = parsePhrase(q);
     const looksLikePhrase = parsed.length > 1 || /\d|^(um|uma|dois|duas|meio|meia|tres)\b/i.test(q);
     const found = search(state.index, parsed.length === 1 ? parsed[0].query : q, 12).map(r => r.food);
-    results.replaceChildren(
+    // replaceChildren escreveria "null" na tela; só entram os blocos que existem.
+    results.replaceChildren(...[
       looksLikePhrase ? h('button.phrase-cta', { onclick: () => phraseSheet(q) },
         h('span', h('b', parsed.length > 1 ? `Registrar ${parsed.length} itens desta frase` : 'Registrar esta frase'), h('span', 'Você confere tudo antes de salvar.')), icon('next')) : null,
       found.length ? h('ul.food-list', found.map(f => foodRow(f, parsed.length === 1 && parsed[0].qty !== 1 ? { qty: parsed[0].qty, unit: parsed[0].unit } : {})))
         : !looksLikePhrase || parsed.length === 1 ? h('div.empty.small', h('p.empty-title', 'Nada encontrado na tabela'),
-          h('p.empty-text', 'Confira a grafia, leia o código de barras ou cadastre o alimento.'),
-          h('button.btn.tonal', { onclick: () => manualFoodSheet({ n: q }) }, 'Cadastrar alimento')) : null);
+          h('p.empty-text', 'Sem código de barras? O Leve estima pela receita típica ou pela média de produtos parecidos.'),
+          h('div.empty-actions',
+            h('button.btn.primary', { onclick: () => openEstimate(parsed.length === 1 ? parsed[0].query : q) }, 'Estimar calorias'),
+            h('button.btn.tonal', { onclick: () => manualFoodSheet({ n: q }) }, 'Cadastrar alimento'))) : null,
+      found.length && (!looksLikePhrase || parsed.length === 1) ? estimateCta(parsed.length === 1 ? parsed[0].query : q) : null,
+    ].filter(Boolean));
   }
   input.addEventListener('input', paint);
 

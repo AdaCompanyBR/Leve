@@ -244,6 +244,32 @@ input::placeholder { color: var(--ink-3); }
 .muted .liq-name, .muted .liq-ml, .liq-types-sum .muted { opacity: .6; }
 .liquids .week-day { padding: 0; }
 
+/* ---------- Estimativa ---------- */
+.est-cta { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; margin-top: 12px; padding: 14px 16px; border-radius: 20px; background: var(--accent-soft); color: var(--accent-ink); }
+.est-cta > span { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.est-cta > span > span { color: var(--ink-2); font-size: 13px; }
+.est-cta .icon { width: 20px; height: 20px; flex: none; }
+.est-section { margin-top: 20px; }
+.est-h { font-size: 17px; font-weight: 700; }
+.est-sub { color: var(--ink-2); font-size: 14px; margin-top: 4px; }
+.est-card { margin-top: 10px; padding: 14px 16px; border-radius: 18px; background: var(--surface-2); }
+.est-card .btn.block { margin-top: 12px; }
+.est-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.est-name { font-weight: 650; }
+.est-meta, .est-macros { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.est-macros { margin-top: 8px; }
+.est-kcal { white-space: nowrap; color: var(--ink-2); font-size: 14px; }
+.est-kcal b { color: var(--ink); font: 700 22px var(--font-num); }
+.est-details { margin-top: 10px; font-size: 14px; }
+.est-details summary { cursor: pointer; color: var(--accent-ink); font-weight: 600; min-height: 36px; display: flex; align-items: center; }
+.est-ingr li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.est-ingr li span:last-child { white-space: nowrap; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.est-note { color: var(--ink-2); }
+.est-loading { display: flex; align-items: center; gap: 10px; color: var(--ink-2); font-size: 14px; margin-top: 8px; }
+.est-spin { width: 18px; height: 18px; border-radius: 50%; border: 3px solid var(--track); border-top-color: var(--accent); animation: spin .9s linear infinite; flex: none; }
+.est-online .btn.compact { margin-top: 10px; }
+.phrase-item.missing .btn { margin-top: 10px; }
+
 /* ---------- Trocas ---------- */
 .swap-box { margin-top: 16px; padding: 14px 16px; border-radius: 18px; background: var(--accent-soft); }
 .swap-title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--accent-ink); }

@@ -9,8 +9,9 @@ Responder, em poucos segundos, três perguntas: quanto ainda posso comer hoje, e
 ## Telas
 1. **Hoje.** Anel de calorias, macros, refeições, água, "O que cabe?". Setas levam a dias anteriores.
 2. **Registrar.** Um campo só. Com número ou mais de um item, vira frase; sem isso, é busca. Abaixo: recentes, favoritos e modelos.
-3. **Progresso.** Peso real e tendência, projeção, "e se", saldo da semana, gasto adaptativo, pesagens.
-4. **Ajustes.** Plano, dados, meta, tema, backup, aviso de saúde.
+3. **Líquidos.** Total do dia e meta, bebida por tipo com tamanhos rápidos ou quantidade livre, registros do dia com apagar e desfazer, semana e meta diária.
+4. **Progresso.** Peso real e tendência, projeção, "e se", saldo da semana, gasto adaptativo, pesagens.
+5. **Ajustes.** Plano, dados, meta, tema, backup, aviso de saúde.
 
 O onboarding faz uma pergunta por tela e termina na revelação do plano.
 
@@ -26,4 +27,5 @@ O onboarding faz uma pergunta por tela e termina na revelação do plano.
 - Dia passado sem registro conta como "na meta" no orçamento semanal: não gera crédito nem débito.
 - Comer menos que a meta não vira crédito para os dias seguintes; só o excesso é redistribuído.
 - O gasto adaptativo exige 14 dias entre a primeira e a última pesagem da janela, pelo menos 4 pesagens e registros em 70% dos dias. Só propõe mudança se a diferença for de 5% ou mais.
+- Na aba Líquidos entra só o volume. Calorias de bebidas (suco, leite, refrigerante, álcool) se registram no diário, com valores da TACO; o atalho leva à busca. Bebida alcoólica não conta para a meta de líquidos.
 - Para menores de 18 anos o app não mostra faixa de IMC adulta, peso sugerido, meta calórica nem projeção.

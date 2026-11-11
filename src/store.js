@@ -6,6 +6,7 @@ import { weekBudget } from './lib/budget.js';
 import { estimateTdee, shouldPropose } from './lib/adaptive.js';
 import { addDays, todayISO } from './lib/dates.js';
 import { makeIndex } from './lib/search.js';
+import { dayTotal } from './lib/hydration.js';
 
 export const MEALS = [
   { id: 'cafe', label: 'Café da manhã' },
@@ -18,7 +19,7 @@ const DEFAULT_SETTINGS = { theme: 'auto', weightReminder: true, waterGoal: 2000 
 
 export const state = {
   ready: false, profile: null, settings: { ...DEFAULT_SETTINGS }, entries: [], weights: [], foods: [], templates: [],
-  favorites: [], water: {}, adaptive: { declinedTdee: null }, taco: [], index: [],
+  favorites: [], water: {}, drinks: [], adaptive: { declinedTdee: null }, taco: [], index: [],
 };
 
 const listeners = new Set();
@@ -37,7 +38,7 @@ export async function load() {
   const map = Object.fromEntries(kvs.map(r => [r.key, r.value]));
   Object.assign(state, {
     ready: true, profile: map.profile ?? null, settings: { ...DEFAULT_SETTINGS, ...map.settings }, entries, weights, foods, templates,
-    favorites: map.favorites ?? [], water: map.water ?? {}, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
+    favorites: map.favorites ?? [], water: map.water ?? {}, drinks: map.drinks ?? [], adaptive: map.adaptive ?? { declinedTdee: null }, taco,
   });
   reindex();
 }
@@ -132,8 +133,33 @@ export async function setWeight(date, kg, silent) {
   if (!silent) emit();
 }
 export async function removeWeight(date) { state.weights = state.weights.filter(w => w.date !== date); await db.del('weights', date); emit(); }
-export async function addWater(date, ml) {
-  state.water = { ...state.water, [date]: Math.max(0, (state.water[date] ?? 0) + ml) };
+// Líquidos: cada bebida é um item; `water` guarda o total antigo por dia, de antes da aba Líquidos.
+export const liquidsOn = date => dayTotal(state.drinks, state.water, date);
+export const dayDrinks = date => state.drinks.filter(d => d.date === date).sort((a, b) => a.ts - b.ts);
+export async function addDrink(date, type, ml) {
+  const row = { id: uid(), date, type, ml: Math.round(ml), ts: Date.now() };
+  state.drinks = [...state.drinks, row];
+  await kv('drinks', state.drinks);
+  emit();
+  return row;
+}
+export async function removeDrink(id) {
+  state.drinks = state.drinks.filter(d => d.id !== id);
+  await kv('drinks', state.drinks);
+  emit();
+}
+export async function clearLegacyWater(date) {
+  const { [date]: _, ...rest } = state.water;
+  state.water = rest;
+  await kv('water', state.water);
+  emit();
+}
+export async function restoreDrink(row) { state.drinks = [...state.drinks, row]; await kv('drinks', state.drinks); emit(); }
+/** Tira `ml` de água do dia: primeiro do último copo de água registrado, depois do total antigo. */
+export async function removeWater(date, ml) {
+  const last = dayDrinks(date).filter(d => d.type === 'agua').pop();
+  if (last) return removeDrink(last.id);
+  state.water = { ...state.water, [date]: Math.max(0, (state.water[date] ?? 0) - ml) };
   await kv('water', state.water);
   emit();
 }
@@ -162,8 +188,8 @@ export async function declineTdee(tdee) { state.adaptive = { declinedTdee: tdee 
 
 // ---------- Exportar, importar, apagar ----------
 export function exportData() {
-  const { profile, settings, entries, weights, foods, templates, favorites, water, adaptive } = state;
-  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, adaptive };
+  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, adaptive } = state;
+  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, adaptive };
 }
 export async function importData(data) {
   if (data?.app !== 'leve' || !Array.isArray(data.entries) || !Array.isArray(data.weights)) throw new Error('Arquivo não reconhecido');
@@ -171,7 +197,7 @@ export async function importData(data) {
   await Promise.all([
     db.bulkPut('entries', data.entries), db.bulkPut('weights', data.weights), db.bulkPut('foods', data.foods ?? []),
     db.bulkPut('templates', data.templates ?? []),
-    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
+    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'drinks', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
   ]);
   await load();
   emit();

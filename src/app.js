@@ -5,6 +5,7 @@ import { ui, setNavigator, go } from './ui/state.js';
 import { onboarding } from './ui/onboarding.js';
 import { todayScreen } from './ui/today.js';
 import { logScreen } from './ui/log.js';
+import { liquidsScreen } from './ui/liquids.js';
 import { progressScreen } from './ui/progress.js';
 import { settingsScreen, applyTheme } from './ui/settings.js';
 import { todayISO } from './lib/dates.js';
@@ -13,6 +14,7 @@ const root = document.getElementById('app');
 const TABS = [
   { id: 'hoje', label: 'Hoje', icon: 'today', screen: todayScreen },
   { id: 'registrar', label: 'Registrar', icon: 'log', screen: logScreen },
+  { id: 'liquidos', label: 'Líquidos', icon: 'drop', screen: liquidsScreen },
   { id: 'progresso', label: 'Progresso', icon: 'progress', screen: progressScreen },
   { id: 'ajustes', label: 'Ajustes', icon: 'settings', screen: settingsScreen },
 ];
@@ -23,7 +25,7 @@ function buildShell() {
   const main = h('main.main', { id: 'conteudo', tabindex: '-1' });
   const nav = h('nav.nav', { 'aria-label': 'Principal' },
     h('div.brand', h('span.brand-mark', { 'aria-hidden': 'true' }), h('span.brand-name', 'Leve')),
-    h('div.nav-items', TABS.map(t => h('button.nav-item', { 'data-tab': t.id, onclick: () => go(t.id, t.id === 'hoje' && ui.tab === 'hoje' ? { date: todayISO() } : {}) }, icon(t.icon), h('span', t.label)))),
+    h('div.nav-items', TABS.map(t => h('button.nav-item', { 'data-tab': t.id, onclick: () => go(t.id, (t.id === 'hoje' || t.id === 'liquidos') && ui.tab === t.id ? { date: todayISO() } : {}) }, icon(t.icon), h('span', t.label)))),
     h('p.nav-foot', 'Seus dados ficam só neste aparelho.'));
   root.replaceChildren(h('a.skip', { href: '#conteudo' }, 'Pular para o conteúdo'), nav, main);
   return { main, nav };

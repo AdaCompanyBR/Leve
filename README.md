@@ -8,6 +8,7 @@ Diário de calorias e peso em português do Brasil, feito para uma pessoa só. �
 
 - **Registro por frase.** Escreva "2 ovos mexidos e um pão francês"; o app separa itens, quantidades e calorias e mostra tudo para você confirmar antes de salvar.
 - **Gasto adaptativo.** Com 14 dias ou mais de registros e pesagens, calcula o seu gasto real e propõe uma nova meta. Você aceita ou recusa.
+- **Aba Líquidos.** Água, café, chá, suco, leite e outras bebidas, com tamanhos rápidos, lista do dia, semana e meta diária. Bebida alcoólica fica registrada, mas não conta para a meta.
 - **Peso tendência.** Média móvel exponencial que esconde a oscilação diária de água.
 - **Data de chegada** com o controle "e se eu comer 200 kcal a menos?".
 - **Orçamento semanal.** O excesso de um dia é diluído nos dias seguintes, sem passar do piso calórico.
@@ -60,6 +61,7 @@ src/lib/               funções puras, todas com testes
   parser.js            frase livre
   search.js            busca aproximada
   portions.js          medidas caseiras
+  hydration.js         tipos de bebida e somas de líquidos
 src/store.js, src/db.js   estado e IndexedDB
 src/ui/                telas e componentes
 tests/                 node --test

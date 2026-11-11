@@ -206,6 +206,39 @@ input::placeholder { color: var(--ink-3); }
 .water-val b { color: var(--ink); font: 700 17px var(--font-num); }
 .water-actions { display: flex; gap: 10px; margin-top: 16px; }
 .water-actions .icon { width: 20px; height: 20px; }
+.water-more { display: block; margin: 6px auto -8px; font-size: 14px; }
+
+/* ---------- Líquidos ---------- */
+.liquids-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.liq-hero { background: radial-gradient(120% 80% at 0% 0%, var(--accent-soft), transparent 70%), var(--surface); }
+.liq-now { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.liq-num { font: 700 clamp(52px, 15vw, 64px)/1 var(--font-num); letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.liq-unit { color: var(--ink-2); font: 650 18px var(--font-num); }
+.liq-bar { height: 12px; margin-top: 16px; }
+.liq-types { margin-top: 12px; }
+.liq-sizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.liq-size { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 64px; border-radius: var(--r-ctl); background: var(--accent-soft); color: var(--accent-ink); transition: transform .25s var(--ease); }
+.liq-size:active { transform: scale(.95); }
+.liq-size b { font: 700 20px/1.1 var(--font-num); }
+.liq-size span { font-size: 12px; font-weight: 600; opacity: .85; }
+.liq-custom { display: flex; align-items: flex-end; gap: 10px; margin-top: 14px; }
+.liq-custom .field { flex: 1; margin: 0; }
+.liq-custom .btn { min-height: 50px; }
+.link.inline { display: inline; min-height: 0; font-size: inherit; padding: 0; }
+.liq-types-sum { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 4px; font-size: 14px; color: var(--ink-2); }
+.liq-types-sum b { color: var(--ink); font: 650 14px var(--font-num); margin-left: 6px; }
+.liq-rows { margin: 8px -6px -8px 0; }
+.liq-row { display: flex; align-items: center; gap: 12px; min-height: 52px; }
+.liq-row + .liq-row { border-top: 1px solid var(--line); }
+.liq-time { width: 46px; flex: none; color: var(--ink-2); font: 500 14px var(--font-num); font-variant-numeric: tabular-nums; }
+.liq-name { flex: 1; min-width: 0; font-weight: 550; display: flex; flex-direction: column; }
+.liq-sub { color: var(--ink-2); font-size: 13px; font-weight: 400; }
+.liq-ml { font: 650 16px var(--font-num); font-variant-numeric: tabular-nums; }
+.muted .liq-name, .muted .liq-ml, .liq-types-sum .muted { opacity: .6; }
+.liquids .week-day { padding: 0; }
+.liquids .week-day:disabled { cursor: default; }
+.liq-goal-ctl { margin-top: 14px; }
+@media (hover: hover) { .liq-size:hover { filter: brightness(.97); } }
 
 .fit-list { margin: 12px -8px -6px; }
 .fit { display: grid; grid-template-columns: 1fr auto; column-gap: 12px; width: 100%; text-align: left; padding: 9px 10px; border-radius: 14px; min-height: 52px; align-items: center; }
@@ -449,6 +482,8 @@ input::placeholder { color: var(--ink-3); }
   .today-grid .col-meals { grid-column: 2; grid-row: 1 / span 2; }
   .today-grid .col-side { grid-column: 1; }
   .log-grid { grid-template-columns: 400px minmax(0, 1fr); align-items: start; gap: 18px; }
+  .liquids-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 18px; }
+  .liq-sizes { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .progress-grid { grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr); align-items: start; gap: 18px; }
   .settings-grid { grid-template-columns: 1fr 1fr; align-items: start; gap: 18px; }
   .col { gap: 18px; }

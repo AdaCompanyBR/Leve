@@ -96,7 +96,8 @@ export function settingsScreen() {
   const about = h('section.card.about', { 'aria-label': 'Sobre' },
     h('p.about-notice', { role: 'note' }, h('b', 'O Leve não substitui médico ou nutricionista. '), 'As metas são estimativas baseadas em fórmulas populacionais. Gestantes, lactantes e pessoas com condições de saúde devem seguir orientação profissional.'),
     h('p.fine', 'Dados nutricionais: Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada, NEPA/UNICAMP, 2011. Produtos com código de barras: Open Food Facts (licença ODbL). Medidas caseiras são estimativas.'),
-    h('p.fine', 'Fórmulas: Mifflin-St Jeor para o metabolismo basal; faixa saudável pelo IMC de 18,5 a 24,9.'));
+    h('p.fine', 'Fórmulas: Mifflin-St Jeor para o metabolismo basal; faixa saudável pelo IMC de 18,5 a 24,9.'),
+    h('p.fine', h('a.link', { href: '../' }, 'Sobre o Leve')));
 
   return h('div.screen.settings',
     h('header.screen-head', h('div', h('p.screen-date', 'Perfil'), h('h1', 'Ajustes'))),

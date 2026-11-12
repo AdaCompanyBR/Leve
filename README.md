@@ -23,7 +23,7 @@ Diário de calorias e peso em português do Brasil, feito para uma pessoa só. �
 Precisa só do Node 20 ou mais novo. Não há dependências para instalar.
 
 ```bash
-npm start        # abre em http://localhost:5173
+npm start        # landing em http://localhost:5173/ e app em http://localhost:5173/app/
 npm test         # roda os testes dos cálculos, do parser e da busca
 ```
 
@@ -33,13 +33,15 @@ Qualquer servidor de arquivos estáticos também serve (por exemplo `python3 -m 
 
 1. Suba este projeto para um repositório no GitHub, na branch `main`.
 2. No repositório, abra **Settings > Pages** e, em **Source**, escolha **GitHub Actions**.
-3. A cada push na `main`, o workflow `.github/workflows/pages.yml` roda os testes e publica. O endereço aparece na aba **Actions** e em **Settings > Pages**.
+3. A cada push na `main`, o workflow `.github/workflows/pages.yml` roda os testes e publica: a landing (pasta `site/`) fica na raiz, `https://adacompanybr.github.io/Leve/`, e o app em `https://adacompanybr.github.io/Leve/app/`.
 
-Ao publicar uma mudança, aumente `VERSION` no `sw.js` (de `leve-v1` para `leve-v2`, e assim por diante). É isso que faz os aparelhos baixarem os arquivos novos.
+Ao publicar uma mudança no app, aumente `VERSION` no `sw.js` (`leve-app-v9`, `leve-app-v10`…). É isso que faz os aparelhos baixarem os arquivos novos.
+
+Até novembro de 2026 o app ficava na raiz. `site/sw.js` desliga o service worker antigo de lá; os dados continuam, porque o armazenamento do navegador é do site inteiro e o app em `/app/` os encontra. Quem instalou o app na tela inicial com o endereço antigo é levado direto para `/app/`.
 
 ## Como instalar no celular
 
-- **iPhone (Safari):** abra o endereço do app, toque em **Compartilhar** e depois em **Adicionar à Tela de Início**.
+- **iPhone (Safari):** abra `https://adacompanybr.github.io/Leve/app/`, toque em **Compartilhar** e depois em **Adicionar à Tela de Início**.
 - **Android (Chrome):** abra o endereço, toque no menu de três pontos e em **Instalar app** (ou **Adicionar à tela inicial**).
 - **Computador (Chrome ou Edge):** clique no ícone de instalar na barra de endereço.
 
@@ -57,7 +59,7 @@ O login usa o [Supabase](https://supabase.com) (plano gratuito): ele guarda as s
 
 1. Crie uma conta em supabase.com e um projeto novo (região São Paulo, `sa-east-1`, fica mais perto).
 2. Em **SQL Editor > New query**, cole todo o conteúdo de [`supabase/schema.sql`](supabase/schema.sql) e clique em **Run**.
-3. Em **Authentication > URL Configuration**, coloque em **Site URL** o endereço do app (`https://adacompanybr.github.io/Leve/`) e adicione o mesmo endereço em **Redirect URLs**. É para onde voltam os links de confirmação e de troca de senha.
+3. Em **Authentication > URL Configuration**, coloque em **Site URL** o endereço do app (`https://adacompanybr.github.io/Leve/app/`) e adicione o mesmo endereço em **Redirect URLs**. É para onde voltam os links de confirmação e de troca de senha.
 4. Em **Authentication > Sign In / Providers > Email**: deixe **Confirm email** ligado se quiser que a conta só funcione depois de clicar no link do e-mail, ou desligue para entrar na hora.
 5. Em **Project Settings > API**, copie **Project URL** e a chave **anon public** para `src/config.js` e publique (push na `main`). A chave anon é pública por natureza; quem protege os dados são as regras do passo 2.
 
@@ -81,7 +83,8 @@ O que já existia no aparelho é juntado com a nuvem. Se os dois tiverem o mesmo
 ## Estrutura
 
 ```
-index.html, sw.js, manifest.webmanifest
+site/                  landing page (index.html, imagens, DESIGN.md)
+index.html, sw.js, manifest.webmanifest   app
 css/app.css            tokens de design e estilos
 data/taco.json         tabela TACO compacta (591 alimentos)
 src/lib/               funções puras, todas com testes

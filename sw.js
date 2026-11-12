@@ -1,6 +1,6 @@
 // Service worker do Leve: o app abre e funciona sem internet.
 // Ao publicar mudanças, aumente VERSION para os aparelhos buscarem os arquivos novos.
-const VERSION = 'leve-v8';
+const VERSION = 'leve-app-v9';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './css/app.css', './data/taco.json',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
@@ -16,7 +16,8 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  // Só mexe nos caches do app ("leve-app-*" e os antigos "leve-vN"); outros caches do site ficam.
+  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== VERSION && /^leve-(app-)?v\d+$/.test(k)).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', event => {

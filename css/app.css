@@ -1018,3 +1018,45 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .mini-ring circle { fill: none; stroke-width: 3.2; }
 .mini-ring-track { stroke: var(--fill); }
 .mini-ring-fill { stroke: var(--accent); stroke-linecap: round; }
+
+/* Cadastro: perguntas em cartões, régua e progresso em traços */
+.ob-step { text-align: center; }
+.ob-step .ob-sub { margin-left: auto; margin-right: auto; }
+.ob-back { background: var(--fill); border-radius: 50%; color: var(--accent-ink); }
+.ob-dashes { flex: 1; display: flex; justify-content: center; gap: 5px; }
+.ob-dashes span { flex: 1; max-width: 26px; height: 5px; border-radius: 3px; background: var(--track); transition: background var(--dur) var(--ease); }
+.ob-dashes span.on { background: var(--accent); }
+.opts { display: grid; gap: 10px; margin-top: 28px; text-align: left; }
+.opt { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; min-height: 64px; padding: 12px 16px 12px 18px; border-radius: 22px; background: var(--surface); border: 1.5px solid transparent; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.opt:active { background: var(--fill); }
+@media (hover: hover) { .opt:hover { border-color: var(--line); } }
+.opt-icon { width: 28px; height: 28px; flex: none; color: var(--ink-2); transition: color var(--dur) var(--ease); }
+.opt-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.opt-label { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.opt-hint { color: var(--ink-2); font-size: 14px; line-height: 1.35; }
+.opt-check { display: grid; place-items: center; width: 24px; height: 24px; flex: none; border-radius: 50%; background: var(--accent); color: var(--on-accent); opacity: 0; transform: scale(.6); transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.opt-check .icon { width: 14px; height: 14px; stroke-width: 2.8; }
+.opt[aria-checked="true"] { background: var(--accent-wash); border-color: var(--accent); }
+.opt[aria-checked="true"] .opt-label, .opt[aria-checked="true"] .opt-icon { color: var(--accent-ink); }
+.opt[aria-checked="true"] .opt-check { opacity: 1; transform: none; }
+.ob-foot { margin-top: auto; padding-top: 20px; display: flex; flex-direction: column; align-items: center; }
+.ob .ob-next { width: min(100%, 280px); min-height: 52px; border-radius: 999px; margin-top: 0; font-size: 17px; }
+.ob-step .big-field { margin-top: 36px; }
+.ob-step .big-input { text-align: center; }
+.ob-step .ob-err { justify-content: center; }
+.ruler-wrap { margin-top: 28px; }
+.unit-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 320px; margin: 0 auto; }
+.unit-pill { min-height: 48px; border-radius: 999px; background: var(--surface); border: 1.5px solid transparent; color: var(--ink-2); font-size: 16px; font-weight: 500; transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.unit-pill[aria-checked="true"] { background: var(--accent-wash); border-color: var(--accent); color: var(--accent-ink); }
+.ruler-value { margin-top: 32px; display: flex; align-items: baseline; justify-content: center; gap: 8px; }
+.ruler-num { font: 700 48px/1 var(--font-num); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.ruler-unit { font: 600 26px/1 var(--font-num); color: var(--ink-2); }
+.ruler { position: relative; height: 96px; margin: 12px calc(-1 * var(--gutter)) 0; border-radius: 12px; }
+.ruler:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: 2px; }
+.ruler-scroll { height: 100%; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding: 0 50%; cursor: grab; touch-action: pan-x; overscroll-behavior-x: contain; -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.ruler-scroll::-webkit-scrollbar { display: none; }
+.ruler-scroll:active { cursor: grabbing; }
+.ruler-track { height: 100%; box-sizing: content-box; margin-left: -1px;
+  background-image: linear-gradient(90deg, var(--ink-2) 2px, transparent 2px), linear-gradient(90deg, var(--ink-3) 2px, transparent 2px);
+  background-size: var(--major, 120px) 74%, 12px 46%; background-position: var(--shift, 0) 100%, 0 100%; background-repeat: repeat-x; opacity: .7; }
+.ruler-needle { position: absolute; left: 50%; bottom: 0; width: 3px; height: 100%; margin-left: -1.5px; border-radius: 2px; background: var(--accent); pointer-events: none; }

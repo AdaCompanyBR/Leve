@@ -506,10 +506,14 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .drink-preview { min-height: 1.3em; text-align: center; }
 .drink-preview.error { color: var(--red-ink); }
 .drink-presets { margin-top: 12px; justify-content: center; }
-.drink-types { flex-wrap: nowrap; overflow-x: auto; margin: 14px calc(-1 * var(--gutter)) 0; padding: 0 var(--gutter) 2px; scrollbar-width: none; }
-.drink-types::-webkit-scrollbar { display: none; }
-.drink-types .chip { flex: none; padding-left: 4px; }
+.type-picker { margin-top: 14px; }
+.type-picker .search { max-width: 320px; margin: 0 auto; }
+.drink-types { justify-content: center; margin-top: 10px; }
+.drink-types .chip { padding-left: 4px; }
+.drink-types .chip[hidden] { display: none; }
 .drink-types .chip .drink-badge { margin-right: 2px; }
+.type-none { text-align: center; margin-top: 8px; }
+.type-none[hidden] { display: none; }
 .drink-when { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
 .pill-input { min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--fill); color: var(--ink); font: inherit; font-size: 15px; border: 0; }
 .pill-input::-webkit-calendar-picker-indicator { opacity: .5; }

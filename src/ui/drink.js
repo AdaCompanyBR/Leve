@@ -16,6 +16,53 @@ const fmtNum = (ml, unit) => (unit === 'L' ? nf3.format(ml / 1000) : String(ml))
 const PLACEHOLDER = { agua: 'Ex.: água filtrada', gas: 'Ex.: água tônica sem açúcar', cafe: 'Ex.: café com leite', cha: 'Ex.: chá verde', suco: 'Ex.: suco de uva integral', leite: 'Ex.: leite desnatado',
   refri: 'Ex.: guaraná', zero: 'Ex.: Coca-Cola Zero', alcool: 'Ex.: cerveja', isotonico: 'Ex.: isotônico de limão', coco: 'Ex.: água de coco de caixinha', outro: 'Ex.: kombucha' };
 
+// Outros nomes pelos quais a pessoa procura cada bebida.
+const ALIASES = {
+  agua: 'agua mineral filtrada', gas: 'agua com gas gaseificada tonica', cafe: 'cafe expresso espresso cafezinho pingado cappuccino', cha: 'cha mate verde preto gelado',
+  suco: 'suco limonada laranjada vitamina smoothie', leite: 'leite achocolatado iogurte', coco: 'agua de coco', refri: 'refrigerante refri coca guarana fanta soda',
+  zero: 'refrigerante zero diet coca zero', isotonico: 'isotonico gatorade powerade', alcool: 'alcool cerveja vinho chopp caipirinha drink', outro: 'outro outra kombucha energetico caldo',
+};
+const plain = t => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+/**
+ * Escolha do tipo de bebida: um campo para digitar e filtrar, e todas as opções à vista, em linhas
+ * (sem rolagem lateral, que no computador não dá para alcançar com o mouse).
+ */
+export function typePicker({ value, onChange }) {
+  let current = value;
+  const chips = DRINKS.map(d => {
+    const b = h('button.chip', { type: 'button', 'aria-pressed': String(d.id === current), onclick: () => pick(d.id) }, drinkBadge(d.id, 26), d.label);
+    b.dataset.id = d.id;
+    b.dataset.find = plain(`${d.label} ${ALIASES[d.id] ?? ''}`);
+    return b;
+  });
+  const row = h('div.chip-row.drink-types', { role: 'group', 'aria-label': 'Tipo de bebida' }, chips);
+  const none = h('p.fine.type-none', { hidden: true, 'aria-live': 'polite' }, 'Nenhuma bebida com esse nome. Escolha “Outro” e escreva o nome abaixo.');
+  const input = h('input', { type: 'search', enterkeyhint: 'search', autocomplete: 'off', autocapitalize: 'none', spellcheck: false, placeholder: 'Buscar bebida', 'aria-label': 'Buscar bebida' });
+  const clear = h('button.search-clear', { type: 'button', 'aria-label': 'Limpar busca', hidden: true, onclick: () => { input.value = ''; filter(); input.focus(); } }, icon('clear'));
+  const visible = () => chips.filter(b => !b.hidden);
+  function filter() {
+    const q = plain(input.value);
+    clear.hidden = !input.value;
+    for (const b of chips) b.hidden = !!q && !q.split(/\s+/).every(w => b.dataset.find.includes(w));
+    // Com a busca vazia, "Outro" continua à mão; sem resultado, ele é a saída.
+    if (!visible().length) { chips.find(b => b.dataset.id === 'outro').hidden = false; none.hidden = false; } else none.hidden = true;
+  }
+  function pick(id) {
+    current = id;
+    for (const b of chips) b.setAttribute('aria-pressed', String(b.dataset.id === id));
+    onChange(id);
+  }
+  input.addEventListener('input', filter);
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const first = visible()[0];
+    if (first && input.value.trim()) { pick(first.dataset.id); input.value = ''; filter(); }
+  });
+  return h('div.type-picker', h('div.search', icon('search'), input, clear), row, none);
+}
+
 /** Abre o registro de líquido. Com `drink`, edita um registro existente. */
 export function drinkSheet({ date = ui.date, type, drink, ml: preset } = {}) {
   const editing = !!drink;
@@ -68,16 +115,14 @@ export function drinkSheet({ date = ui.date, type, drink, ml: preset } = {}) {
     amountInput.focus();
   }, 'Unidade');
 
-  const typeChips = h('div.chip-row.drink-types', { role: 'group', 'aria-label': 'Tipo de líquido' },
-    DRINKS.map(d => h('button.chip', { type: 'button', 'aria-pressed': String(d.id === v.type), onclick: e => {
-      v.type = d.id;
-      typeName.textContent = d.label;
-      typeChips.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === e.currentTarget)));
-      noteInput.placeholder = PLACEHOLDER[d.id];
-      hint.textContent = d.hydrates ? '' : 'Bebida alcoólica fica registrada, mas não conta para a meta de líquidos.';
-      paint();
-    } }, drinkBadge(d.id, 26), d.label)));
-  requestAnimationFrame(() => typeChips.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
+  const typeChips = typePicker({ value: v.type, onChange: id => {
+    const d = drinkById(id);
+    v.type = id;
+    typeName.textContent = d.label;
+    noteInput.placeholder = PLACEHOLDER[id];
+    hint.textContent = d.hydrates ? '' : 'Bebida alcoólica fica registrada, mas não conta para a meta de líquidos.';
+    paint();
+  } });
 
   // Teclado numérico (só no toque).
   let comma = null;

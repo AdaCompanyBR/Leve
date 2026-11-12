@@ -4,9 +4,9 @@ import { h, icon, int, dec1, toast, haptic, segmented, openPopover, openSheet, f
 import { ui, go } from './state.js';
 import { state, subscribe, addDrink, removeDrink, restoreDrink, clearLegacyWater, dayDrinks, liquidsOn, waterGoalOn, setWaterGoal, bodyStyle, latestWeight, drinkPresets, savePreset, removePreset, restorePresets } from '../store.js';
 import { drinkSwaps } from './swaps.js';
-import { drinkSheet } from './drink.js';
+import { drinkSheet, typePicker } from './drink.js';
 import { bodyFigure, drinkBadge, cupFigure } from './body.js';
-import { DRINKS, drinkById, dayLayers, fillBands, weekDetail, suggestWaterGoal, parseDrinkSpeech, parseAmount } from '../lib/hydration.js';
+import { drinkById, dayLayers, fillBands, weekDetail, suggestWaterGoal, parseDrinkSpeech, parseAmount } from '../lib/hydration.js';
 import { todayISO, addDays, fmtDate, toISO } from '../lib/dates.js';
 
 export const GOALS = [1500, 2000, 2500, 3000, 3500];
@@ -79,12 +79,7 @@ function presetSheet(preset) {
   const readMl = () => parseAmount(amountInput.value, 'ml');
   let sheet = null;
   const paint = () => sheet?.setAction({ disabled: Number.isNaN(readMl()) });
-  const chips = h('div.chip-row.drink-types', { role: 'group', 'aria-label': 'Tipo de bebida' },
-    DRINKS.map(d => h('button.chip', { type: 'button', 'aria-pressed': String(d.id === v.type), onclick: e => {
-      v.type = d.id; typeName.textContent = d.label;
-      chips.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === e.currentTarget)));
-    } }, drinkBadge(d.id, 26), d.label)));
-  requestAnimationFrame(() => chips.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
+  const chips = typePicker({ value: v.type, onChange: id => { v.type = id; typeName.textContent = drinkById(id).label; } });
   amountInput.addEventListener('input', paint);
   const save = async e => {
     e?.preventDefault();

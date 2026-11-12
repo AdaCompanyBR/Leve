@@ -17,8 +17,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..500&display=swap">
   <script>
-    // O app instalado na tela inicial ainda abre este endereço: leva direto para o app.
-    if (matchMedia('(display-mode: standalone)').matches || navigator.standalone) location.replace('app/');
+    // Já conectado neste aparelho? A landing troca "Entrar / Criar conta" por "Abrir o Leve".
+    try { if (localStorage.getItem('leve-session') || localStorage.getItem('leve-biometric')) document.documentElement.classList.add('logged'); } catch { /* armazenamento bloqueado */ }
   </script>
   <style>
     :root {
@@ -74,6 +74,10 @@
     .nav-links a { padding: 0 12px; min-height: 40px; display: inline-flex; align-items: center; border-radius: 10px; color: var(--ink); font-size: 15px; transition: background .2s; }
     .nav-links a:hover { background: var(--wash); }
     .nav .pill { margin-left: 6px; }
+    .nav-login { display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 10px; font-size: 15px; margin-left: 6px; transition: background .2s; }
+    .nav-login:hover { background: var(--wash); }
+    html.logged .when-out, html:not(.logged) .when-in { display: none !important; }
+    .final-cta { display: flex; flex-wrap: wrap; gap: 10px; }
 
     /* ---------- Botões e etiquetas ---------- */
     .pill {
@@ -236,7 +240,7 @@
       :root { --gap: 64px; --pad-card: 28px; --r-card: 30px; }
       .hero { padding-top: 104px; min-height: auto; }
       .hero-grid { gap: 8px; }
-      .ring-wrap { width: min(100%, 360px); order: -1; }
+      .ring-wrap { width: min(100%, 340px); margin-top: 28px; }
       .step { padding: 28px; border-radius: 26px; }
       .step h3 { margin-top: 20px; }
       .screens { padding: 30px 0 28px; }
@@ -271,7 +275,9 @@
       <a href="#saude">Saúde</a>
       <a href="#privacidade">Privacidade</a>
     </div>
-    <a class="pill" href="app/">Abrir o app<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    <a class="nav-login when-out" href="app/#entrar">Entrar</a>
+    <a class="pill when-out" href="app/#criar-conta">Criar conta</a>
+    <a class="pill when-in" href="app/">Abrir o app<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
   </nav>
 
   <main id="conteudo">
@@ -282,10 +288,13 @@
           <h1>Emagrecer sem culpa, <span>com números que você entende.</span></h1>
           <p class="hero-sub">Diário de calorias, peso e líquidos em português. O Leve responde em segundos: quanto ainda posso comer hoje, se estou no caminho certo e quando chego lá.</p>
           <div class="hero-cta">
-            <a class="pill big dark" href="app/">Abrir o Leve<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="pill big dark when-out" href="app/#criar-conta">Criar conta<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="pill big when-out" href="app/#entrar">Entrar</a>
+            <a class="pill big dark when-in" href="app/">Abrir o Leve<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
             <a class="link" href="#como-funciona">Ver como funciona</a>
           </div>
-          <p class="hero-note">Funciona no navegador e instala no iPhone, no Android e no computador.</p>
+          <p class="hero-note when-out">Com a conta, o seu diário fica no celular e no computador. Prefere sem cadastro? <a class="link" href="app/">Usar só neste aparelho</a>.</p>
+          <p class="hero-note when-in">Você já está conectado neste aparelho.</p>
         </div>
 
         <div class="ring-wrap" role="img" aria-label="Exemplo do anel de calorias do app: 748 kcal restantes, 795 consumidas de uma meta de 1.543.">
@@ -483,9 +492,13 @@
         <div>
           <p class="label">Comece hoje</p>
           <h2 class="h2" id="t-final">Leva um minuto para criar o seu plano.</h2>
-          <p class="body">Seis perguntas, uma por tela, e o Leve mostra a sua meta diária, o gasto estimado e a faixa saudável.</p>
+          <p class="body">Crie a conta, responda seis perguntas, uma por tela, e o Leve mostra a sua meta diária, o gasto estimado e a faixa saudável.</p>
         </div>
-        <a class="pill big dark" href="app/">Abrir o Leve<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <div class="final-cta">
+          <a class="pill big dark when-out" href="app/#criar-conta">Criar conta<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="pill big when-out" href="app/#entrar">Entrar</a>
+          <a class="pill big dark when-in" href="app/">Abrir o Leve<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
       </div>
     </section>
   </main>
@@ -499,7 +512,9 @@
         </div>
         <nav class="foot-links" aria-label="Rodapé">
           <h4>O app</h4>
-          <a href="app/">Abrir o Leve</a>
+          <a class="when-out" href="app/#criar-conta">Criar conta</a>
+          <a class="when-out" href="app/#entrar">Entrar</a>
+          <a class="when-in" href="app/">Abrir o Leve</a>
           <a href="#como-funciona">Como funciona</a>
           <a href="#recursos">Recursos</a>
           <a href="#instalar">Instalar</a>

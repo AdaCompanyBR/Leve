@@ -22,7 +22,7 @@ export function onboarding(root) {
   };
 
   const steps = [
-    { q: 'Como podemos chamar você?', sub: 'Fica só neste aparelho.', body: () => {
+    { q: 'Como podemos chamar você?', sub: 'Só para o Leve chamar você pelo nome.', body: () => {
       const input = h('input.big-input.text', { autocomplete: 'given-name', placeholder: 'Seu nome', value: data.name, maxlength: 30, autofocus: true });
       input.addEventListener('input', () => { data.name = input.value.trim(); });
       input.validate = () => (data.name ? null : 'Digite um nome ou apelido.');

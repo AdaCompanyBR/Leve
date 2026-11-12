@@ -92,7 +92,7 @@ async function start() {
     return;
   }
   sync.setReloader(async () => { await reload(); applyTheme(); });
-  if (!auth.configured()) return open();
+  if (!auth.configured()) { if (/^#(entrar|criar-conta)$/.test(location.hash)) history.replaceState(null, '', location.pathname); return open(); }
   // Links do e-mail (confirmar conta, trocar senha) chegam com a sessão no endereço.
   const redirect = auth.fromRedirect();
   if (redirect) {
@@ -105,6 +105,9 @@ async function start() {
   if (bio.enabled()) return lockScreen(root, () => { open(); sync.start(); });
   if (auth.restorePlain()) { open(); sync.start(); return; }
   open();
+  // Vindo da landing: "Entrar" e "Criar conta" abrem direto a tela da conta.
+  const want = { '#entrar': 'entrar', '#criar-conta': 'criar' }[location.hash];
+  if (want) { history.replaceState(null, '', location.pathname + location.search); loginSheet({ mode: want }); }
 }
 
 function open() {

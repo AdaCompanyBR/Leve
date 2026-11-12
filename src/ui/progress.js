@@ -17,7 +17,7 @@ function chart(points, plan, eta) {
   const horizon = eta && diffDays(today, eta) <= 400 ? eta : addDays(today, 30);
   const end = diffDays(start, horizon) < 14 ? addDays(start, 14) : horizon;
   const span = diffDays(start, end);
-  const hasGoal = plan.mode !== 'menor';
+  const hasGoal = plan.mode !== 'menor' && plan.goal === 'perder';
   const ys = [...points.map(p => p.kg), ...points.map(p => p.trend), ...(hasGoal ? [plan.goalKg] : [])];
   const lo = Math.floor(Math.min(...ys) - 0.5), hi = Math.ceil(Math.max(...ys) + 0.5);
   const x = d => pad.l + (diffDays(start, d) / span) * (W - pad.l - pad.r);
@@ -63,7 +63,7 @@ export function progressScreen() {
       h('div', h('span.stat-label', 'Peso tendência'), h('div.weight-now', h('span.weight-num', dec1(trend)), h('span.weight-unit', 'kg'))),
       h('button.btn.tonal', { onclick: () => weightSheet() }, icon('scale'), 'Registrar peso')),
     pts.length > 1
-      ? h('p.card-sub', `${change <= 0 ? 'Menos' : 'Mais'} ${dec1(Math.abs(change))} kg desde ${fmtDate(first.date)}.${deficitMode ? ` Faltam ${dec1(Math.max(0, trend - plan.goalKg))} kg para a meta.` : ''}`)
+      ? h('p.card-sub', `${change <= 0 ? 'Menos' : 'Mais'} ${dec1(Math.abs(change))} kg desde ${fmtDate(first.date)}.${deficitMode && plan.goal === 'perder' ? ` Faltam ${dec1(Math.max(0, trend - plan.goalKg))} kg para a meta.` : ''}`)
       : h('p.card-sub', 'Com mais pesagens, a linha de tendência aparece e esconde a oscilação diária de água.'),
     chartEl,
     h('div.legend', h('span.lg.lg-trend', 'Tendência'), h('span.lg.lg-dot', 'Pesagens'), eta ? h('span.lg.lg-proj', 'Projeção') : null));
@@ -96,8 +96,13 @@ export function progressScreen() {
       minDelta >= 0 ? h('p.card-sub', 'Sua meta já está no limite seguro, então o controle só permite comer mais.') : null,
       h('p.fine', 'A projeção usa o peso tendência e 7.700 kcal por quilo. É uma estimativa, não uma promessa.'));
   } else {
-    etaCard = h('section.card.eta-card', h('h3', 'Data de chegada'),
-      h('p.card-sub', plan.mode === 'menor' ? 'O Leve não projeta perda de peso para menores de 18 anos.' : 'Você está no peso-alvo. A meta diária agora é de manutenção.'));
+    etaCard = h('section.card.eta-card', h('h3', plan.mode === 'menor' || plan.goal === 'perder' ? 'Data de chegada' : 'Como acompanhar'),
+      h('p.card-sub', {
+        menor: 'O Leve não projeta mudanças de peso para menores de 18 anos.',
+        superavit: 'Para ganhar massa, o peso deve subir devagar. Se a tendência subir rápido, diminua o superávit; se ficar parada por três semanas, aumente um pouco.',
+        recomposicao: 'Definir mexe pouco na balança: a gordura cai enquanto os músculos se mantêm. Acompanhe a tendência e, se puder, a medida da cintura.',
+        manutencao: plan.goal === 'perder' ? 'Você está no peso-alvo. A meta diária agora é de manutenção.' : plan.goal === 'saude' ? 'O foco é a rotina de hábitos, não a balança. A meta de calorias é o seu gasto.' : 'Se a tendência se mantiver estável, o plano está certo.',
+      }[plan.mode]));
   }
 
   // ----- Saldo da semana -----

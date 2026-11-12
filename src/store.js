@@ -9,6 +9,7 @@ import { makeIndex } from './lib/search.js';
 import { dayTotal } from './lib/hydration.js';
 import { buildRecipeFoods } from './lib/recipes.js';
 import { registerServings } from './lib/portions.js';
+import { buildRoutine, dayStatus } from './lib/routine.js';
 
 export const MEALS = [
   { id: 'cafe', label: 'Café da manhã' },
@@ -21,7 +22,7 @@ const DEFAULT_SETTINGS = { theme: 'auto', weightReminder: true, waterGoal: 2000,
 
 export const state = {
   ready: false, profile: null, settings: { ...DEFAULT_SETTINGS }, entries: [], weights: [], foods: [], templates: [],
-  favorites: [], water: {}, drinks: [], adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
+  favorites: [], water: {}, drinks: [], routine: {}, adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
 };
 
 const listeners = new Set();
@@ -46,7 +47,7 @@ export async function load() {
   }
   Object.assign(state, {
     ready: true, profile: map.profile ?? null, settings: { ...DEFAULT_SETTINGS, ...map.settings }, entries, weights, foods, templates,
-    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
+    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, routine: map.routine ?? {}, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
   });
   state.recipes = buildRecipeFoods(taco);
   registerServings([...state.recipes, ...state.foods]);
@@ -77,7 +78,8 @@ export function intakeByDate() {
 }
 export function budgetFor(date) {
   const p = getPlan();
-  if (!p?.target) return null;
+  // O saldo da semana dilui excessos: só faz sentido em objetivos com déficit.
+  if (!p?.target || !['deficit', 'recomposicao'].includes(p.mode)) return null;
   return weekBudget({ dailyTarget: p.target, floor: p.floor, today: date, intakeByDate: intakeByDate() });
 }
 export function adaptiveStatus() {
@@ -179,6 +181,28 @@ export async function removeWater(date, ml) {
   await kv('water', state.water);
   emit();
 }
+// ---------- Rotina ----------
+export function getRoutine() {
+  const p = getPlan();
+  return p ? buildRoutine({ profile: state.profile, plan: p, waterGoal: state.settings.waterGoal }) : null;
+}
+export function routineStatus(date, routine = getRoutine()) {
+  if (!routine) return null;
+  const p = getPlan();
+  return dayStatus(routine, {
+    entries: dayEntries(date), water: liquidsOn(date).total, waterGoal: state.settings.waterGoal,
+    protein: totals(dayEntries(date)).p, proteinGoal: p?.macros?.protein ?? null,
+    weighed: state.weights.some(w => w.date === date), checks: state.routine[date] ?? {},
+  });
+}
+export async function toggleRoutineCheck(date, id) {
+  const day = { ...(state.routine[date] ?? {}) };
+  if (day[id]) delete day[id]; else day[id] = true;
+  state.routine = { ...state.routine, [date]: day };
+  await kv('routine', state.routine);
+  emit();
+}
+
 export async function toggleFavorite(foodId) {
   state.favorites = state.favorites.includes(foodId) ? state.favorites.filter(f => f !== foodId) : [foodId, ...state.favorites];
   await kv('favorites', state.favorites);
@@ -205,8 +229,8 @@ export async function declineTdee(tdee) { state.adaptive = { declinedTdee: tdee 
 
 // ---------- Exportar, importar, apagar ----------
 export function exportData() {
-  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, adaptive } = state;
-  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, adaptive };
+  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, adaptive } = state;
+  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, adaptive };
 }
 export async function importData(data) {
   if (data?.app !== 'leve' || !Array.isArray(data.entries) || !Array.isArray(data.weights)) throw new Error('Arquivo não reconhecido');
@@ -214,7 +238,7 @@ export async function importData(data) {
   await Promise.all([
     db.bulkPut('entries', data.entries), db.bulkPut('weights', data.weights), db.bulkPut('foods', data.foods ?? []),
     db.bulkPut('templates', data.templates ?? []), db.bulkPut('drinks', data.drinks ?? []),
-    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
+    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'routine', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
   ]);
   await load();
   emit();

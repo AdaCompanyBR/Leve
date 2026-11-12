@@ -1,7 +1,9 @@
 // Perfil e Ajustes.
 import { h, int, dec1, parseNum, segmented, field, toast, confirmSheet, openSheet } from './dom.js';
 import { state, getPlan, saveProfile, saveSettings, exportData, importData, wipe } from '../store.js';
-import { ACTIVITY, PACES, validateGoal, healthyRange } from '../lib/calc.js';
+import { ACTIVITY, PACES, GAIN_PACES, goalById, validateGoal, healthyRange } from '../lib/calc.js';
+import { MEAL_COUNTS, WAKE_TIMES } from '../lib/routine.js';
+import { goalWizard, routineSheet } from './routine.js';
 import { todayISO } from '../lib/dates.js';
 import { accountCard } from './account.js';
 import * as auth from '../auth.js';
@@ -36,14 +38,17 @@ export function settingsScreen() {
   const valueBtn = (text, onclick, label) => h('button.value-btn', { onclick, 'aria-label': label }, text);
 
   const planCard = h('section.card.plan-card', { 'aria-label': 'Seu plano' },
-    h('h2', p.name),
+    h('h2', p.name), h('p.card-sub', goalById(plan.goal).label),
     plan.target
       ? h('div.plan-stats',
         h('div', h('span.stat-value', int(plan.target)), h('span.stat-label', 'kcal por dia')),
         h('div', h('span.stat-value', int(plan.tdee)), h('span.stat-label', plan.adapted ? 'gasto medido' : 'gasto estimado')),
         h('div', h('span.stat-value', dec1(plan.bmi)), h('span.stat-label', 'IMC')))
-      : h('p.card-sub', 'O Leve não cria plano de déficit para menores de 18 anos. Procure um médico ou nutricionista para definir metas.'),
-    plan.locks.includes('piso') ? h('p.fine', `Trava ativa: a meta não fica abaixo de ${int(plan.floor)} kcal. Ritmo real de cerca de ${dec1(plan.kgWeek)} kg por semana.`) : null,
+      : h('p.card-sub', 'O Leve não cria metas de calorias para menores de 18 anos. Procure um médico ou nutricionista para definir metas.'),
+    plan.locks.includes('imc-alto') ? h('p.fine', 'Trava ativa: com IMC acima de 27, a meta fica no seu gasto, sem superávit. Considere “Definir o corpo”.') : null,
+    plan.locks.includes('superavit15') ? h('p.fine', 'Trava ativa: superávit limitado a 15% do gasto.') : null,
+    plan.locks.includes('imc-baixo') ? h('p.fine', 'Trava ativa: com IMC abaixo de 18,5, o Leve não corta calorias.') : null,
+    plan.locks.includes('piso') ? h('p.fine', `Trava ativa: a meta não fica abaixo de ${int(plan.floor)} kcal.${plan.mode === 'deficit' ? ` Ritmo real de cerca de ${dec1(plan.kgWeek)} kg por semana.` : ''}`) : null,
     plan.locks.includes('deficit25') ? h('p.fine', `Trava ativa: déficit limitado a 25% do gasto. Ritmo real de cerca de ${dec1(plan.kgWeek)} kg por semana.`) : null,
     plan.macros ? h('p.fine', `Macros sugeridos: ${plan.macros.protein} g de proteína, ${plan.macros.carbs} g de carboidrato e ${plan.macros.fat} g de gordura.`) : null);
 
@@ -54,15 +59,20 @@ export function settingsScreen() {
     row('Altura', valueBtn(`${p.heightCm} cm`, () => editSheet({ title: 'Altura', label: 'Altura em centímetros', value: p.heightCm, inputmode: 'numeric',
       validate: v => (parseNum(v) >= 120 && parseNum(v) <= 230 ? null : 'Informe uma altura entre 120 e 230 cm.'),
       onSave: v => { const cm = Math.round(parseNum(v)); const g = validateGoal(p.goalKg, cm).ok ? p.goalKg : healthyRange(cm).ideal; return saveProfile({ heightCm: cm, goalKg: g }); } }), 'Editar altura')),
-    row('Rotina', select(ACTIVITY, p.activity, v => saveProfile({ activity: v }), 'Nível de atividade')));
+    row('Atividade', select(ACTIVITY, p.activity, v => saveProfile({ activity: v }), 'Nível de atividade')));
 
-  const goalCard = plan.mode === 'menor' ? null : h('section.card.set-card', { 'aria-label': 'Meta' }, h('h3', 'Meta'),
-    row('Peso-alvo', valueBtn(`${dec1(plan.goalKg)} kg`, () => editSheet({ title: 'Peso-alvo', label: 'Peso-alvo em quilos', value: dec1(plan.goalKg),
+  const goalCard = h('section.card.set-card', { 'aria-label': 'Objetivo e rotina' }, h('h3', 'Objetivo e rotina'),
+    row('Objetivo', valueBtn(goalById(p.goal).label, () => goalWizard(), 'Mudar objetivo'), p.goal ? null : 'Escolha para montar a sua rotina'),
+    p.goal === 'ganhar' ? row('Ritmo', select(GAIN_PACES.map(x => ({ id: x.id, label: `${x.label} (${x.hint.toLowerCase()})` })), p.gainPace ?? 'suave', v => saveProfile({ gainPace: v }), 'Ritmo de ganho')) : null,
+    plan.goal !== 'perder' || plan.mode === 'menor' ? null : row('Peso-alvo', valueBtn(`${dec1(plan.goalKg)} kg`, () => editSheet({ title: 'Peso-alvo', label: 'Peso-alvo em quilos', value: dec1(plan.goalKg),
       hint: `A faixa saudável para ${p.heightCm} cm vai de ${dec1(range.min)} a ${dec1(range.max)} kg. O sugerido é ${dec1(range.ideal)} kg.`,
       validate: v => { const r = validateGoal(parseNum(v), p.heightCm); return r.ok ? null : r.reason; },
       onSave: v => saveProfile({ goalKg: Math.round(parseNum(v) * 10) / 10 }) }), 'Editar peso-alvo'),
       `Faixa saudável: ${dec1(range.min)} a ${dec1(range.max)} kg`),
-    row('Ritmo', select(PACES.map(x => ({ id: x.id, label: `${x.label} (${x.hint})` })), p.pace, v => saveProfile({ pace: v }), 'Ritmo')),
+    plan.goal === 'perder' && plan.mode !== 'menor' ? row('Ritmo', select(PACES.map(x => ({ id: x.id, label: `${x.label} (${x.hint})` })), p.pace, v => saveProfile({ pace: v }), 'Ritmo')) : null,
+    row('Refeições por dia', select(MEAL_COUNTS.map(n => ({ id: String(n), label: `${n} refeições` })), String(p.meals ?? 4), v => saveProfile({ meals: Number(v) }), 'Refeições por dia')),
+    row('Acordo às', select(WAKE_TIMES.map(t => ({ id: t, label: t.replace(':00', 'h') })), p.wake ?? '07:00', v => saveProfile({ wake: v }), 'Hora de acordar'), 'Os horários das refeições partem daqui'),
+    row('Rotina do dia', h('button.btn.tonal.compact', { onclick: () => routineSheet() }, 'Ver rotina')),
     plan.adapted ? row('Gasto medido', h('button.btn.tonal.compact', { onclick: async () => { await saveProfile({ tdeeOverride: null }); toast('De volta à fórmula'); } }, 'Voltar à fórmula'), `${int(plan.tdee)} kcal por dia, calculado dos seus registros`) : null);
 
   const prefCard = h('section.card.set-card', { 'aria-label': 'Preferências' }, h('h3', 'Preferências'),

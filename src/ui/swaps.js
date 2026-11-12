@@ -1,10 +1,11 @@
 // Trocas mais leves: bloco compartilhado pela sheet de alimento, pela tela Hoje e pela aba Líquidos.
 import { h, icon, int, openSheet } from './dom.js';
-import { state, foodById } from '../store.js';
+import { state, foodById, getPlan } from '../store.js';
 import { swapsFor, DRINK_SWAPS } from '../lib/swaps.js';
 import { drinkById } from '../lib/hydration.js';
 
-export const swapsOn = () => state.settings.showSwaps !== false;
+// Para quem quer ganhar massa, sugerir menos calorias atrapalha: as trocas ficam desligadas.
+export const swapsOn = () => state.settings.showSwaps !== false && getPlan()?.goal !== 'ganhar';
 
 /** Trocas para um alimento do diário (ou null). */
 export function swapsForFood(food, grams) {

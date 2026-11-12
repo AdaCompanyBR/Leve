@@ -6,6 +6,7 @@ Diário de calorias e peso em português do Brasil, feito para uma pessoa só. �
 
 ## O que ele faz
 
+- **Objetivo e rotina.** Perder peso, ganhar massa muscular, definir o corpo, manter o peso ou comer melhor. Cada objetivo tem o seu cálculo (déficit, superávit pequeno, déficit de 10% com proteína alta ou manutenção) e gera uma rotina: horários das refeições a partir da hora de acordar, com calorias e proteína de cada uma, e hábitos do dia (água, proteína, treino de força, movimento, vegetais, sono, pesagem). Água, proteína, pesagem e refeições se marcam sozinhas.
 - **Registro por frase.** Escreva "2 ovos mexidos e um pão francês"; o app separa itens, quantidades e calorias e mostra tudo para você confirmar antes de salvar.
 - **Gasto adaptativo.** Com 14 dias ou mais de registros e pesagens, calcula o seu gasto real e propõe uma nova meta. Você aceita ou recusa.
 - **Aba Líquidos.** Água, café, chá, suco, leite e outras bebidas. Registro com o valor exato em ml ou litros ("473", "1,25 L"), tipo, nome opcional, data e horário; tamanhos rápidos para o dia a dia; toque num registro para corrigir. Lista do dia, semana e meta diária. Bebida alcoólica fica registrada, mas não conta para a meta.
@@ -16,7 +17,7 @@ Diário de calorias e peso em português do Brasil, feito para uma pessoa só. �
 - **O que cabe?** Sugestões que cabem nas calorias restantes do dia.
 - **Estimativa para o que não tem código de barras.** Pratos comuns que a TACO não traz prontos (sanduíche natural, misto quente, pizza, lasanha, prato feito, açaí, tapioca, sushi e outros) entram como receitas típicas, com calorias somadas dos ingredientes da TACO e a conta à mostra. Para o resto, "Estimar calorias" calcula a média (mediana) de produtos parecidos no Open Food Facts. Tudo marcado como estimativa e editável.
 - **Código de barras** com busca no Open Food Facts e cache local.
-- **Travas de segurança.** Nunca abaixo de 1.200 kcal (mulheres) ou 1.500 kcal (homens), déficit máximo de 25% do gasto, peso-alvo só dentro do IMC 18,5 a 24,9, e nenhum plano de déficit para menores de 18 anos.
+- **Travas de segurança.** Nunca abaixo de 1.200 kcal (mulheres) ou 1.500 kcal (homens), déficit máximo de 25% do gasto, peso-alvo só dentro do IMC 18,5 a 24,9, superávit de no máximo 15% do gasto (e nenhum com IMC 27 ou mais), nenhum corte com IMC abaixo de 18,5, e nenhuma meta de calorias para menores de 18 anos.
 
 ## Como rodar
 
@@ -90,6 +91,7 @@ data/taco.json         tabela TACO compacta (591 alimentos)
 src/lib/               funções puras, todas com testes
   calc.js              TMB, gasto, faixa saudável, meta, travas, macros
   trend.js             peso tendência
+  routine.js           horários das refeições e hábitos por objetivo
   budget.js            orçamento semanal
   adaptive.js          gasto adaptativo
   parser.js            frase livre

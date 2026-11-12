@@ -99,3 +99,49 @@ test('data de chegada', () => {
   assert.equal(etaDate(80, 79, 0, '2026-01-01'), null);
   assert.equal(etaDate(70, 72, 500, '2026-01-01'), '2026-01-01');
 });
+
+test('objetivo: ganhar massa usa superávit pequeno e mais proteína', () => {
+  const p = plan({ ...base, weightKg: 72, activity: 'moderado', goal: 'ganhar', gainPace: 'moderado' }, TODAY);
+  assert.equal(p.mode, 'superavit');
+  assert.equal(p.surplus, 350);
+  assert.equal(p.target, p.tdee + 350);
+  assert.equal(p.macros.protein, Math.round(1.8 * 72));
+  assert.equal(p.eta, null);
+});
+
+test('objetivo: ganhar massa com IMC 27 ou mais não soma superávit', () => {
+  const p = plan({ ...base, weightKg: 90, goal: 'ganhar', gainPace: 'intenso' }, TODAY); // IMC 27,8
+  assert.ok(p.locks.includes('imc-alto'));
+  assert.equal(p.surplus, 0);
+  assert.equal(p.target, p.tdee);
+});
+
+test('objetivo: superávit limitado a 15% do gasto', () => {
+  const p = plan({ sex: 'f', birthDate: '1960-01-01', heightCm: 150, weightKg: 45, activity: 'sedentario', goal: 'ganhar', gainPace: 'intenso' }, TODAY);
+  assert.ok(p.locks.includes('superavit15'));
+  assert.ok(p.surplus <= p.tdee * 0.15 + 1);
+});
+
+test('objetivo: definir corta 10% e respeita o piso', () => {
+  const p = plan({ ...base, weightKg: 82, activity: 'moderado', goal: 'definir' }, TODAY);
+  assert.equal(p.mode, 'recomposicao');
+  assert.ok(Math.abs(p.target - p.tdee * 0.9) <= 1);
+  assert.equal(p.macros.protein, Math.round(2.0 * 80.6)); // peso limitado ao topo da faixa saudável
+  const magra = plan({ ...base, weightKg: 58, goal: 'definir' }, TODAY); // IMC 17,9
+  assert.equal(magra.mode, 'manutencao');
+  assert.ok(magra.locks.includes('imc-baixo'));
+});
+
+test('objetivo: manter e comer melhor ficam no gasto; menor de 18 continua sem meta', () => {
+  for (const goal of ['manter', 'saude']) {
+    const p = plan({ ...base, goal }, TODAY);
+    assert.equal(p.mode, 'manutencao');
+    assert.equal(p.target, p.tdee);
+  }
+  assert.equal(plan({ ...base, birthDate: '2012-01-01', goal: 'ganhar' }, TODAY).mode, 'menor');
+});
+
+test('perfil antigo sem objetivo continua perdendo peso', () => {
+  assert.equal(plan(base, TODAY).goal, 'perder');
+  assert.equal(plan(base, TODAY).mode, 'deficit');
+});

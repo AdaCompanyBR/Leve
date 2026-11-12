@@ -4,6 +4,7 @@ import { createRing } from './ring.js';
 import { foodSheet, undoToast } from './food.js';
 import { daySwaps, swapSheet } from './swaps.js';
 import { drinkSheet } from './drink.js';
+import { routineCard } from './routine.js';
 import { ui, go } from './state.js';
 import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
@@ -108,11 +109,12 @@ export function todayScreen() {
     h('div.ring-wrap', canvas,
       h('div.ring-center',
         h('span.ring-number', int(target != null ? Math.abs(remaining) : t.kcal)),
-        h('span.ring-label', target == null ? 'kcal consumidas' : over ? 'kcal acima da meta' : 'kcal restantes'))),
+        h('span.ring-label', target == null ? 'kcal consumidas' : over ? 'kcal acima da meta' : plan?.mode === 'superavit' ? 'kcal para a meta' : 'kcal restantes'))),
     target != null ? h('div.ring-stats',
       h('div', h('span.stat-value', int(t.kcal)), h('span.stat-label', 'Consumidas')),
       h('div', h('span.stat-value', int(target)), h('span.stat-label', budget?.adjusted ? 'Meta ajustada' : 'Meta do dia'))) : null,
-    over ? h('p.ring-note', 'Um dia acima da meta não desfaz o plano. O saldo da semana equilibra os próximos dias.') : null,
+    over && budget ? h('p.ring-note', 'Um dia acima da meta não desfaz o plano. O saldo da semana equilibra os próximos dias.') : null,
+    over && !budget && plan?.mode === 'manutencao' ? h('p.ring-note', 'Um dia acima não muda nada sozinho. O que conta é a média das semanas.') : null,
     !over && budget?.adjusted ? h('p.ring-note', `A meta de hoje considera ${int(budget.carry)} kcal a mais de dias anteriores, diluídas no resto da semana.`) : null,
     plan?.mode === 'menor' ? h('p.ring-note', 'O Leve não define metas de déficit para menores de 18 anos. Procure um médico ou nutricionista.') : null);
 
@@ -210,6 +212,6 @@ export function todayScreen() {
         h('button.icon-btn', { 'aria-label': 'Próximo dia', disabled: isToday, onclick: () => go('hoje', { date: addDays(date, 1) }) }, icon('next')))),
     h('div.today-grid',
       h('div.col.col-hero', ringCard, macrosCard),
-      h('div.col.col-meals', weightCard, mealsCard),
+      h('div.col.col-meals', weightCard, routineCard(date), mealsCard),
       h('div.col.col-side', waterCard, swapsCard, fitsCard)));
 }

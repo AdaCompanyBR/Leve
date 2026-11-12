@@ -1,13 +1,15 @@
 // Onboarding: uma pergunta por tela e uma revelação no fim.
 import { h, icon, int, dec1, parseNum, reducedMotion, haptic } from './dom.js';
-import { ACTIVITY, PACES, plan, ageOn } from '../lib/calc.js';
+import { ACTIVITY, PACES, GAIN_PACES, GOALS, plan, ageOn } from '../lib/calc.js';
+import { MEAL_COUNTS, WAKE_TIMES, buildRoutine } from '../lib/routine.js';
+import { routinePreview } from './routine.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
 import { saveProfile } from '../store.js';
 import { configured } from '../auth.js';
 import { loginSheet } from './account.js';
 
 export function onboarding(root) {
-  const data = { name: '', sex: null, birthDate: '', heightCm: null, weightKg: null, activity: null, pace: null };
+  const data = { name: '', goal: null, sex: null, birthDate: '', heightCm: null, weightKg: null, activity: null, pace: null, gainPace: null, meals: null, wake: null };
   let step = 0, dir = 1;
 
   const choice = (key, options) => () => h('div.choices', { role: 'radiogroup' }, options.map(o =>
@@ -21,13 +23,14 @@ export function onboarding(root) {
     return h('div.big-field', input, h('span.big-unit', unit));
   };
 
-  const steps = [
+  const allSteps = [
     { q: 'Como podemos chamar você?', sub: 'Só para o Leve chamar você pelo nome.', body: () => {
       const input = h('input.big-input.text', { autocomplete: 'given-name', placeholder: 'Seu nome', value: data.name, maxlength: 30, autofocus: true });
       input.addEventListener('input', () => { data.name = input.value.trim(); });
       input.validate = () => (data.name ? null : 'Digite um nome ou apelido.');
       return h('div.big-field', input);
     } },
+    { q: 'Qual é o seu objetivo?', sub: 'O Leve monta o plano e a rotina a partir daqui. Dá para mudar depois.', auto: true, body: choice('goal', GOALS) },
     { q: 'Qual é o seu sexo biológico?', sub: 'A fórmula do gasto de energia muda conforme o sexo.', auto: true,
       body: choice('sex', [{ id: 'f', label: 'Feminino' }, { id: 'm', label: 'Masculino' }]) },
     { q: 'Quando você nasceu?', sub: 'A idade entra no cálculo do metabolismo.', body: () => {
@@ -39,8 +42,13 @@ export function onboarding(root) {
     { q: 'Qual é a sua altura?', body: number('heightCm', { unit: 'cm', min: 120, max: 230, placeholder: '170' }) },
     { q: 'E o seu peso hoje?', sub: 'Se puder, pese-se pela manhã, antes de comer.', body: number('weightKg', { unit: 'kg', min: 30, max: 300, placeholder: '70,0', decimals: true }) },
     { q: 'Como é a sua rotina?', auto: true, body: choice('activity', ACTIVITY) },
-    { q: 'Em que ritmo você quer ir?', sub: 'Ritmos suaves são mais fáceis de manter.', auto: true, body: choice('pace', PACES) },
+    { q: 'Em que ritmo você quer ir?', sub: 'Ritmos suaves são mais fáceis de manter.', auto: true, body: choice('pace', PACES), when: () => data.goal === 'perder' },
+    { q: 'Quanto acima do gasto?', sub: 'Superávits pequenos fazem o ganho ser mais músculo do que gordura.', auto: true, body: choice('gainPace', GAIN_PACES), when: () => data.goal === 'ganhar' },
+    { q: 'Quantas refeições você faz por dia?', sub: 'Conte lanches e ceia.', auto: true, body: choice('meals', MEAL_COUNTS.map(n => ({ id: n, label: `${n} refeições` }))) },
+    { q: 'Que horas você costuma acordar?', sub: 'Os horários das refeições partem daqui.', auto: true, body: choice('wake', WAKE_TIMES.map(t => ({ id: t, label: t.replace(':00', 'h') }))) },
   ];
+  // Perguntas que dependem do objetivo (ritmo de perda ou de ganho) só aparecem quando valem.
+  const active = () => allSteps.filter(s => !s.when || s.when());
 
   function next() {
     const input = root.querySelector('.big-input');
@@ -52,6 +60,7 @@ export function onboarding(root) {
   function back() { dir = -1; step--; render(); }
 
   function render() {
+    const steps = active();
     if (step >= steps.length) return reveal();
     const s = steps[step];
     const body = s.body();
@@ -88,34 +97,44 @@ export function onboarding(root) {
     const p = plan(data, today);
     const stat = (label, value, note) => h('div.reveal-stat', h('span.reveal-label', label), h('span.reveal-value', value), note ? h('span.reveal-note', note) : null);
     const big = h('span.reveal-big');
-    let headline, lead, foot;
+    const name = data.name;
+    let headline, lead = 'Sua meta diária', foot;
+    const goalWord = { perder: 'perder peso', ganhar: 'ganhar massa', definir: 'definir o corpo', manter: 'manter o peso', saude: 'comer melhor' }[p.goal];
     if (p.mode === 'menor') {
-      headline = `${data.name}, o Leve não cria plano de déficit para menores de 18 anos.`;
-      lead = 'Você pode usar o diário e acompanhar o peso. Para definir metas, procure um médico ou nutricionista.';
-    } else if (p.mode === 'manutencao') {
+      headline = `${name}, o Leve não cria metas de calorias para menores de 18 anos.`;
+      lead = 'Você pode usar o diário, os líquidos e a rotina de hábitos. Para metas, procure um médico ou nutricionista.';
+    } else if (p.mode === 'manutencao' && p.goal === 'perder') {
       headline = 'Seu peso já está na meta sugerida.';
       lead = 'Sua meta diária é a de manutenção.';
     } else {
-      headline = `${data.name}, este é o seu plano.`;
-      lead = 'Sua meta diária';
+      headline = `${name}, este é o seu plano para ${goalWord}.`;
     }
-    if (p.locks.includes('piso')) foot = `Ajustamos a meta para não ficar abaixo de ${int(p.floor)} kcal por dia, o mínimo seguro. O ritmo real será de cerca de ${dec1(p.kgWeek)} kg por semana.`;
+    if (p.locks.includes('piso')) foot = `Ajustamos a meta para não ficar abaixo de ${int(p.floor)} kcal por dia, o mínimo seguro.${p.mode === 'deficit' ? ` O ritmo real será de cerca de ${dec1(p.kgWeek)} kg por semana.` : ''}`;
     else if (p.locks.includes('deficit25')) foot = `Limitamos o déficit a 25% do seu gasto. O ritmo real será de cerca de ${dec1(p.kgWeek)} kg por semana.`;
-    if (p.bmi < 18.5) foot = 'Seu IMC está abaixo de 18,5. Vale conversar com um médico ou nutricionista antes de mudar a alimentação.';
+    else if (p.locks.includes('imc-alto')) foot = 'Com IMC acima de 27, somar calorias tende a virar mais gordura do que músculo. Por isso a meta fica no seu gasto, com proteína alta e treino de força. Vale considerar “Definir o corpo”.';
+    else if (p.locks.includes('superavit15')) foot = 'Limitamos o superávit a 15% do seu gasto.';
+    if (p.bmi < 18.5 && p.goal !== 'ganhar') foot = 'Seu IMC está abaixo de 18,5. O Leve não corta calorias nesse caso; vale conversar com um médico ou nutricionista.';
+
+    const routine = buildRoutine({ profile: data, plan: p, waterGoal: 2000 });
+    const gasto = stat('Gasto diário estimado', `${int(p.tdee)} kcal`, `${ageOn(data.birthDate, today)} anos, ${data.heightCm} cm`);
+    const prot = p.macros ? stat('Proteína por dia', `${int(p.macros.protein)} g`) : null;
+    const grid = p.mode === 'menor' ? null : p.goal === 'perder'
+      ? [stat('IMC atual', dec1(p.bmi)), stat('Faixa saudável', `${dec1(p.range.min)} a ${dec1(p.range.max)} kg`),
+        stat('Peso sugerido', `${dec1(p.goalKg)} kg`, 'Meio da faixa saudável. Você pode ajustar depois.'),
+        p.mode === 'deficit' && p.eta ? stat('Chegada prevista', fmtDate(p.eta, { day: 'numeric', month: 'long', year: 'numeric' })) : null, gasto]
+      : p.goal === 'ganhar' ? [stat('Acima do gasto', `+${int(p.surplus)} kcal`), prot, gasto]
+        : p.goal === 'definir' && p.mode === 'recomposicao' ? [stat('Abaixo do gasto', `−${int(p.deficit)} kcal`), prot, gasto]
+          : [stat('IMC atual', dec1(p.bmi)), prot, gasto];
 
     root.replaceChildren(h('div.ob.reveal',
-      h('header.ob-top', h('button.icon-btn', { 'aria-label': 'Voltar', onclick: () => { step = steps.length - 1; dir = -1; render(); } }, icon('back'))),
+      h('header.ob-top', h('button.icon-btn', { 'aria-label': 'Voltar', onclick: () => { step = active().length - 1; dir = -1; render(); } }, icon('back'))),
       h('div.reveal-body',
         h('h1.ob-q', headline),
         p.target ? h('div.reveal-hero', h('span.reveal-label', lead), h('div.reveal-kcal', big, h('span.reveal-unit', 'kcal'))) : h('p.ob-sub', lead),
-        p.mode === 'menor' ? null : h('div.reveal-grid',
-          stat('IMC atual', dec1(p.bmi)),
-          stat('Faixa saudável', `${dec1(p.range.min)} a ${dec1(p.range.max)} kg`),
-          stat('Peso sugerido', `${dec1(p.goalKg)} kg`, 'Meio da faixa saudável. Você pode ajustar depois.'),
-          p.mode === 'deficit' && p.eta ? stat('Chegada prevista', fmtDate(p.eta, { day: 'numeric', month: 'long', year: 'numeric' })) : null,
-          stat('Gasto diário estimado', `${int(p.tdee)} kcal`, `${ageOn(data.birthDate, today)} anos, ${data.heightCm} cm`)),
+        grid ? h('div.reveal-grid', grid) : null,
         foot ? h('p.reveal-foot', foot) : null,
-        h('p.reveal-disclaimer', 'O Leve não substitui médico ou nutricionista.'),
+        h('section.reveal-routine', h('h2.reveal-h', 'Sua rotina'), routinePreview(routine)),
+        h('p.reveal-disclaimer', 'O Leve não substitui médico, nutricionista ou profissional de educação física.'),
         h('button.btn.primary.block', { autofocus: true, onclick: async () => { haptic(12); await saveProfile({ ...data, goalKg: p.goalKg, createdAt: today }); } }, 'Começar'))));
     if (p.target) countUp(big, p.target, int);
   }

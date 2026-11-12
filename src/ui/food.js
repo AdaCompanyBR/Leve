@@ -51,16 +51,16 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
     macrosEl.replaceChildren(macroLine(n));
     clearTimeout(swapTimer);
     swapTimer = setTimeout(() => swapEl.replaceChildren(swapBox(ok ? swapsForFood(food, g.grams) : null, pick, entry ? 'Para a próxima vez' : 'Opção mais leve') ?? ''), 150);
-    save.disabled = !ok;
+    sheet?.setAction({ disabled: !ok });
   }
-  const save = h('button.btn.primary.block', { onclick: async () => {
+  const save = async () => {
     if (!current) return;
     const row = { foodId: food.id, name: food.n, qty: v.qty, unit: v.unit, meal: v.meal, ...current };
     if (entry) await updateEntry(entry.id, row); else await addEntries([{ ...row, date: ui.date }]);
     haptic(12); sheet.close();
     const s = entry ? null : swapsForFood(food, current.grams);
     toast(entry ? 'Item atualizado' : `${int(current.kcal)} kcal adicionadas`, s ? { label: 'Ver troca', run: () => swapSheet(food.n, s, (f, g) => foodSheet(f, { qty: g, unit: 'g', meal: v.meal })) } : undefined);
-  } }, entry ? 'Salvar alterações' : 'Adicionar ao diário');
+  };
   qtyInput.addEventListener('input', update);
   unitSel.addEventListener('change', update);
 
@@ -68,10 +68,13 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
   const favBtn = h('button.chip', { 'aria-pressed': String(fav()), onclick: async () => { await toggleFavorite(food.id); favBtn.setAttribute('aria-pressed', String(fav())); favBtn.lastChild.textContent = fav() ? 'Nos favoritos' : 'Favoritar'; } },
     icon('star'), h('span', fav() ? 'Nos favoritos' : 'Favoritar'));
 
-  const sheet = openSheet({
-    title: food.n,
+  let sheet = null;
+  sheet = openSheet({
+    title: entry ? 'Editar item' : 'Alimento',
+    action: { label: entry ? 'Salvar' : 'Adicionar', run: save },
     content: [
-      h('p.sheet-source', `${sourceOf(food)}. ${int(food.k)} kcal por 100 g`),
+      h('h3.sheet-food', food.n),
+      h('p.sheet-source', `${sourceOf(food)} · ${int(food.k)} kcal por 100 g`),
       food.source === 'media' ? h('p.sheet-source', `A maioria dos produtos fica entre ${int(food.low)} e ${int(food.high)} kcal por 100 g.`) : null,
       h('div.sheet-kcal-row', kcalEl, h('span.sheet-kcal-unit', 'kcal')),
       macrosEl,
@@ -84,7 +87,6 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
         food.id !== 'x' ? favBtn : null,
         entry ? h('button.chip', { onclick: async () => { const { id, ts, ...rest } = entry; await addEntries([rest]); sheet.close(); toast('Item duplicado'); } }, icon('plus'), h('span', 'Duplicar')) : null,
         entry ? h('button.chip', { onclick: async () => { await removeEntry(entry.id); sheet.close(); undoToast(entry); } }, icon('trash'), h('span', 'Apagar')) : null),
-      save,
     ],
   });
   update();
@@ -158,7 +160,7 @@ export function phraseSheet(text) {
   }
 
   const sheet = openSheet({
-    title: 'Confira antes de salvar', wide: true,
+    title: 'Confirmar itens', wide: true,
     content: [
       parsed.length ? null : h('p.sheet-text', 'Não deu para entender a frase. Tente algo como “2 ovos e 1 pão francês”.'),
       list,
@@ -184,6 +186,7 @@ export function manualFoodSheet(prefill = {}) {
   const err = h('p.ob-err', { role: 'alert' });
   const sheet = openSheet({
     title: 'Novo alimento',
+    action: { label: 'Salvar', run: () => sheet.body.querySelector('form').requestSubmit() },
     content: h('form', { onsubmit: async e => {
       e.preventDefault();
       const k = parseNum(inputs.k.value), name = inputs.n.value.trim();
@@ -194,12 +197,10 @@ export function manualFoodSheet(prefill = {}) {
       sheet.close();
       setTimeout(() => foodSheet(food), 280);
     } },
-      h('p.sheet-text', 'Use os valores do rótulo, por 100 g.'),
       field('Nome', inputs.n),
-      field('Calorias (kcal por 100 g)', inputs.k),
+      field('Calorias (kcal por 100 g)', inputs.k, 'Valores do rótulo, por 100 g.'),
       h('div.qty-row.three', field('Proteína (g)', inputs.p), field('Carboidrato (g)', inputs.c), field('Gordura (g)', inputs.f)),
-      err,
-      h('button.btn.primary.block', { type: 'submit' }, 'Salvar alimento')),
+      err),
   });
   return sheet;
 }

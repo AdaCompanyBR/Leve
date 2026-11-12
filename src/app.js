@@ -13,27 +13,56 @@ import { reload } from './store.js';
 import * as auth from './auth.js';
 import * as bio from './biometric.js';
 import * as sync from './sync.js';
-import { lockScreen, newPasswordSheet, afterLogin, logoutSheet, authScreen, localMode, goToLogin } from './ui/account.js';
+import { lockScreen, newPasswordSheet, afterLogin, logoutSheet, authScreen, localMode, goToLogin, welcomeScreen, welcomed } from './ui/account.js';
 
 const root = document.getElementById('app');
+// Telas e grupos da navegação. `side`: só na barra lateral do computador (no celular, o botão + abre Registrar).
 const TABS = [
-  { id: 'hoje', label: 'Hoje', icon: 'today', screen: todayScreen },
-  { id: 'registrar', label: 'Registrar', icon: 'log', screen: logScreen },
-  { id: 'liquidos', label: 'Líquidos', icon: 'drop', screen: liquidsScreen },
-  { id: 'progresso', label: 'Progresso', icon: 'progress', screen: progressScreen },
-  { id: 'ajustes', label: 'Ajustes', icon: 'settings', screen: settingsScreen },
+  { id: 'hoje', label: 'Hoje', icon: 'today', screen: todayScreen, group: 'Diário' },
+  { id: 'registrar', label: 'Registrar', icon: 'fork', screen: logScreen, group: 'Diário', side: true },
+  { id: 'liquidos', label: 'Líquidos', icon: 'drop', screen: liquidsScreen, group: 'Diário' },
+  { id: 'progresso', label: 'Progresso', icon: 'progress', screen: progressScreen, group: 'Acompanhar' },
+  { id: 'ajustes', label: 'Ajustes', icon: 'settings', screen: settingsScreen, group: 'Conta' },
 ];
+const SIDE_KEY = 'leve-sidebar';
 
 let shell = null, lastTab = null, onboardingOpen = false;
 
+function setCollapsed(on) {
+  document.documentElement.classList.toggle('side-collapsed', on);
+  try { localStorage.setItem(SIDE_KEY, on ? 'collapsed' : 'open'); } catch { /* bloqueado */ }
+  shell?.nav.querySelector('.nav-collapse')?.setAttribute('aria-label', on ? 'Mostrar a barra lateral' : 'Recolher a barra lateral');
+}
+
 function buildShell() {
+  try { document.documentElement.classList.toggle('side-collapsed', localStorage.getItem(SIDE_KEY) === 'collapsed'); } catch { /* bloqueado */ }
   const main = h('main.main', { id: 'conteudo', tabindex: '-1' });
+  const items = [];
+  let group = null;
+  for (const t of TABS) {
+    if (t.group !== group) { group = t.group; items.push(h('span.nav-group-label', { 'aria-hidden': 'true' }, group)); }
+    items.push(h('button.nav-item' + (t.side ? '.only-side' : ''), { type: 'button', 'data-tab': t.id, title: t.label,
+      onclick: () => go(t.id, (t.id === 'hoje' || t.id === 'liquidos') && ui.tab === t.id ? { date: todayISO() } : {}) }, icon(t.icon), h('span', t.label)));
+  }
+  const collapsed = document.documentElement.classList.contains('side-collapsed');
   const nav = h('nav.nav', { 'aria-label': 'Principal' },
-    h('div.brand', h('span.brand-mark', { 'aria-hidden': 'true' }), h('span.brand-name', 'Leve')),
-    h('div.nav-items', TABS.map(t => h('button.nav-item', { 'data-tab': t.id, onclick: () => go(t.id, (t.id === 'hoje' || t.id === 'liquidos') && ui.tab === t.id ? { date: todayISO() } : {}) }, icon(t.icon), h('span', t.label)))),
+    h('div.nav-top',
+      h('div.brand', h('span.brand-mark', { 'aria-hidden': 'true' }), h('span.brand-name', 'Leve')),
+      h('button.icon-btn.nav-collapse', { type: 'button', 'aria-label': collapsed ? 'Mostrar a barra lateral' : 'Recolher a barra lateral',
+        onclick: () => setCollapsed(!document.documentElement.classList.contains('side-collapsed')) }, icon('sidebar'))),
+    h('div.nav-items', items),
     h('div.nav-foot'));
-  root.replaceChildren(h('a.skip', { href: '#conteudo' }, 'Pular para o conteúdo'), nav, main);
-  return { main, nav };
+  const fab = h('button.fab', { type: 'button', 'aria-label': 'Registrar comida', onclick: () => go('registrar', { meal: null }) }, icon('plus'));
+  root.replaceChildren(h('a.skip', { href: '#conteudo' }, 'Pular para o conteúdo'), nav, main, fab);
+  // Cabeçalho de vidro: o título pequeno aparece quando o título grande sai da tela.
+  addEventListener('scroll', paintTopbar, { passive: true });
+  return { main, nav, fab };
+}
+
+function paintTopbar() {
+  const bar = shell?.main.querySelector('.topbar'), big = shell?.main.querySelector('.screen-head h1');
+  if (!bar || !big) return;
+  bar.classList.toggle('scrolled', big.getBoundingClientRect().bottom < bar.offsetHeight);
 }
 
 /** Rodapé do menu: entrar ou sair da conta. */
@@ -47,7 +76,7 @@ function paintAccount(foot) {
       h('button.nav-item.nav-logout', { type: 'button', onclick: logoutSheet }, icon('logout'), h('span', 'Sair')))
     : h('div.nav-account',
       h('p', 'Seus dados estão só neste aparelho.'),
-      h('button.btn.primary.nav-login', { type: 'button', onclick: () => goToLogin('entrar') }, icon('settings'), 'Entrar')));
+      h('button.btn.primary.compact.nav-login', { type: 'button', onclick: () => goToLogin('entrar') }, 'Entrar')));
 }
 
 function render() {
@@ -70,10 +99,13 @@ function render() {
   try { node = tab.screen(); }
   catch (err) { console.error(err); node = errorState('Esta tela não abriu.', 'Seus dados continuam salvos. Tente de novo ou volte para Hoje.'); }
   node.classList.toggle('enter', changed);
-  shell.main.replaceChildren(node);
+  const title = node.querySelector('.screen-head h1')?.textContent ?? tab.label;
+  shell.main.replaceChildren(h('div.topbar', { 'aria-hidden': 'true' }, h('span.topbar-title', title)), node);
+  shell.fab.hidden = tab.id === 'registrar';
   document.scrollingElement.scrollTop = scroll;
   if (refocus) { const el = shell.main.querySelector(refocus.sel); el?.focus(); try { el?.setSelectionRange(refocus.pos, refocus.pos); } catch { /* tipo sem seleção */ } }
   document.title = `${tab.label} | Leve`;
+  paintTopbar();
   lastTab = tab.id;
 }
 
@@ -109,9 +141,21 @@ async function start() {
   // Vindo da landing, "Criar conta" já abre na aba certa.
   const want = { '#entrar': 'entrar', '#criar-conta': 'criar' }[location.hash];
   if (want) history.replaceState(null, '', location.pathname + location.search);
-  if (want || !localMode()) return authScreen(root, { mode: want ?? 'entrar', onEnter: open });
+  if (want) return authScreen(root, { mode: want, onEnter: open });
+  if (!localMode()) return welcomed() ? authScreen(root, { mode: 'entrar', onEnter: open }) : welcomeScreen(root, () => authScreen(root, { mode: 'entrar', onEnter: open }));
   open();
 }
+
+// Atalho de busca: "/" ou Cmd/Ctrl+K abre Registrar com a busca em foco.
+addEventListener('keydown', e => {
+  const typing = e.target.closest?.('input, textarea, select, [contenteditable]');
+  if (!shell || document.querySelector('.backdrop')) return;
+  if ((e.key === '/' && !typing) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) {
+    e.preventDefault();
+    if (ui.tab !== 'registrar') go('registrar', { meal: null });
+    setTimeout(() => shell?.main.querySelector('.log-input')?.focus(), 0);
+  }
+});
 
 // Já dentro do app, um link para #entrar ou #criar-conta abre a conta numa sheet.
 addEventListener('hashchange', () => {

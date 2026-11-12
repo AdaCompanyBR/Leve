@@ -68,28 +68,22 @@ function weightSheet(date = todayISO()) {
   const existing = state.weights.find(w => w.date === date);
   const input = h('input', { inputmode: 'decimal', autofocus: true, autocomplete: 'off', value: dec1(existing?.kg ?? latestWeight() ?? 70) });
   const err = h('p.ob-err', { role: 'alert' });
-  const sheet = openSheet({
-    title: 'Registrar peso',
-    content: h('form', { onsubmit: async e => {
-      e.preventDefault();
-      const kg = parseNum(input.value);
-      if (!(kg >= 30 && kg <= 300)) { err.textContent = 'Informe um peso entre 30 e 300 kg.'; return; }
-      await setWeight(date, Math.round(kg * 10) / 10); haptic(12); sheet.close(); toast('Peso registrado');
-    } },
-      field(`Peso em ${date === todayISO() ? 'hoje' : fmtDate(date)} (kg)`, input, 'O peso oscila com água e sal. O que conta é a tendência.'),
-      err, h('button.btn.primary.block', { type: 'submit' }, 'Salvar peso')),
-  });
+  const form = h('form', { onsubmit: async e => {
+    e.preventDefault();
+    const kg = parseNum(input.value);
+    if (!(kg >= 30 && kg <= 300)) { err.textContent = 'Informe um peso entre 30 e 300 kg.'; return; }
+    await setWeight(date, Math.round(kg * 10) / 10); haptic(12); sheet.close(); toast('Peso registrado');
+  } },
+    field(`Peso em ${date === todayISO() ? 'hoje' : fmtDate(date)} (kg)`, input, 'O que conta é a tendência, não o dia.'), err);
+  const sheet = openSheet({ title: 'Peso', content: form, action: { label: 'Salvar', run: () => form.requestSubmit() } });
 }
 export { weightSheet };
 
 function mealMenu(meal, entries) {
   const name = h('input', { value: `${meal.label} de ${fmtDate(ui.date, { day: 'numeric', month: 'short' })}`, maxlength: 40, autofocus: true });
-  const sheet = openSheet({
-    title: 'Salvar como modelo',
-    content: h('form', { onsubmit: async e => { e.preventDefault(); await saveTemplate(name.value.trim() || meal.label, entries); sheet.close(); toast('Modelo salvo'); } },
-      h('p.sheet-text', `Os ${entries.length} itens desta refeição ficam em Registrar, na aba Modelos.`),
-      field('Nome do modelo', name), h('button.btn.primary.block', { type: 'submit' }, 'Salvar modelo')),
-  });
+  const form = h('form', { onsubmit: async e => { e.preventDefault(); await saveTemplate(name.value.trim() || meal.label, entries); sheet.close(); toast('Modelo salvo'); } },
+    field('Nome do modelo', name, `${entries.length} itens. Fica em Registrar, na aba Modelos.`));
+  const sheet = openSheet({ title: 'Novo modelo', content: form, action: { label: 'Salvar', run: () => form.requestSubmit() } });
 }
 
 export function todayScreen() {

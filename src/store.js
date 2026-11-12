@@ -18,7 +18,7 @@ export const MEALS = [
   { id: 'lanches', label: 'Lanches' },
 ];
 
-const DEFAULT_SETTINGS = { theme: 'dark', weightReminder: true, waterGoal: 2000, showSwaps: true };
+const DEFAULT_SETTINGS = { theme: 'auto', weightReminder: true, waterGoal: 2000, showSwaps: true };
 
 export const state = {
   ready: false, profile: null, settings: { ...DEFAULT_SETTINGS }, entries: [], weights: [], foods: [], templates: [],

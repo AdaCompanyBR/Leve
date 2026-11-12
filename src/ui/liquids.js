@@ -102,13 +102,13 @@ export function liquidsScreen() {
       w.days.map((d, i) => h('button.week-day' + (d.date === date ? '.is-today' : ''), { type: 'button', tabindex: -1, 'aria-hidden': 'true', disabled: d.future, onclick: () => go('liquidos', { date: d.date }) },
         h('span.week-bar' + (d.ml ? '' : '.none'), { style: { height: `${d.ml ? Math.max(4, (d.ml / maxMl) * 100) : 0}%` } }),
         h('span.week-name', names[i])))),
-    h('p.fine', 'A linha tracejada marca a meta diária. Toque em um dia para abrir os registros dele.'));
+    null);
 
   // ----- Meta -----
   const goalCard = h('section.card.liq-goal', { 'aria-label': 'Meta de líquidos' },
     h('h3', 'Meta diária'),
     h('div.liq-goal-ctl', segmented(GOALS.map(v => ({ id: String(v), label: dec1(v / 1000) })), String(goal), v => saveSettings({ waterGoal: Number(v) }), 'Meta diária em litros')),
-    h('p.fine', 'Em litros. Água, café, chá, leite, sucos e outras bebidas contam. Em dias quentes ou com exercício, o corpo pede mais. Quem tem orientação médica para limitar líquidos deve seguir essa orientação.'));
+    h('p.fine', 'Em litros. Todas as bebidas contam, menos as alcoólicas. Siga a orientação médica se houver restrição de líquidos.'));
 
   const title = isToday ? 'Líquidos' : date === addDays(todayISO(), -1) ? 'Líquidos de ontem' : 'Líquidos';
   return h('div.screen.liquids',

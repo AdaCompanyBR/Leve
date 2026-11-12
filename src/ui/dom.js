@@ -19,31 +19,41 @@ export function h(spec, props, ...children) {
 
 export function svg(markup, cls = 'icon') {
   const t = document.createElement('template');
-  t.innerHTML = `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${markup}</svg>`;
+  t.innerHTML = `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${markup}</svg>`;
   return t.content.firstChild;
 }
 
+// Ícones próprios no espírito dos SF Symbols: caixa de 24, traço de 1,75, pontas arredondadas.
 export const ICONS = {
-  today: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5" stroke-width="3.2"/>',
+  today: '<circle cx="12" cy="12" r="8.25" opacity=".35"/><path d="M12 3.75a8.25 8.25 0 1 1-7.4 4.6" stroke-width="2.4"/>',
   log: '<path d="M12 5v14M5 12h14"/>',
-  progress: '<path d="M4 17l5-5 4 3 7-8"/><path d="M4 20h16" opacity=".4"/>',
-  settings: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>',
+  progress: '<path d="M4 18.5 9.5 13l3.5 3L20 8.5"/><path d="M15.5 8.5H20V13"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.5-2-3.4-2.3.9a7.5 7.5 0 0 0-2.6-1.5L14 2.6h-4l-.5 2.4a7.5 7.5 0 0 0-2.6 1.5l-2.3-.9-2 3.4 2 1.5a7.6 7.6 0 0 0 0 3l-2 1.5 2 3.4 2.3-.9a7.5 7.5 0 0 0 2.6 1.5l.5 2.4h4l.5-2.4a7.5 7.5 0 0 0 2.6-1.5l2.3.9 2-3.4z"/>',
+  person: '<circle cx="12" cy="8" r="3.75"/><path d="M4.75 20c.9-3.6 3.7-5.6 7.25-5.6s6.35 2 7.25 5.6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
   minus: '<path d="M5 12h14"/>',
-  back: '<path d="M15 5l-7 7 7 7"/>',
-  next: '<path d="M9 5l7 7-7 7"/>',
-  close: '<path d="M6 6l12 12M18 6L6 18"/>',
-  star: '<path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.700l5.8-.8z"/>',
-  barcode: '<path d="M4 6v12M8 6v12M11 6v12M15 6v12M18 6v12M20.5 6v12" stroke-width="1.6"/>',
-  drop: '<path d="M12 3.5c3 3.600 5.500 6.600 5.500 9.800a5.500 5.500 0 0 1-11 0c0-3.200 2.500-6.200 5.500-9.800z"/>',
-  trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12"/>',
-  scale: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 9.500a4.500 4.500 0 0 1 6 0M12 9v2.500"/>',
-  more: '<circle cx="5.500" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18.500" cy="12" r="1.2" fill="currentColor"/>',
-  search: '<circle cx="11" cy="11" r="6.500"/><path d="M16 16l4 4"/>',
-  check: '<path d="M5 12.500l4.500 4.500L19 7.500"/>',
-  logout: '<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M15 8l4 4-4 4M19 12H9"/>',
-  face: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1M12 9.5v3.500h-1M9.500 16c1.500 1 3.500 1 5 0"/>',
-  swap: '<path d="M7 4l-3 3 3 3M4 7h12M17 20l3-3-3-3M20 17H8"/>',
+  back: '<path d="M14.5 5.5 8 12l6.5 6.5"/>',
+  next: '<path d="M9.5 5.5 16 12l-6.5 6.5"/>',
+  close: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  star: '<path d="M12 3.8l2.5 5.1 5.6.8-4 4 1 5.6-5.1-2.6-5 2.6.9-5.6-4-4 5.6-.8z"/>',
+  barcode: '<path d="M4.5 6.5v11M8 6.5v11M10.5 6.5v11M14 6.5v11M16.5 6.5v11M19.5 6.5v11"/><path d="M3 4h3M18 4h3M3 20h3M18 20h3" opacity=".6"/>',
+  drop: '<path d="M12 3.6c3.1 3.7 5.7 6.8 5.7 10a5.7 5.7 0 0 1-11.4 0c0-3.2 2.6-6.3 5.7-10z"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l.9 12.2h9.2L17.5 7M10 10.5v5.5M14 10.5v5.5"/>',
+  scale: '<rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M8.7 10a4.6 4.6 0 0 1 6.6 0M12 9.4l1.2 2"/>',
+  more: '<circle cx="6" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.3" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.3" fill="currentColor" stroke="none"/>',
+  search: '<circle cx="10.5" cy="10.5" r="6.25"/><path d="M15.2 15.2 20 20"/>',
+  check: '<path d="M5.5 12.5l4.2 4.2 8.8-9.4"/>',
+  swap: '<path d="M7.5 4.5 4 8l3.5 3.5M4 8h13M16.5 12.5 20 16l-3.5 3.5M20 16H7"/>',
+  face: '<path d="M4 8.5V6.5A2.5 2.5 0 0 1 6.5 4h2M15.5 4h2A2.5 2.5 0 0 1 20 6.5v2M20 15.5v2a2.5 2.5 0 0 1-2.5 2.5h-2M8.5 20h-2A2.5 2.5 0 0 1 4 17.5v-2"/><path d="M9 9.5v1.2M15 9.5v1.2M12 9.5v3.6h-1M9.5 16c1.5 1 3.5 1 5 0"/>',
+  logout: '<path d="M14 4.5H7A2.5 2.5 0 0 0 4.5 7v10A2.5 2.5 0 0 0 7 19.5h7M15.5 8.5 19 12l-3.5 3.5M19 12H10"/>',
+  sidebar: '<rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M9.5 5v14"/>',
+  clear: '<circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M9 9l6 6M15 9l-6 6" stroke="var(--surface, #fff)" stroke-width="1.8"/>',
+  pencil: '<path d="M14.5 5.5l4 4L9 19H5v-4z"/><path d="M13 7l4 4"/>',
+  sparkles: '<path d="M10 4.5l1.4 3.6 3.6 1.4-3.6 1.4L10 14.5l-1.4-3.6L5 9.5l3.6-1.4zM17 13.5l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z"/>',
+  calendar: '<rect x="4" y="5.5" width="16" height="14" rx="3"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/><path d="M8 14h2M12 14h2M8 17h2" stroke-width="2"/>',
+  lock: '<rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  fork: '<path d="M7 3.5v6a2 2 0 0 0 4 0v-6M9 9.5V20.5M16.5 3.5c-1.7 1-2.5 3-2.5 5.5v3h2.5v8.5"/>',
+  clock: '<circle cx="12" cy="12" r="8.25"/><path d="M12 7.5V12l3 2"/>',
 };
 export const icon = (name, cls) => svg(ICONS[name], cls);
 
@@ -78,23 +88,34 @@ export function toast(message, action) {
   toastTimer = setTimeout(() => el.classList.remove('show'), action ? 5000 : 2600);
 }
 
-// ---------- Sheet (sobe no celular, vira diálogo no desktop) ----------
-export function openSheet({ title, content, onClose, wide }) {
+// ---------- Janela (sobe no celular, vira diálogo no computador) ----------
+/**
+ * openSheet({ title, content, action, cancel, onClose, wide })
+ * Sem `action`: título no centro e botão de fechar (X) à direita.
+ * Com `action` ({ label, run, disabled }): "Cancelar" à esquerda, título no centro e a ação à direita,
+ * como nas janelas de edição do iOS. Devolve { close, body, panel, setAction({ disabled, busy, label }) }.
+ */
+export function openSheet({ title, content, onClose, wide, action, cancel = 'Cancelar' }) {
   const previous = document.activeElement;
   const titleId = 'sheet-' + Math.random().toString(36).slice(2, 7);
   const body = h('div.sheet-body', content);
   const handle = h('div.sheet-handle', { 'aria-hidden': 'true' });
-  const panel = h('div.sheet' + (wide ? '.wide' : ''), { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId },
-    handle,
-    h('header.sheet-head', h('h2', { id: titleId }, title), h('button.icon-btn', { 'aria-label': 'Fechar', onclick: () => close() }, icon('close'))),
-    body);
+  let actionBtn = null;
+  if (action) actionBtn = h('button.sheet-nav-btn.done', { type: 'button', disabled: !!action.disabled, onclick: () => action.run() }, action.label);
+  const head = h('header.sheet-head',
+    action ? h('div.sheet-left', h('button.sheet-nav-btn', { type: 'button', onclick: () => close() }, cancel)) : null,
+    h('h2', { id: titleId }, title),
+    h('div.sheet-right', action ? actionBtn : h('button.icon-btn', { type: 'button', 'aria-label': 'Fechar', onclick: () => close() }, icon('close'))));
+  const panel = h('div.sheet' + (wide ? '.wide' : ''), { role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId }, handle, head, body);
   const backdrop = h('div.backdrop', { onclick: e => { if (e.target === backdrop) close(); } }, panel);
   document.body.append(backdrop);
   document.body.classList.add('sheet-open');
   requestAnimationFrame(() => backdrop.classList.add('open'));
 
-  const focusables = () => [...panel.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(el => !el.disabled && el.offsetParent !== null);
+  const focusables = () => [...panel.querySelectorAll('button, input, select, textarea, a[href], summary, [tabindex]:not([tabindex="-1"])')].filter(el => !el.disabled && el.offsetParent !== null);
   const onKey = e => {
+    // Só a janela de cima responde.
+    if (backdrop !== [...document.querySelectorAll('.backdrop')].pop()) return;
     if (e.key === 'Escape') { e.preventDefault(); close(); }
     if (e.key === 'Tab') {
       const f = focusables(); if (!f.length) return;
@@ -103,10 +124,10 @@ export function openSheet({ title, content, onClose, wide }) {
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   };
-  backdrop.addEventListener('keydown', onKey);
-  setTimeout(() => (panel.querySelector('[autofocus]') ?? focusables()[1] ?? focusables()[0])?.focus({ preventScroll: true }), 60);
+  document.addEventListener('keydown', onKey);
+  setTimeout(() => (panel.querySelector('[autofocus]') ?? body.querySelector('input, select, button') ?? focusables()[0])?.focus({ preventScroll: true }), 60);
 
-  // Arrastar para baixo fecha
+  // Arrastar a alça para baixo fecha (celular)
   let startY = null, dy = 0;
   const dragStart = e => { startY = e.clientY; dy = 0; panel.style.transition = 'none'; handle.setPointerCapture?.(e.pointerId); };
   const dragMove = e => { if (startY == null) return; dy = Math.max(0, e.clientY - startY); panel.style.transform = `translateY(${dy}px)`; };
@@ -120,11 +141,37 @@ export function openSheet({ title, content, onClose, wide }) {
   function close() {
     if (closed) return; closed = true;
     backdrop.classList.remove('open');
-    document.body.classList.remove('sheet-open');
+    document.removeEventListener('keydown', onKey);
+    if (!document.querySelectorAll('.backdrop.open').length) document.body.classList.remove('sheet-open');
     const done = () => { backdrop.remove(); onClose?.(); previous?.focus?.({ preventScroll: true }); };
-    reducedMotion() ? done() : setTimeout(done, 260);
+    reducedMotion() ? done() : setTimeout(done, 240);
   }
-  return { close, body, panel };
+  function setAction({ disabled, busy, label } = {}) {
+    if (!actionBtn) return;
+    if (disabled != null) actionBtn.disabled = !!disabled;
+    if (label != null) actionBtn.textContent = label;
+    if (busy != null) { actionBtn.disabled = !!busy; actionBtn.setAttribute('aria-busy', String(!!busy)); }
+  }
+  return { close, body, panel, setAction };
+}
+
+/** Botão em carregamento: mostra um indicador e bloqueia cliques enquanto `fn` roda. */
+export async function busy(btn, fn) {
+  btn.setAttribute('aria-busy', 'true');
+  try { return await fn(); } finally { btn.removeAttribute('aria-busy'); }
+}
+
+/**
+ * Campo de busca no padrão iOS: lupa, placeholder discreto e botão de limpar quando há texto.
+ * Devolve { el, input }. `shortcut` mostra a tecla de atalho no computador.
+ */
+export function searchField({ placeholder = 'Buscar', label, value = '', onInput, onSubmit, shortcut, cls = '' }) {
+  const input = h('input.log-input', { type: 'search', enterkeyhint: 'search', autocomplete: 'off', autocapitalize: 'none', spellcheck: false, placeholder, 'aria-label': label ?? placeholder, value });
+  const clear = h('button.search-clear', { type: 'button', 'aria-label': 'Limpar busca', hidden: !value, onclick: () => { input.value = ''; clear.hidden = true; input.focus(); onInput?.(''); } }, icon('clear'));
+  input.addEventListener('input', () => { clear.hidden = !input.value; onInput?.(input.value); });
+  const el = h('form.search' + (cls ? '.' + cls : ''), { role: 'search', onsubmit: e => { e.preventDefault(); onSubmit?.(input.value); } },
+    icon('search'), input, clear, shortcut ? h('kbd', { 'aria-hidden': 'true' }, shortcut) : null);
+  return { el, input };
 }
 
 /** Confirmação para ações que não têm volta. */
@@ -134,8 +181,8 @@ export function confirmSheet({ title, message, confirmLabel, onConfirm }) {
     content: [
       h('p.sheet-text', message),
       h('div.sheet-actions',
-        h('button.btn.ghost', { onclick: () => sheet.close() }, 'Cancelar'),
-        h('button.btn.strong', { onclick: async () => { await onConfirm(); sheet.close(); } }, confirmLabel)),
+        h('button.btn.secondary', { onclick: () => sheet.close() }, 'Cancelar'),
+        h('button.btn.destructive', { onclick: async e => { await busy(e.currentTarget, onConfirm); sheet.close(); } }, confirmLabel)),
     ],
   });
   return sheet;

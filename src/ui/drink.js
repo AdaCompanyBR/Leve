@@ -34,7 +34,7 @@ export function drinkSheet({ date = ui.date, type, drink } = {}) {
   const timeInput = h('input', { type: 'time', value: v.time, required: true });
 
   const readMl = () => parseAmount(amountInput.value, v.unit);
-  const save = h('button.btn.primary.block', { type: 'submit' });
+  let sheet = null;
 
   function paint() {
     const ml = readMl();
@@ -43,8 +43,7 @@ export function drinkSheet({ date = ui.date, type, drink } = {}) {
       : Number.isNaN(ml) ? `Use um valor entre 1 ml e ${dec1(MAX_ML / 1000).replace(',0', '')} litros.`
         : v.unit === 'L' ? `= ${int(ml)} ml` : ml >= 1000 ? `= ${dec1(ml / 1000)} L` : '';
     preview.classList.toggle('error', !empty && Number.isNaN(ml));
-    save.disabled = Number.isNaN(ml) || !dateInput.value || !timeInput.value;
-    save.textContent = editing ? 'Salvar alterações' : Number.isNaN(ml) ? 'Adicionar' : `Adicionar ${int(ml)} ml de ${drinkById(v.type).label.toLowerCase()}`;
+    sheet?.setAction({ disabled: Number.isNaN(ml) || !dateInput.value || !timeInput.value });
     presets.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.ml) === ml)));
   }
 
@@ -98,8 +97,9 @@ export function drinkSheet({ date = ui.date, type, drink } = {}) {
     }
   }
 
-  const sheet = openSheet({
-    title: editing ? 'Editar líquido' : 'Registrar líquido',
+  sheet = openSheet({
+    title: editing ? 'Editar líquido' : 'Novo líquido',
+    action: { label: editing ? 'Salvar' : 'Adicionar', run: () => sheet.body.querySelector('form').requestSubmit() },
     content: h('form.drink-form', { onsubmit: submit, novalidate: true },
       h('div.big-field.drink-amount', amountInput, unitLabel),
       preview,
@@ -113,7 +113,7 @@ export function drinkSheet({ date = ui.date, type, drink } = {}) {
         await removeDrink(drink.id); sheet.close();
         toast('Registro apagado', { label: 'Desfazer', run: () => restoreDrink(drink) });
       } }, icon('trash'), h('span', 'Apagar'))) : null,
-      save),
+    ),
   });
   paint();
   return sheet;

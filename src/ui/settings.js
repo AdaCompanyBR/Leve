@@ -12,7 +12,7 @@ export function applyTheme() {
   const t = state.settings.theme;
   if (t === 'auto') delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = t;
   const dark = t === 'dark' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#000000' : '#F5F5F7');
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.removeAttribute('media'); m.setAttribute('content', dark ? '#161617' : '#F5F5F7'); });
 }
 
 function row(label, control, hint) {
@@ -22,12 +22,25 @@ function row(label, control, hint) {
 function editSheet({ title, label, value, hint, validate, onSave, inputmode = 'decimal', type }) {
   const input = h('input', { inputmode, type, value, autofocus: true, autocomplete: 'off' });
   const err = h('p.ob-err', { role: 'alert' });
-  const sheet = openSheet({ title, content: h('form', { onsubmit: async e => {
+  const form = h('form', { onsubmit: async e => {
     e.preventDefault();
     const msg = validate(input.value);
     if (msg) { err.textContent = msg; return; }
     await onSave(input.value); sheet.close(); toast('Salvo');
-  } }, field(label, input, hint), err, h('button.btn.primary.block', { type: 'submit' }, 'Salvar')) });
+  } }, field(label, input, hint), err);
+  const sheet = openSheet({ title, content: form, action: { label: 'Salvar', run: () => form.requestSubmit() } });
+}
+
+/** Junta as linhas seguidas de uma seção numa lista agrupada (fundo único, cantos arredondados). */
+export function groupRows(section) {
+  let wrap = null;
+  for (const el of [...section.children]) {
+    if (el.classList.contains('set-row')) {
+      if (!wrap) { wrap = h('div.set-rows'); el.before(wrap); }
+      wrap.append(el);
+    } else wrap = null;
+  }
+  return section;
 }
 
 export function settingsScreen() {
@@ -71,16 +84,16 @@ export function settingsScreen() {
       `Faixa saudável: ${dec1(range.min)} a ${dec1(range.max)} kg`),
     plan.goal === 'perder' && plan.mode !== 'menor' ? row('Ritmo', select(PACES.map(x => ({ id: x.id, label: `${x.label} (${x.hint})` })), p.pace, v => saveProfile({ pace: v }), 'Ritmo')) : null,
     row('Refeições por dia', select(MEAL_COUNTS.map(n => ({ id: String(n), label: `${n} refeições` })), String(p.meals ?? 4), v => saveProfile({ meals: Number(v) }), 'Refeições por dia')),
-    row('Acordo às', select(WAKE_TIMES.map(t => ({ id: t, label: t.replace(':00', 'h') })), p.wake ?? '07:00', v => saveProfile({ wake: v }), 'Hora de acordar'), 'Os horários das refeições partem daqui'),
-    row('Rotina do dia', h('button.btn.tonal.compact', { onclick: () => routineSheet() }, 'Ver rotina')),
+    row('Acordo às', select(WAKE_TIMES.map(t => ({ id: t, label: t.replace(':00', 'h') })), p.wake ?? '07:00', v => saveProfile({ wake: v }), 'Hora de acordar')),
+    row('Rotina do dia', valueBtn('Ver', () => routineSheet(), 'Ver a rotina do dia')),
     plan.adapted ? row('Gasto medido', h('button.btn.tonal.compact', { onclick: async () => { await saveProfile({ tdeeOverride: null }); toast('De volta à fórmula'); } }, 'Voltar à fórmula'), `${int(plan.tdee)} kcal por dia, calculado dos seus registros`) : null);
 
   const prefCard = h('section.card.set-card', { 'aria-label': 'Preferências' }, h('h3', 'Preferências'),
     row('Tema', segmented([{ id: 'auto', label: 'Automático' }, { id: 'light', label: 'Claro' }, { id: 'dark', label: 'Escuro' }], s.theme, async v => { await saveSettings({ theme: v }); applyTheme(); }, 'Tema')),
     row('Lembrete de peso', h('button.switch', { role: 'switch', 'aria-checked': String(s.weightReminder), 'aria-label': 'Lembrete de peso', onclick: () => saveSettings({ weightReminder: !s.weightReminder }) }, h('span')),
-      'Mostra um cartão em Hoje até você se pesar'),
+      null),
     row('Sugerir trocas mais leves', h('button.switch', { role: 'switch', 'aria-checked': String(s.showSwaps !== false), 'aria-label': 'Sugerir trocas mais leves', onclick: () => saveSettings({ showSwaps: s.showSwaps === false }) }, h('span')),
-      'Mostra opções com menos calorias e o motivo, ao registrar e em Hoje'),
+      null),
     row('Meta de líquidos', select([1500, 2000, 2500, 3000, 3500].map(v => ({ id: String(v), label: `${dec1(v / 1000)} L` })), String(s.waterGoal), v => saveSettings({ waterGoal: Number(v) }), 'Meta de líquidos')));
 
   const file = h('input', { type: 'file', accept: 'application/json,.json', hidden: true, onchange: async e => {
@@ -93,23 +106,22 @@ export function settingsScreen() {
     e.target.value = '';
   } });
   const dataCard = h('section.card.set-card', { 'aria-label': 'Seus dados' }, h('h3', 'Seus dados'),
-    h('p.card-sub', auth.current() ? 'Seus dados ficam neste aparelho e na nuvem da sua conta. O backup em JSON continua disponível.' : 'Tudo fica guardado só neste aparelho. Exporte um backup de vez em quando, ou entre numa conta para usar em outros aparelhos.'),
-    h('div.data-actions',
-      h('button.btn.tonal', { onclick: () => {
+    h('button.set-row.row-action', { type: 'button', onclick: () => {
         const blob = new Blob([JSON.stringify(exportData(), null, 2)], { type: 'application/json' });
         const a = h('a', { href: URL.createObjectURL(blob), download: `leve-backup-${todayISO()}.json` });
         document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); toast('Backup exportado');
-      } }, 'Exportar JSON'),
-      h('button.btn.tonal', { onclick: () => file.click() }, 'Importar JSON'), file,
-      h('button.btn.ghost', { onclick: () => confirmSheet({ title: 'Apagar tudo?', message: auth.current() ? 'Perfil, diário, pesagens, favoritos e modelos serão apagados deste aparelho e da nuvem da sua conta, em todos os aparelhos. Não dá para desfazer.' : 'Perfil, diário, pesagens, favoritos e modelos serão apagados deste aparelho. Não dá para desfazer.', confirmLabel: 'Apagar tudo', onConfirm: async () => { await wipe(); applyTheme(); } }) }, 'Apagar tudo')));
+      } }, 'Exportar backup'),
+    h('button.set-row.row-action', { type: 'button', onclick: () => file.click() }, 'Importar backup'),
+    h('button.set-row.row-action.destructive', { type: 'button', onclick: () => confirmSheet({ title: 'Apagar tudo?', message: auth.current() ? 'Perfil, diário, pesagens, favoritos e modelos serão apagados deste aparelho e da nuvem da sua conta, em todos os aparelhos. Não dá para desfazer.' : 'Perfil, diário, pesagens, favoritos e modelos serão apagados deste aparelho. Não dá para desfazer.', confirmLabel: 'Apagar tudo', onConfirm: async () => { await wipe(); applyTheme(); } }) }, 'Apagar tudo'), file,
+    h('p.group-foot', auth.current() ? 'Os dados ficam neste aparelho e na nuvem da sua conta.' : 'Os dados ficam só neste aparelho. Exporte um backup de vez em quando.'));
 
-  const about = h('section.card.about', { 'aria-label': 'Sobre' },
-    h('p.about-notice', { role: 'note' }, h('b', 'O Leve não substitui médico ou nutricionista. '), 'As metas são estimativas baseadas em fórmulas populacionais. Gestantes, lactantes e pessoas com condições de saúde devem seguir orientação profissional.'),
-    h('p.fine', 'Dados nutricionais: Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada, NEPA/UNICAMP, 2011. Produtos com código de barras: Open Food Facts (licença ODbL). Medidas caseiras são estimativas.'),
-    h('p.fine', 'Fórmulas: Mifflin-St Jeor para o metabolismo basal; faixa saudável pelo IMC de 18,5 a 24,9.'),
-    h('p.fine', h('a.link', { href: '../' }, 'Sobre o Leve')));
+  const about = h('section.about', { 'aria-label': 'Sobre' },
+    h('p.about-notice', { role: 'note' }, 'O Leve não substitui médico ou nutricionista. As metas são estimativas (Mifflin-St Jeor e IMC de 18,5 a 24,9). Gestantes, lactantes e pessoas com condições de saúde devem seguir orientação profissional.'),
+    h('p.fine', 'Alimentos: tabela TACO (NEPA/UNICAMP, 2011) e Open Food Facts (ODbL).'),
+    h('p.fine', h('a.link.inline', { href: '../' }, 'Sobre o Leve')));
 
+  [profileCard, goalCard, prefCard, dataCard].filter(Boolean).forEach(groupRows);
   return h('div.screen.settings',
-    h('header.screen-head', h('div', h('p.screen-date', 'Perfil'), h('h1', 'Ajustes'))),
-    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', accountCard({ row }), prefCard, dataCard, about)));
+    h('header.screen-head', h('div', h('h1', 'Ajustes'))),
+    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', groupRows(accountCard({ row })), prefCard, dataCard, about)));
 }

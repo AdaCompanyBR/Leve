@@ -39,9 +39,11 @@ export async function afterLogin({ quiet } = {}) {
  */
 function authForm({ mode = 'entrar', intro, onSuccess, onRecover, onConfirm, onMode }) {
   let m = mode;
-  const email = h('input', { type: 'email', autocomplete: 'username', inputmode: 'email', autocapitalize: 'none', spellcheck: false, required: true, autofocus: true });
+  const email = h('input', { type: 'email', autocomplete: 'username', inputmode: 'email', autocapitalize: 'none', spellcheck: false, required: true, autofocus: true, placeholder: 'E-mail' });
   const pw = passwordInput(m === 'criar' ? 'new-password' : 'current-password');
   const pw2 = passwordInput('new-password');
+  pw.input.placeholder = 'Senha'; pw2.input.placeholder = 'Repita a senha';
+  const pw2Field = pwField('Repita a senha', pw2);
   const err = h('p.ob-err', { role: 'alert' });
   const submit = h('button.btn.primary.block', { type: 'submit' });
   const extra = h('div');
@@ -51,9 +53,8 @@ function authForm({ mode = 'entrar', intro, onSuccess, onRecover, onConfirm, onM
   function paint() {
     pw.input.autocomplete = m === 'criar' ? 'new-password' : 'current-password';
     submit.textContent = m === 'criar' ? 'Criar conta' : 'Entrar';
-    extra.replaceChildren(m === 'criar'
-      ? pwField('Repita a senha', pw2)
-      : h('button.link.forgot', { type: 'button', onclick: () => onRecover(email.value) }, 'Esqueci a senha'));
+    pw2Field.hidden = m !== 'criar';
+    extra.replaceChildren(m === 'criar' ? '' : h('button.link.forgot', { type: 'button', onclick: () => onRecover(email.value) }, 'Esqueci a senha'));
     pwHint.textContent = m === 'criar' ? `Pelo menos ${MIN_PASSWORD} caracteres.` : '';
   }
 
@@ -63,7 +64,7 @@ function authForm({ mode = 'entrar', intro, onSuccess, onRecover, onConfirm, onM
     if (!emailOk(email.value)) { err.textContent = 'Digite um e-mail válido.'; return email.focus(); }
     if (pw.input.value.length < MIN_PASSWORD) { err.textContent = `A senha precisa de pelo menos ${MIN_PASSWORD} caracteres.`; return pw.input.focus(); }
     if (m === 'criar' && pw.input.value !== pw2.input.value) { err.textContent = 'As senhas não são iguais.'; return pw2.input.focus(); }
-    submit.disabled = true; submit.textContent = m === 'criar' ? 'Criando…' : 'Entrando…';
+    submit.setAttribute('aria-busy', 'true');
     try {
       if (m === 'criar') {
         const r = await auth.signUp(email.value, pw.input.value);
@@ -76,13 +77,13 @@ function authForm({ mode = 'entrar', intro, onSuccess, onRecover, onConfirm, onM
     } catch (ex) {
       err.textContent = ex.message;
     } finally {
-      submit.disabled = false; paint();
+      submit.removeAttribute('aria-busy'); paint();
     }
   }
 
   const form = h('form.auth-form', { onsubmit: go, novalidate: true },
     intro ? h('p.sheet-text', intro) : null,
-    tabs, field('E-mail', email), pwField('Senha', pw), pwHint, extra, err, submit);
+    tabs, h('div.auth-fields', field('E-mail', email), pwField('Senha', pw), pw2Field), pwHint, extra, err, submit);
   paint();
   return form;
 }
@@ -102,6 +103,24 @@ export function loginSheet({ mode = 'entrar', onDone } = {}) {
     }),
   });
   return sheet;
+}
+
+const WELCOMED = 'leve-welcomed';
+export const welcomed = () => { try { return localStorage.getItem(WELCOMED) === '1'; } catch { return true; } };
+
+/** Boas-vindas na primeira abertura: três motivos e "Continuar", como nos apps da Apple. */
+export function welcomeScreen(root, onContinue) {
+  const item = (ic, title, text) => h('li', icon(ic), h('div', h('b', title), h('span', text)));
+  const go = () => { try { localStorage.setItem(WELCOMED, '1'); } catch { /* bloqueado */ } onContinue(); };
+  root.replaceChildren(h('div.welcome',
+    h('div.welcome-body',
+      h('img.app-icon', { src: 'icons/icon.svg', alt: '', width: 88, height: 88 }),
+      h('h1', 'Boas-vindas ao Leve'),
+      h('ul.features',
+        item('fork', 'Registre em uma frase', 'Escreva o que comeu e veja quanto ainda cabe no dia.'),
+        item('calendar', 'Uma rotina para o seu objetivo', 'Refeições com horário, proteína e hábitos do dia.'),
+        item('lock', 'Seus dados protegidos', 'Entre com Face ID e use no celular e no computador.'))),
+    h('div.welcome-foot', h('button.btn.primary', { type: 'button', onclick: go }, 'Continuar'))));
 }
 
 /** Vai para a tela de login de página inteira (de qualquer lugar do app). */
@@ -124,8 +143,9 @@ export function authScreen(root, { mode = 'entrar', onEnter }) {
   function showForm(m = mode) {
     const title = h('h1.auth-title', m === 'criar' ? 'Crie a sua conta' : 'Entre no Leve');
     box.replaceChildren(
+      h('img.app-icon.auth-icon', { src: 'icons/icon.svg', alt: '', width: 64, height: 64 }),
       title,
-      h('p.auth-sub', 'Seu diário de calorias, peso e líquidos, igual no celular e no computador.'),
+      h('p.auth-sub', 'O mesmo diário no celular e no computador.'),
       authForm({
         mode: m,
         onMode: x => { title.textContent = x === 'criar' ? 'Crie a sua conta' : 'Entre no Leve'; },
@@ -133,17 +153,17 @@ export function authScreen(root, { mode = 'entrar', onEnter }) {
         onRecover: email => recoverSheet(email),
         onConfirm: email => box.replaceChildren(
           h('h1.auth-title', 'Confirme o seu e-mail'),
-          h('p.auth-sub', `Enviamos um link para ${email}. Abra o e-mail, de preferência neste aparelho, e toque no link para ativar a conta. Se não encontrar, veja a caixa de spam.`),
+          h('p.auth-sub', `Enviamos um link para ${email}. Toque nele para ativar a conta. Se não encontrar, veja o spam.`),
           h('button.btn.primary.block', { type: 'button', onclick: () => showForm('entrar') }, 'Já confirmei, quero entrar')),
       }),
       h('div.auth-alt',
-        h('button.link', { type: 'button', onclick: () => { try { localStorage.setItem(LOCAL_MODE, '1'); } catch { /* bloqueado */ } onEnter(); } }, 'Usar sem conta, só neste aparelho')));
+        h('button.link', { type: 'button', onclick: () => { try { localStorage.setItem(LOCAL_MODE, '1'); } catch { /* bloqueado */ } onEnter(); } }, 'Usar sem conta neste aparelho')));
     box.querySelector('input')?.focus({ preventScroll: true });
   }
   root.replaceChildren(h('div.auth-screen',
     h('header.auth-top',
       h('a.auth-brand', { href: '../', 'aria-label': 'Voltar ao site do Leve' }, h('span.brand-mark', { 'aria-hidden': 'true' }), h('span', 'Leve')),
-      h('a.link.auth-back', { href: '../' }, 'Voltar ao site')),
+      h('a.link.auth-back', { href: '../' }, 'Site')),
     h('main.auth-main', box),
     h('p.auth-foot', 'O Leve não substitui médico ou nutricionista.')));
   showForm();
@@ -153,7 +173,8 @@ export function recoverSheet(prefill = '') {
   const email = h('input', { type: 'email', autocomplete: 'username', inputmode: 'email', autocapitalize: 'none', value: prefill, required: true, autofocus: true });
   const err = h('p.ob-err', { role: 'alert' });
   const sheet = openSheet({
-    title: 'Esqueci a senha',
+    title: 'Nova senha',
+    action: { label: 'Enviar', run: () => sheet.body.querySelector('form').requestSubmit() },
     content: h('form', { novalidate: true, onsubmit: async e => {
       e.preventDefault();
       if (!emailOk(email.value)) { err.textContent = 'Digite um e-mail válido.'; return; }
@@ -163,9 +184,7 @@ export function recoverSheet(prefill = '') {
         toast('Se houver conta com este e-mail, o link para criar uma nova senha chega em instantes.');
       } catch (ex) { err.textContent = ex.message; }
     } },
-      h('p.sheet-text', 'Enviamos um link para você criar uma nova senha. Abra o e-mail neste aparelho.'),
-      field('E-mail', email), err,
-      h('button.btn.primary.block', { type: 'submit' }, 'Enviar link')),
+      field('E-mail', email, 'Enviamos um link para você criar uma nova senha.'), err),
   });
   return sheet;
 }
@@ -174,13 +193,14 @@ export function newPasswordSheet() {
   const pw = passwordInput('new-password');
   const err = h('p.ob-err', { role: 'alert' });
   const sheet = openSheet({
-    title: 'Crie uma nova senha',
+    title: 'Nova senha',
+    action: { label: 'Salvar', run: () => sheet.body.querySelector('form').requestSubmit() },
     content: h('form', { novalidate: true, onsubmit: async e => {
       e.preventDefault();
       if (pw.input.value.length < MIN_PASSWORD) { err.textContent = `Use pelo menos ${MIN_PASSWORD} caracteres.`; return; }
       try { await auth.setPassword(pw.input.value); sheet.close(); toast('Senha alterada'); }
       catch (ex) { err.textContent = ex.message; }
-    } }, pwField('Nova senha', pw, `Pelo menos ${MIN_PASSWORD} caracteres.`), err, h('button.btn.primary.block', { type: 'submit' }, 'Salvar senha')),
+    } }, pwField('Nova senha', pw, `Pelo menos ${MIN_PASSWORD} caracteres.`), err),
   });
   setTimeout(() => pw.input.focus(), 80);
   return sheet;
@@ -234,7 +254,6 @@ export function lockScreen(root, onUnlock) {
       h('p.lock-sub', 'Seus dados estão protegidos.'),
       btn, msg,
       h('button.link', { type: 'button', onclick: () => { bio.disable(); auth.forget(); authScreen(root, { mode: 'entrar', onEnter: onUnlock }); } }, 'Usar e-mail e senha'))));
-  btn.focus();
 }
 
 const ago = t => {
@@ -261,15 +280,14 @@ export function accountCard({ row }) {
   const s = auth.current();
   if (!s) {
     return h('section.card.set-card.account', { 'aria-label': 'Conta' }, h('h3', 'Conta'),
-      h('p.card-sub', 'Entre para guardar seus dados na nuvem e usar o Leve no celular e no computador com os mesmos registros.'),
-      h('div.data-actions',
-        h('button.btn.primary', { onclick: () => goToLogin('entrar') }, 'Entrar'),
-        h('button.btn.tonal', { onclick: () => goToLogin('criar') }, 'Criar conta')));
+      h('button.set-row.row-action', { type: 'button', onclick: () => goToLogin('entrar') }, 'Entrar'),
+      h('button.set-row.row-action', { type: 'button', onclick: () => goToLogin('criar') }, 'Criar conta'),
+      h('p.card-sub', 'Com a conta, o mesmo diário fica no celular e no computador.'));
   }
   const st = sync.getStatus();
   const statusEl = h('p.card-sub.sync-status', { role: 'status', 'aria-live': 'polite' }, statusText(st));
   const off = sync.onStatus(x => { if (!statusEl.isConnected) return off(); statusEl.textContent = statusText(x); });
-  const bioRow = h('div');
+  const bioRow = h('div.set-row.pending');
   bio.available().then(ok => {
     if (!ok) return;
     const on = bio.enabled();
@@ -279,15 +297,14 @@ export function accountCard({ row }) {
         if (bio.enabled()) disableBiometric(); else await enableBiometric();
         btn.setAttribute('aria-checked', String(bio.enabled()));
       } }, h('span')),
-      'Pede o rosto ou a digital ao abrir o app'));
+      null));
   });
   return h('section.card.set-card.account', { 'aria-label': 'Conta' }, h('h3', 'Conta'),
     row('E-mail', h('span.account-email', s.user?.email ?? '—')),
-    statusEl,
     bioRow,
-    h('div.data-actions',
-      h('button.btn.tonal', { onclick: () => sync.syncNow() }, 'Sincronizar agora'),
-      h('button.btn.ghost', { onclick: logoutSheet }, 'Sair')));
+    h('button.set-row.row-action', { type: 'button', onclick: () => sync.syncNow() }, 'Sincronizar agora'),
+    h('button.set-row.row-action.destructive', { type: 'button', onclick: logoutSheet }, 'Sair'),
+    statusEl);
 }
 
 export function logoutSheet() {

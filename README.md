@@ -9,7 +9,7 @@ Diário de calorias e peso em português do Brasil, feito para uma pessoa só. �
 - **Objetivo e rotina.** Perder peso, ganhar massa muscular, definir o corpo, manter o peso ou comer melhor. Cada objetivo tem o seu cálculo (déficit, superávit pequeno, déficit de 10% com proteína alta ou manutenção) e gera uma rotina: horários das refeições a partir da hora de acordar, com calorias e proteína de cada uma, e hábitos do dia (água, proteína, treino de força, movimento, vegetais, sono, pesagem). Água, proteína, pesagem e refeições se marcam sozinhas.
 - **Registro por frase.** Escreva "2 ovos mexidos e um pão francês"; o app separa itens, quantidades e calorias e mostra tudo para você confirmar antes de salvar.
 - **Gasto adaptativo.** Com 14 dias ou mais de registros e pesagens, calcula o seu gasto real e propõe uma nova meta. Você aceita ou recusa.
-- **Aba Líquidos.** Água, café, chá, suco, leite e outras bebidas. Registro com o valor exato em ml ou litros ("473", "1,25 L"), tipo, nome opcional, data e horário; tamanhos rápidos para o dia a dia; toque num registro para corrigir. Lista do dia, semana e meta diária. Bebida alcoólica fica registrada, mas não conta para a meta.
+- **Aba Líquidos.** Um corpo (feminino ou masculino, à escolha em Ajustes) enche de baixo para cima com uma camada de cor por bebida, na ordem do dia, com total, meta, porcentagem e quanto falta. O + abre um menu com os atalhos mais usados, "Outra bebida…" (valor exato em ml ou litros, tipo, data e horário, teclado numérico no celular) e "Falar" ("300 ml de café"). Lista do dia editável, semana em 7 copos com detalhe por dia e resumo, e meta de 1,5 a 3,5 L com sugestão pelo peso, rotina e clima. Cada dia guarda a meta que tinha. Bebida alcoólica fica registrada, mas não conta para a meta.
 - **Trocas mais leves.** Ao abrir um alimento, depois de registrar e no cartão "Trocas para a próxima vez" em Hoje, o app mostra opções com menos calorias e o motivo (suco de uva → água ou refrigerante zero, batata frita → batata cozida, picanha → patinho ou frango). As calorias das alternativas vêm da TACO, na mesma quantidade. Dá para desligar em Ajustes.
 - **Peso tendência.** Média móvel exponencial que esconde a oscilação diária de água.
 - **Data de chegada** com o controle "e se eu comer 200 kcal a menos?".
@@ -97,7 +97,7 @@ src/lib/               funções puras, todas com testes
   parser.js            frase livre
   search.js            busca aproximada
   portions.js          medidas caseiras
-  hydration.js         tipos de bebida e somas de líquidos
+  hydration.js         bebidas, camadas, semana, meta por dia, sugestão, atalhos e voz
   swaps.js             trocas mais leves e o motivo de cada uma
   recipes.js           receitas típicas calculadas com a TACO
   estimate.js          média de produtos parecidos (Open Food Facts)

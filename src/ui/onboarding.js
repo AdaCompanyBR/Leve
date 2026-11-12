@@ -4,12 +4,13 @@ import { ACTIVITY, PACES, GAIN_PACES, GOALS, plan, ageOn } from '../lib/calc.js'
 import { MEAL_COUNTS, WAKE_TIMES, buildRoutine } from '../lib/routine.js';
 import { routinePreview } from './routine.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
-import { saveProfile } from '../store.js';
+import { saveProfile, setWaterGoal } from '../store.js';
+import { CLIMATES, suggestWaterGoal } from '../lib/hydration.js';
 import { configured } from '../auth.js';
 import { goToLogin } from './account.js';
 
 export function onboarding(root) {
-  const data = { name: '', goal: null, sex: null, birthDate: '', heightCm: null, weightKg: null, activity: null, pace: null, gainPace: null, meals: null, wake: null };
+  const data = { name: '', goal: null, sex: null, birthDate: '', heightCm: null, weightKg: null, activity: null, climate: null, pace: null, gainPace: null, meals: null, wake: null };
   let step = 0, dir = 1;
 
   const choice = (key, options) => () => h('div.choices', { role: 'radiogroup' }, options.map(o =>
@@ -42,6 +43,7 @@ export function onboarding(root) {
     { q: 'Qual é a sua altura?', body: number('heightCm', { unit: 'cm', min: 120, max: 230, placeholder: '170' }) },
     { q: 'E o seu peso hoje?', sub: 'Se puder, pese-se pela manhã, antes de comer.', body: number('weightKg', { unit: 'kg', min: 30, max: 300, placeholder: '70,0', decimals: true }) },
     { q: 'Como é a sua rotina?', auto: true, body: choice('activity', ACTIVITY) },
+    { q: 'Como é o clima onde você mora?', sub: 'No calor o corpo perde mais água. Isso ajusta a sua meta de líquidos.', auto: true, body: choice('climate', CLIMATES) },
     { q: 'Em que ritmo você quer ir?', sub: 'Ritmos suaves são mais fáceis de manter.', auto: true, body: choice('pace', PACES), when: () => data.goal === 'perder' },
     { q: 'Quanto acima do gasto?', sub: 'Superávits pequenos fazem o ganho ser mais músculo do que gordura.', auto: true, body: choice('gainPace', GAIN_PACES), when: () => data.goal === 'ganhar' },
     { q: 'Quantas refeições você faz por dia?', sub: 'Conte lanches e ceia.', auto: true, body: choice('meals', MEAL_COUNTS.map(n => ({ id: n, label: `${n} refeições` }))) },
@@ -115,16 +117,18 @@ export function onboarding(root) {
     else if (p.locks.includes('superavit15')) foot = 'Limitamos o superávit a 15% do seu gasto.';
     if (p.bmi < 18.5 && p.goal !== 'ganhar') foot = 'Seu IMC está abaixo de 18,5. O Leve não corta calorias nesse caso; vale conversar com um médico ou nutricionista.';
 
-    const routine = buildRoutine({ profile: data, plan: p, waterGoal: 2000 });
+    const water = suggestWaterGoal({ weightKg: data.weightKg, activity: data.activity, climate: data.climate });
+    const routine = buildRoutine({ profile: data, plan: p, waterGoal: water });
+    const liq = stat('Líquidos por dia', `${dec1(water / 1000)} L`, 'Pelo seu peso, rotina e clima.');
     const gasto = stat('Gasto diário estimado', `${int(p.tdee)} kcal`, `${ageOn(data.birthDate, today)} anos, ${data.heightCm} cm`);
     const prot = p.macros ? stat('Proteína por dia', `${int(p.macros.protein)} g`) : null;
     const grid = p.mode === 'menor' ? null : p.goal === 'perder'
-      ? [stat('IMC atual', dec1(p.bmi)), stat('Faixa saudável', `${dec1(p.range.min)} a ${dec1(p.range.max)} kg`),
+      ? [liq, stat('IMC atual', dec1(p.bmi)), stat('Faixa saudável', `${dec1(p.range.min)} a ${dec1(p.range.max)} kg`),
         stat('Peso sugerido', `${dec1(p.goalKg)} kg`, 'Meio da faixa saudável. Você pode ajustar depois.'),
         p.mode === 'deficit' && p.eta ? stat('Chegada prevista', fmtDate(p.eta, { day: 'numeric', month: 'long', year: 'numeric' })) : null, gasto]
-      : p.goal === 'ganhar' ? [stat('Acima do gasto', `+${int(p.surplus)} kcal`), prot, gasto]
-        : p.goal === 'definir' && p.mode === 'recomposicao' ? [stat('Abaixo do gasto', `−${int(p.deficit)} kcal`), prot, gasto]
-          : [stat('IMC atual', dec1(p.bmi)), prot, gasto];
+      : p.goal === 'ganhar' ? [stat('Acima do gasto', `+${int(p.surplus)} kcal`), prot, liq, gasto]
+        : p.goal === 'definir' && p.mode === 'recomposicao' ? [stat('Abaixo do gasto', `−${int(p.deficit)} kcal`), prot, liq, gasto]
+          : [stat('IMC atual', dec1(p.bmi)), prot, liq, gasto];
 
     root.replaceChildren(h('div.ob.reveal',
       h('header.ob-top', h('button.icon-btn', { 'aria-label': 'Voltar', onclick: () => { step = active().length - 1; dir = -1; render(); } }, icon('back'))),
@@ -135,7 +139,7 @@ export function onboarding(root) {
         foot ? h('p.reveal-foot', foot) : null,
         h('section.reveal-routine', h('h2.reveal-h', 'Sua rotina'), routinePreview(routine)),
         h('p.reveal-disclaimer', 'O Leve não substitui médico, nutricionista ou profissional de educação física.'),
-        h('button.btn.primary.block', { autofocus: true, onclick: async () => { haptic(12); await saveProfile({ ...data, goalKg: p.goalKg, createdAt: today }); } }, 'Começar'))));
+        h('button.btn.primary.block', { autofocus: true, onclick: async () => { haptic(12); await setWaterGoal(water); await saveProfile({ ...data, goalKg: p.goalKg, createdAt: today }); } }, 'Começar'))));
     if (p.target) countUp(big, p.target, int);
   }
 

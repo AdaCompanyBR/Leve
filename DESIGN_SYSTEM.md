@@ -90,7 +90,7 @@ O resultado deve transmitir o mesmo cuidado dos apps nativos da Apple: precisão
 ### Decisões
 - **Tema:** segue o aparelho (claro ou escuro), e a pessoa pode fixar um em Ajustes.
 - **Destaque:** azul do sistema. Verde, vermelho e laranja só para sucesso, erro e alerta.
-- **Navegação no celular:** 4 abas (Hoje, Líquidos, Progresso, Ajustes) numa barra de vidro, e um botão **+** flutuante para registrar comida.
+- **Navegação no celular:** 4 abas (Hoje, Líquidos, Progresso, Ajustes) numa barra de vidro, e um botão **+** flutuante para registrar comida (na aba Líquidos, ele abre o menu de bebidas).
 - **Navegação no computador:** sidebar de vidro, em grupos, que pode ser recolhida (a escolha fica guardada).
 - **Landing:** usa o mesmo sistema.
 
@@ -150,6 +150,11 @@ Conjunto próprio desenhado em `src/ui/dom.js` (`ICONS`), no espírito dos SF Sy
 - **Interruptor**: como no iOS, verde quando ligado.
 - **Controle segmentado**: como no iOS.
 - **Aviso (toast)**: cápsula de vidro com ação opcional.
+- **Popover e menu** (`openPopover` em `dom.js`, `.popover`, `.menu`): painel de vidro preso ao botão que o abriu, com entrada em escala. Fecha ao tocar fora, com Esc, ao rolar ou redimensionar, e devolve o foco. Menus navegam com as setas.
+- **Pastilha de bebida** (`drinkBadge`): círculo na cor da bebida com o ícone em branco. A cor de cada bebida é a mesma no corpo, nos copos e nas listas (`DRINKS` em `hydration.js`).
+- **Corpo** (`bodyFigure` em `body.js`): silhueta própria em vetor, feminina ou masculina, que enche de baixo para cima com uma camada por bebida, na ordem do dia. Sobe em 1,1 s ao registrar; depois só a superfície ondula, devagar; bolhas nas bebidas com gás. Cheia ao bater a meta, sem passar dela. Sem rosto e sem detalhes: é uma representação da meta, não uma medida do corpo.
+- **Copos da semana** (`cupFigure`): um copo por dia, com as mesmas camadas; o contorno fica verde no dia que bateu a meta. Tocar abre um popover com o detalhe.
+- **Teclado numérico** (`.keypad`): só em telas de toque, na janela de bebida, para não abrir o teclado do sistema por cima da janela.
 
 ### Movimento
 Curva padrão `cubic-bezier(.25, .1, .25, 1)` a 200 ms; janelas a 280 ms com `cubic-bezier(.32, .72, 0, 1)`. O anel mantém a mola. `prefers-reduced-motion` desliga transições e animações.

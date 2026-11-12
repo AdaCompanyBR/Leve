@@ -1,6 +1,7 @@
 // Perfil e Ajustes.
 import { h, int, dec1, parseNum, segmented, field, toast, confirmSheet, openSheet } from './dom.js';
-import { state, getPlan, saveProfile, saveSettings, exportData, importData, wipe } from '../store.js';
+import { state, getPlan, saveProfile, saveSettings, exportData, importData, wipe, setWaterGoal, waterGoalOn, bodyStyle, latestWeight } from '../store.js';
+import { CLIMATES, suggestWaterGoal } from '../lib/hydration.js';
 import { ACTIVITY, PACES, GAIN_PACES, goalById, validateGoal, healthyRange } from '../lib/calc.js';
 import { MEAL_COUNTS, WAKE_TIMES } from '../lib/routine.js';
 import { goalWizard, routineSheet } from './routine.js';
@@ -93,8 +94,18 @@ export function settingsScreen() {
     row('Lembrete de peso', h('button.switch', { role: 'switch', 'aria-checked': String(s.weightReminder), 'aria-label': 'Lembrete de peso', onclick: () => saveSettings({ weightReminder: !s.weightReminder }) }, h('span')),
       null),
     row('Sugerir trocas mais leves', h('button.switch', { role: 'switch', 'aria-checked': String(s.showSwaps !== false), 'aria-label': 'Sugerir trocas mais leves', onclick: () => saveSettings({ showSwaps: s.showSwaps === false }) }, h('span')),
-      null),
-    row('Meta de líquidos', select([1500, 2000, 2500, 3000, 3500].map(v => ({ id: String(v), label: `${dec1(v / 1000)} L` })), String(s.waterGoal), v => saveSettings({ waterGoal: Number(v) }), 'Meta de líquidos')));
+      null));
+
+  // Líquidos: meta (com a sugestão), clima e o corpo que aparece na aba.
+  const goalNow = waterGoalOn(todayISO());
+  const kg = latestWeight();
+  const suggested = kg ? suggestWaterGoal({ weightKg: kg, activity: p?.activity, climate: p?.climate }) : null;
+  const goalIds = [...new Set([1500, 2000, 2500, 3000, 3500, goalNow, ...(suggested ? [suggested] : [])])].sort((a, b) => a - b);
+  const liqCard = h('section.card.set-card', { 'aria-label': 'Líquidos' }, h('h3', 'Líquidos'),
+    row('Meta diária', select(goalIds.map(v => ({ id: String(v), label: `${dec1(v / 1000)} L${v === suggested ? ' (sugerida)' : ''}` })), String(goalNow), v => setWaterGoal(Number(v)), 'Meta diária de líquidos'),
+      suggested ? `Sugerida: ${dec1(suggested / 1000)} L, pelo seu peso, rotina e clima. A meta nova vale a partir de hoje.` : 'A meta nova vale a partir de hoje.'),
+    p ? row('Clima onde você mora', select(CLIMATES.map(c => ({ id: c.id, label: c.label })), p.climate ?? 'temperado', v => saveProfile({ climate: v }), 'Clima')) : null,
+    row('Corpo na aba Líquidos', segmented([{ id: 'f', label: 'Feminino' }, { id: 'm', label: 'Masculino' }], bodyStyle(), v => saveSettings({ body: v }), 'Corpo na aba Líquidos')));
 
   const file = h('input', { type: 'file', accept: 'application/json,.json', hidden: true, onchange: async e => {
     const f = e.target.files[0]; if (!f) return;
@@ -120,8 +131,8 @@ export function settingsScreen() {
     h('p.fine', 'Alimentos: tabela TACO (NEPA/UNICAMP, 2011) e Open Food Facts (ODbL).'),
     h('p.fine', h('a.link.inline', { href: '../' }, 'Sobre o Leve')));
 
-  [profileCard, goalCard, prefCard, dataCard].filter(Boolean).forEach(groupRows);
+  [profileCard, goalCard, prefCard, liqCard, dataCard].filter(Boolean).forEach(groupRows);
   return h('div.screen.settings',
     h('header.screen-head', h('div', h('h1', 'Ajustes'))),
-    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', groupRows(accountCard({ row })), prefCard, dataCard, about)));
+    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', groupRows(accountCard({ row })), prefCard, liqCard, dataCard, about)));
 }

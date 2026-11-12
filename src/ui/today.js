@@ -6,7 +6,7 @@ import { daySwaps, swapSheet } from './swaps.js';
 import { drinkSheet } from './drink.js';
 import { routineCard } from './routine.js';
 import { ui, go } from './state.js';
-import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
+import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, waterGoalOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
 import { toGrams, nutrientsFor } from '../lib/portions.js';
 import { todayISO, addDays, fmtDate } from '../lib/dates.js';
@@ -154,7 +154,7 @@ export function todayScreen() {
     mealSections);
 
   // ----- Água -----
-  const ml = liquidsOn(date).total, goal = state.settings.waterGoal;
+  const ml = liquidsOn(date).total, goal = waterGoalOn(date);
   const canRemove = (state.water[date] ?? 0) > 0 || dayDrinks(date).some(d => d.type === 'agua');
   const waterCard = h('section.card.water', { 'aria-label': 'Líquidos' },
     h('div.water-head', h('h3', 'Líquidos'), h('span.water-val', h('b', int(ml)), ` de ${int(goal)} ml`)),

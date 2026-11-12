@@ -5,7 +5,7 @@ import { ui, setNavigator, go } from './ui/state.js';
 import { onboarding } from './ui/onboarding.js';
 import { todayScreen } from './ui/today.js';
 import { logScreen } from './ui/log.js';
-import { liquidsScreen } from './ui/liquids.js';
+import { liquidsScreen, drinkMenu } from './ui/liquids.js';
 import { progressScreen } from './ui/progress.js';
 import { settingsScreen, applyTheme } from './ui/settings.js';
 import { todayISO } from './lib/dates.js';
@@ -52,7 +52,8 @@ function buildShell() {
         onclick: () => setCollapsed(!document.documentElement.classList.contains('side-collapsed')) }, icon('sidebar'))),
     h('div.nav-items', items),
     h('div.nav-foot'));
-  const fab = h('button.fab', { type: 'button', 'aria-label': 'Registrar comida', onclick: () => go('registrar', { meal: null }) }, icon('plus'));
+  // No Líquidos, o + abre o menu de bebidas; nas outras abas, o registro de comida.
+  const fab = h('button.fab', { type: 'button', 'aria-label': 'Registrar comida', onclick: e => (ui.tab === 'liquidos' ? drinkMenu(e.currentTarget) : go('registrar', { meal: null })) }, icon('plus'));
   root.replaceChildren(h('a.skip', { href: '#conteudo' }, 'Pular para o conteúdo'), nav, main, fab);
   // Cabeçalho de vidro: o título pequeno aparece quando o título grande sai da tela.
   addEventListener('scroll', paintTopbar, { passive: true });
@@ -102,6 +103,8 @@ function render() {
   const title = node.querySelector('.screen-head h1')?.textContent ?? tab.label;
   shell.main.replaceChildren(h('div.topbar', { 'aria-hidden': 'true' }, h('span.topbar-title', title)), node);
   shell.fab.hidden = tab.id === 'registrar';
+  shell.fab.setAttribute('aria-label', tab.id === 'liquidos' ? 'Adicionar bebida' : 'Registrar comida');
+  shell.fab.toggleAttribute('aria-haspopup', tab.id === 'liquidos');
   document.scrollingElement.scrollTop = scroll;
   if (refocus) { const el = shell.main.querySelector(refocus.sel); el?.focus(); try { el?.setSelectionRange(refocus.pos, refocus.pos); } catch { /* tipo sem seleção */ } }
   document.title = `${tab.label} | Leve`;

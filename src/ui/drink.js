@@ -1,8 +1,10 @@
-// Sheet de líquido: valor exato em ml ou litros, tipo, nome opcional, data e horário. Também edita e apaga.
+// Janela de bebida: valor grande em ml ou litros, tipo com ícone, data e horário em pílulas e, no
+// celular, um teclado numérico próprio. Também edita e apaga.
 import { h, icon, int, dec1, openSheet, segmented, field, toast, haptic } from './dom.js';
 import { ui } from './state.js';
 import { addDrink, updateDrink, removeDrink, restoreDrink } from '../store.js';
 import { DRINKS, drinkById, parseAmount, MAX_ML } from '../lib/hydration.js';
+import { drinkBadge } from './body.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
 
 const PRESETS = [200, 250, 300, 350, 500, 1000];
@@ -11,11 +13,11 @@ const hhmm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const nf3 = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3, useGrouping: false });
 /** Valor para o campo: em litros, sem arredondar (473 ml vira 0,473). */
 const fmtNum = (ml, unit) => (unit === 'L' ? nf3.format(ml / 1000) : String(ml));
-const PLACEHOLDER = { agua: 'Ex.: água com gás', cafe: 'Ex.: café com leite', cha: 'Ex.: chá verde', suco: 'Ex.: suco de uva integral', leite: 'Ex.: leite desnatado',
+const PLACEHOLDER = { agua: 'Ex.: água filtrada', gas: 'Ex.: água tônica sem açúcar', cafe: 'Ex.: café com leite', cha: 'Ex.: chá verde', suco: 'Ex.: suco de uva integral', leite: 'Ex.: leite desnatado',
   refri: 'Ex.: guaraná', zero: 'Ex.: Coca-Cola Zero', alcool: 'Ex.: cerveja', isotonico: 'Ex.: isotônico de limão', coco: 'Ex.: água de coco de caixinha', outro: 'Ex.: kombucha' };
 
 /** Abre o registro de líquido. Com `drink`, edita um registro existente. */
-export function drinkSheet({ date = ui.date, type, drink } = {}) {
+export function drinkSheet({ date = ui.date, type, drink, ml: preset } = {}) {
   const editing = !!drink;
   const v = {
     type: drink?.type ?? type ?? ui.drinkType ?? 'agua',
@@ -25,13 +27,17 @@ export function drinkSheet({ date = ui.date, type, drink } = {}) {
   };
   const today = todayISO();
 
-  const amountInput = h('input.big-input', { inputmode: 'decimal', autocomplete: 'off', enterkeyhint: 'done', autofocus: true,
-    placeholder: v.unit === 'L' ? '0,5' : '350', 'aria-label': 'Quantidade', value: drink ? fmtNum(drink.ml, v.unit) : '' });
+  // Toque (celular): teclado próprio, sem abrir o do sistema por cima da janela.
+  const touch = matchMedia('(pointer: coarse)').matches;
+  const start = drink?.ml ?? preset;
+  const amountInput = h('input.big-input', { inputmode: touch ? 'none' : 'decimal', autocomplete: 'off', enterkeyhint: 'done', autofocus: !touch,
+    placeholder: v.unit === 'L' ? '0,5' : '350', 'aria-label': 'Quantidade', value: start ? fmtNum(start, v.unit) : '' });
+  const typeName = h('p.drink-type-name', drinkById(v.type).label);
   const unitLabel = h('span.big-unit', v.unit);
   const preview = h('p.field-hint.drink-preview', { 'aria-live': 'polite' });
   const noteInput = h('input', { type: 'text', maxlength: 40, autocomplete: 'off', value: drink?.note ?? '', placeholder: PLACEHOLDER[v.type] });
-  const dateInput = h('input', { type: 'date', max: today, value: v.date, required: true });
-  const timeInput = h('input', { type: 'time', value: v.time, required: true });
+  const dateInput = h('input.pill-input', { type: 'date', 'aria-label': 'Data', max: today, value: v.date, required: true });
+  const timeInput = h('input.pill-input', { type: 'time', 'aria-label': 'Horário', value: v.time, required: true });
 
   const readMl = () => parseAmount(amountInput.value, v.unit);
   let sheet = null;
@@ -45,6 +51,7 @@ export function drinkSheet({ date = ui.date, type, drink } = {}) {
     preview.classList.toggle('error', !empty && Number.isNaN(ml));
     sheet?.setAction({ disabled: Number.isNaN(ml) || !dateInput.value || !timeInput.value });
     presets.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.ml) === ml)));
+    if (comma) comma.disabled = v.unit !== 'L';
   }
 
   const presets = h('div.chip-row.drink-presets', { role: 'group', 'aria-label': 'Preencher com um tamanho comum' },
@@ -64,11 +71,30 @@ export function drinkSheet({ date = ui.date, type, drink } = {}) {
   const typeChips = h('div.chip-row.drink-types', { role: 'group', 'aria-label': 'Tipo de líquido' },
     DRINKS.map(d => h('button.chip', { type: 'button', 'aria-pressed': String(d.id === v.type), onclick: e => {
       v.type = d.id;
+      typeName.textContent = d.label;
       typeChips.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b === e.currentTarget)));
       noteInput.placeholder = PLACEHOLDER[d.id];
       hint.textContent = d.hydrates ? '' : 'Bebida alcoólica fica registrada, mas não conta para a meta de líquidos.';
       paint();
-    } }, d.label)));
+    } }, drinkBadge(d.id, 26), d.label)));
+  requestAnimationFrame(() => typeChips.querySelector('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' }));
+
+  // Teclado numérico (só no toque).
+  let comma = null;
+  const press = k => {
+    const cur = amountInput.value;
+    if (k === 'del') amountInput.value = cur.slice(0, -1);
+    else if (k === ',') { if (!cur.includes(',')) amountInput.value = (cur || '0') + ','; }
+    else if (cur.replace(',', '').length < 5) amountInput.value = cur === '0' ? k : cur + k;
+    haptic(4);
+    paint();
+  };
+  const keypad = touch ? h('div.keypad', { role: 'group', 'aria-label': 'Teclado numérico' },
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', ',', '0', 'del'].map(k => {
+      const b = h('button', { type: 'button', 'aria-label': k === 'del' ? 'Apagar dígito' : k === ',' ? 'Vírgula' : k, onclick: () => press(k) }, k === 'del' ? icon('delete') : k);
+      if (k === ',') comma = b;
+      return b;
+    })) : null;
   const hint = h('p.fine', drinkById(v.type).hydrates ? '' : 'Bebida alcoólica fica registrada, mas não conta para a meta de líquidos.');
 
   amountInput.addEventListener('input', paint);
@@ -98,17 +124,19 @@ export function drinkSheet({ date = ui.date, type, drink } = {}) {
   }
 
   sheet = openSheet({
-    title: editing ? 'Editar líquido' : 'Novo líquido',
+    title: editing ? 'Editar bebida' : 'Outra bebida',
     action: { label: editing ? 'Salvar' : 'Adicionar', run: () => sheet.body.querySelector('form').requestSubmit() },
     content: h('form.drink-form', { onsubmit: submit, novalidate: true },
       h('div.big-field.drink-amount', amountInput, unitLabel),
+      typeName,
       preview,
-      h('div.field', h('label', 'Unidade'), unitCtl),
-      presets,
-      h('div.field', h('label', 'Tipo'), typeChips),
+      typeChips,
       hint,
+      presets,
+      h('div.drink-when', dateInput, timeInput),
+      keypad,
+      h('div.drink-unit', unitCtl),
       field('Nome (opcional)', noteInput),
-      h('div.qty-row', field('Data', dateInput), field('Horário', timeInput)),
       editing ? h('div.chip-row', h('button.chip', { type: 'button', onclick: async () => {
         await removeDrink(drink.id); sheet.close();
         toast('Registro apagado', { label: 'Desfazer', run: () => restoreDrink(drink) });

@@ -25,6 +25,8 @@ export function svg(markup, cls = 'icon') {
 
 // Ícones próprios no espírito dos SF Symbols: caixa de 24, traço de 1,75, pontas arredondadas.
 export const ICONS = {
+  mic: '<rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.75 11.5a6.25 6.25 0 0 0 12.5 0M12 17.75V21"/>',
+  delete: '<path d="M9 5.5h10.5a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5H9l-6-6.5z"/><path d="m12 9.5 5 5M17 9.5l-5 5"/>',
   today: '<circle cx="12" cy="12" r="8.25" opacity=".35"/><path d="M12 3.75a8.25 8.25 0 1 1-7.4 4.6" stroke-width="2.4"/>',
   log: '<path d="M12 5v14M5 12h14"/>',
   progress: '<path d="M4 18.5 9.5 13l3.5 3L20 8.5"/><path d="M15.5 8.5H20V13"/>',
@@ -209,3 +211,53 @@ export function field(label, input, hint) {
   input.id = id;
   return h('div.field', h('label', { for: id }, label), input, hint ? h('p.field-hint', hint) : null);
 }
+
+// ---------- Popover ----------
+// Painel de vidro preso a um botão (menu do + e detalhe dos copos). Fecha ao tocar fora,
+// com Esc, ao rolar ou ao redimensionar; devolve o foco ao botão.
+let closeOpenPopover = null;
+export function openPopover({ anchor, content, label, align = 'center', menu = false }) {
+  closeOpenPopover?.();
+  const pop = h('div.popover', { role: menu ? 'menu' : 'dialog', 'aria-label': label }, content);
+  document.body.append(pop);
+  // offsetWidth/Height: o tamanho real, sem a escala da animação de entrada.
+  const r = anchor.getBoundingClientRect(), pr = { width: pop.offsetWidth, height: pop.offsetHeight };
+  const left = Math.max(12, Math.min(innerWidth - pr.width - 12, align === 'end' ? r.right - pr.width : r.left + r.width / 2 - pr.width / 2));
+  let top = r.top - pr.height - 10, above = true;
+  if (top < 12) { top = Math.min(innerHeight - pr.height - 12, r.bottom + 10); above = false; }
+  Object.assign(pop.style, { left: left + 'px', top: Math.max(12, top) + 'px', transformOrigin: `${r.left + r.width / 2 - left}px ${above ? '100%' : '0'}` });
+  anchor.setAttribute('aria-expanded', 'true');
+  const items = () => [...pop.querySelectorAll('button:not(:disabled), [href]')];
+  const close = (refocus = true) => {
+    if (closeOpenPopover !== close) return;
+    closeOpenPopover = null;
+    anchor.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', outside, true);
+    document.removeEventListener('keydown', key, true);
+    removeEventListener('resize', dismiss); removeEventListener('scroll', dismiss, true);
+    pop.classList.remove('open');
+    setTimeout(() => pop.remove(), reducedMotion() ? 0 : 180);
+    if (refocus && anchor.isConnected) anchor.focus({ preventScroll: true });
+  };
+  const dismiss = e => { if (e?.type === 'scroll' && pop.contains(e.target)) return; close(false); };
+  const outside = e => { if (!pop.contains(e.target) && !anchor.contains(e.target)) close(false); };
+  const key = e => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return; }
+    if (e.key === 'Tab' && !pop.contains(document.activeElement)) return close(false);
+    if (!menu || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault();
+    const list = items(), i = list.indexOf(document.activeElement);
+    const next = e.key === 'Home' ? 0 : e.key === 'End' ? list.length - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + list.length) % list.length;
+    list[next]?.focus();
+  };
+  closeOpenPopover = close;
+  setTimeout(() => {
+    document.addEventListener('pointerdown', outside, true);
+    addEventListener('resize', dismiss); addEventListener('scroll', dismiss, true);
+  });
+  document.addEventListener('keydown', key, true);
+  requestAnimationFrame(() => { pop.classList.add('open'); items()[0]?.focus({ preventScroll: true }); });
+  pop.addEventListener('click', e => { if (e.target.closest('[data-close]')) close(false); });
+  return { close, el: pop };
+}
+export const closePopover = () => closeOpenPopover?.(false);

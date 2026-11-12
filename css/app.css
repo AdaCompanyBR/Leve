@@ -24,7 +24,7 @@
   --accent-2: #5AB0FF;                     /* trecho claro do anel */
   --accent-wash: rgba(0, 113, 227, .1);
   --on-accent: #FFFFFF;
-  --green: #34C759;
+  --green: #34C759; --green-ink: #248A3D;
   --red: #FF3B30;
   --red-ink: #D70015;
   --orange: #FF9500;
@@ -65,7 +65,7 @@
     --fill: rgba(118, 118, 128, .24); --fill-2: rgba(118, 118, 128, .36); --hover: rgba(255, 255, 255, .05); --select: rgba(255, 255, 255, .1);
     --ink: #F5F5F7; --ink-2: #98989D; --ink-3: #636366; --line: #38383A; --sep: rgba(84, 84, 88, .6);
     --accent: #0071E3; --accent-press: #0062C4; --accent-ink: #2997FF; --accent-2: #64B5FF; --accent-wash: rgba(41, 151, 255, .16);
-    --green: #30D158; --red: #FF453A; --red-ink: #FF6961; --orange: #FF9F0A; --orange-ink: #FFB340; --track: rgba(118, 118, 128, .3);
+    --green: #30D158; --green-ink: #30D158; --red: #FF453A; --red-ink: #FF6961; --orange: #FF9F0A; --orange-ink: #FFB340; --track: rgba(118, 118, 128, .3);
     --glass: rgba(30, 30, 32, .72); --glass-strong: rgba(30, 30, 32, .86); --glass-line: rgba(255, 255, 255, .1); --shade: rgba(0, 0, 0, .5);
     --shadow-window: 0 24px 64px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06); --shadow-float: 0 8px 24px rgba(0, 0, 0, .5);
     color-scheme: dark;
@@ -76,7 +76,7 @@
   --fill: rgba(118, 118, 128, .24); --fill-2: rgba(118, 118, 128, .36); --hover: rgba(255, 255, 255, .05); --select: rgba(255, 255, 255, .1);
   --ink: #F5F5F7; --ink-2: #98989D; --ink-3: #636366; --line: #38383A; --sep: rgba(84, 84, 88, .6);
   --accent: #0071E3; --accent-press: #0062C4; --accent-ink: #2997FF; --accent-2: #64B5FF; --accent-wash: rgba(41, 151, 255, .16);
-  --green: #30D158; --red: #FF453A; --red-ink: #FF6961; --orange: #FF9F0A; --orange-ink: #FFB340; --track: rgba(118, 118, 128, .3);
+  --green: #30D158; --green-ink: #30D158; --red: #FF453A; --red-ink: #FF6961; --orange: #FF9F0A; --orange-ink: #FFB340; --track: rgba(118, 118, 128, .3);
   --glass: rgba(30, 30, 32, .72); --glass-strong: rgba(30, 30, 32, .86); --glass-line: rgba(255, 255, 255, .1); --shade: rgba(0, 0, 0, .5);
   --shadow-window: 0 24px 64px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .06); --shadow-float: 0 8px 24px rgba(0, 0, 0, .5);
   color-scheme: dark;
@@ -412,42 +412,121 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 /* =========================================================================
    8. Líquidos
    ========================================================================= */
-.liq-now { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
-.liq-num { font: 700 48px/1.05 var(--font-num); letter-spacing: -.03em; }
+/* Corpo e números */
+.liq-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center; gap: 12px; padding: 4px 0 8px; }
+.liq-body { height: min(62vh, 440px); min-height: 300px; }
+.liq-stats { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.liq-pct { font: 700 17px/1 var(--font-num); color: var(--accent-ink); }
+.liq-total { margin-top: 6px; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; }
+.liq-num { font: 700 44px/1.02 var(--font-num); letter-spacing: -.03em; }
 .liq-unit { color: var(--ink-2); font-size: var(--fs-body); }
-.liq-bar { height: 8px; margin-top: 14px; }
-.liq-types { margin-top: 14px; }
-.liq-sizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
-.liq-size { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56px; border-radius: var(--r-btn); background: var(--fill); color: var(--accent-ink); transition: background var(--dur) var(--ease); }
-.liq-size:active { background: var(--fill-2); }
+.liq-left { margin-top: 4px; color: var(--ink-2); }
+.liq-left.done { color: var(--green-ink); font-weight: 600; }
+.liq-legend { margin-top: 14px; display: grid; gap: 6px; font-size: var(--fs-sub); color: var(--ink-2); width: 100%; }
+.liq-legend li { display: flex; align-items: center; gap: 8px; }
+.liq-legend b { margin-left: auto; color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+.liq-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.liq-stats .fine { margin-top: 10px; }
+.liq-add-btn { margin-top: 18px; min-height: 44px; padding: 0 18px; }
+@media (max-width: 959px) { .liq-add-btn { display: none; } }
+
+/* Adicionar */
+.liq-types { display: flex; gap: 4px; margin: 6px -16px 0; padding: 6px 12px 2px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
+.liq-types::-webkit-scrollbar { display: none; }
+.liq-type { flex: none; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 70px; padding: 6px 2px; border-radius: var(--r-btn); scroll-snap-align: start; font-size: 12px; color: var(--ink-2); text-align: center; line-height: 1.2; transition: background var(--dur) var(--ease); }
+.liq-type .drink-badge { transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+.liq-type[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
+.liq-type[aria-pressed="true"] .drink-badge { box-shadow: 0 0 0 2.5px var(--surface), 0 0 0 4.5px var(--accent); }
+@media (hover: hover) { .liq-type:hover { background: var(--hover); } }
+.liq-sizes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.liq-size { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 52px; border-radius: var(--r-btn); background: var(--fill); color: var(--accent-ink); transition: background var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.liq-size:active { background: var(--fill-2); transform: scale(.97); }
 @media (hover: hover) { .liq-size:hover { background: var(--fill-2); } }
-.liq-size b { font: 600 19px/1.1 var(--font-num); }
+.liq-size b { font: 600 18px/1.1 var(--font-num); }
 .liq-size span { font-size: 12px; color: var(--ink-2); }
-.liq-exact { margin-top: 14px; }
-.liq-or { display: none; }
+.liq-size.other b { font: 600 15px/1.2 var(--font); }
+.liq-add .fine { margin-top: 10px; }
+
+/* Registros do dia */
 .liq-list { padding: 0; overflow: hidden; }
-.liq-list > h3 { padding: 16px 16px 0; }
-.liq-types-sum { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 4px 16px 10px; font-size: var(--fs-sub); color: var(--ink-2); }
-.liq-types-sum b { color: var(--ink); font-weight: 600; margin-left: 4px; }
+.liq-list > h3 { padding: 16px 16px 8px; }
 .liq-rows { border-top: .5px solid var(--sep); }
-.liq-row { display: flex; align-items: center; gap: 8px; min-height: 52px; padding-right: 8px; }
-.liq-row + .liq-row { background-image: linear-gradient(var(--sep), var(--sep)); background-size: calc(100% - 16px) 1px; background-position: right top; background-repeat: no-repeat; }
-.liq-edit { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 0 8px 16px; text-align: left; }
-@media (hover: hover) { .liq-edit:hover .liq-name { color: var(--accent-ink); } }
-.liq-time { width: 46px; flex: none; color: var(--ink-2); font-size: var(--fs-sub); font-variant-numeric: tabular-nums; }
-.liq-name { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.liq-sub { color: var(--ink-2); font-size: 13px; }
-.liq-ml { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.liq-row { display: flex; align-items: center; gap: 4px; min-height: 56px; padding-right: 8px; }
+.liq-row + .liq-row { background-image: linear-gradient(var(--sep), var(--sep)); background-size: calc(100% - 58px) 1px; background-position: right top; background-repeat: no-repeat; }
+.liq-edit { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 0 8px 16px; text-align: left; }
+@media (hover: hover) { button.liq-edit:hover .liq-name { color: var(--accent-ink); } }
+.liq-name { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; text-overflow: ellipsis; }
+.liq-sub { color: var(--ink-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.liq-ml { color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .liq-list .empty { border-top: .5px solid var(--sep); }
-.muted .liq-name, .muted .liq-ml, .liq-types-sum .muted { opacity: .55; }
+.muted .liq-name, .muted .liq-ml, .muted .drink-badge { opacity: .55; }
+
+/* Semana em copos */
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.week-nav { display: flex; margin-right: -8px; }
+.week-cups { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 12px; }
+.week-cup { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 2px 6px; border-radius: var(--r-btn); transition: background var(--dur) var(--ease); }
+.week-cup .cup { width: min(100%, 34px); }
+.week-cup:disabled { cursor: default; opacity: .45; }
+@media (hover: hover) { .week-cup:hover:not(:disabled) { background: var(--hover); } }
+.week-cup.selected, .week-cup[aria-expanded="true"] { background: var(--fill); }
+.week-cup-name { font-size: 12px; color: var(--ink-2); }
+.week-cup.selected .week-cup-name { color: var(--accent-ink); font-weight: 600; }
+.week-cup-ml { font: 600 13px/1 var(--font-num); font-variant-numeric: tabular-nums; min-height: 13px; }
+.week-cup-met { height: 14px; color: var(--green); }
+.week-cup-met .icon { width: 14px; height: 14px; stroke-width: 2.6; }
+.week-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; margin-top: 14px; padding-top: 14px; border-top: .5px solid var(--sep); }
+.week-stat b { display: block; font: 600 17px/1.25 var(--font-num); margin-top: 2px; }
+.cup-pop { width: 240px; padding: 14px 16px; }
+.cup-pop-date { font-size: 13px; color: var(--ink-2); }
+.cup-pop-date::first-letter { text-transform: uppercase; }
+.cup-pop-total { margin-top: 2px; color: var(--ink-2); }
+.cup-pop-total b { color: var(--ink); font: 700 22px var(--font-num); letter-spacing: -.02em; }
+.cup-pop-types { margin-top: 10px; display: grid; gap: 8px; font-size: var(--fs-sub); }
+.cup-pop-types li { display: flex; align-items: center; gap: 8px; }
+.cup-pop-types b { margin-left: auto; font-weight: 500; font-variant-numeric: tabular-nums; }
+.cup-pop .btn.block { margin-top: 14px; min-height: 40px; }
+
+/* Meta */
 .liq-goal-ctl { margin-top: 12px; }
-.liquids .week-day { padding: 0; }
-.liquids .week-day:disabled { cursor: default; }
+.liq-suggest { margin-top: 10px; font-size: var(--fs-sub); }
+
+/* Popover e menu de vidro */
+.popover {
+  position: fixed; z-index: 70; min-width: 220px; max-width: calc(100vw - 24px); border-radius: 14px; overflow: hidden;
+  background: var(--glass-strong); backdrop-filter: saturate(180%) blur(30px); -webkit-backdrop-filter: saturate(180%) blur(30px);
+  border: .5px solid var(--glass-line); box-shadow: var(--shadow-float);
+  opacity: 0; transform: scale(.92); transition: opacity .18s var(--ease), transform .24s var(--ease-sheet);
+}
+.popover.open { opacity: 1; transform: none; }
+.menu { display: flex; flex-direction: column; min-width: 250px; padding: 4px 0; }
+.menu-item { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 16px; text-align: left; font-size: 17px; }
+.menu-item:focus-visible { outline: none; background: var(--hover); }
+@media (hover: hover) { .menu-item:hover { background: var(--hover); } }
+.menu-item:active { background: var(--fill-2); }
+.menu-label { flex: 1; }
+.menu-detail { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.menu-icon { display: grid; place-items: center; width: 28px; height: 28px; color: var(--accent-ink); }
+.menu-icon .icon { width: 20px; height: 20px; }
+.menu-sep { height: 6px; margin: 4px 0; background: var(--sep); opacity: .5; }
+
+/* Janela de bebida */
 .drink-form .big-field { margin-top: 4px; }
-.drink-preview { min-height: 1.3em; }
+.drink-type-name { text-align: center; color: var(--ink-2); margin-top: 2px; }
+.drink-preview { min-height: 1.3em; text-align: center; }
 .drink-preview.error { color: var(--red-ink); }
-.drink-presets { margin-top: 12px; }
-.drink-types { margin-top: 0; }
+.drink-presets { margin-top: 12px; justify-content: center; }
+.drink-types { flex-wrap: nowrap; overflow-x: auto; margin: 14px calc(-1 * var(--gutter)) 0; padding: 0 var(--gutter) 2px; scrollbar-width: none; }
+.drink-types::-webkit-scrollbar { display: none; }
+.drink-types .chip { flex: none; padding-left: 4px; }
+.drink-types .chip .drink-badge { margin-right: 2px; }
+.drink-when { display: flex; justify-content: center; gap: 8px; margin-top: 14px; }
+.pill-input { min-height: 36px; padding: 0 14px; border-radius: 999px; background: var(--fill); color: var(--ink); font: inherit; font-size: 15px; border: 0; }
+.pill-input::-webkit-calendar-picker-indicator { opacity: .5; }
+.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.keypad button { display: grid; place-items: center; min-height: 52px; border-radius: var(--r-btn); background: var(--surface); font: 500 24px var(--font-num); transition: background .1s; }
+.keypad button:active { background: var(--fill-2); }
+.keypad .icon { width: 26px; height: 26px; }
 
 /* =========================================================================
    9. Registrar
@@ -830,7 +909,12 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
   .today-grid .col-meals { grid-column: 2; grid-row: 1 / span 2; }
   .today-grid .col-side { grid-column: 1; }
   .liquids-grid, .settings-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
-  .liq-sizes { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .liquids-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
+  .liquids-grid .col-hero { position: sticky; top: 72px; }
+  .liq-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .liq-stats { align-items: center; }
+  .liq-total { justify-content: center; }
+  .liq-body { height: min(56vh, 460px); width: 100%; }
 }
 
 @media (min-width: 960px) {
@@ -839,7 +923,7 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
   #app:has(> .ob), #app:has(> .boot), #app:has(> .boot-error), #app:has(> .auth-screen), #app:has(> .lock), #app:has(> .welcome) { display: block; }
   /* Sidebar de vidro, como no macOS */
   .nav {
-    position: sticky; top: 0; inset: auto; height: 100dvh; display: flex; flex-direction: column;
+    position: sticky; inset: 0 auto auto auto; height: 100dvh; display: flex; flex-direction: column;
     padding: 12px 10px 16px; border: 0; border-right: .5px solid var(--glass-line);
     background: var(--glass); backdrop-filter: saturate(180%) blur(30px); -webkit-backdrop-filter: saturate(180%) blur(30px);
   }
@@ -893,3 +977,29 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* =========================================================================
+   15. Corpo e copos (aba Líquidos)
+   ========================================================================= */
+.body-figure { display: block; width: 100%; height: 100%; overflow: visible; }
+.body-outline > * { fill: none; stroke: var(--body-line, #8E9AA8); stroke-width: 4.4; stroke-linejoin: round; }
+.body-base > * { fill: var(--body-fill, var(--surface)); stroke: none; }
+.body-hair .hair { fill: var(--body-hair, #B8C1CC); stroke: var(--body-line, #8E9AA8); stroke-width: 2.2; stroke-linejoin: round; }
+.body-band { shape-rendering: crispEdges; }
+.body-bubble { fill: rgba(255, 255, 255, .7); animation: bubble 3.5s ease-in infinite; opacity: 0; }
+@keyframes bubble { 10% { opacity: .9; } 90% { opacity: .6; } to { transform: translateY(var(--rise)); opacity: 0; } }
+:root { --body-line: #A7B1BD; --body-hair: #C9D0D8; --body-fill: #FFFFFF; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --body-line: #5A626D; --body-hair: #3A3F46; --body-fill: #232326; } }
+:root[data-theme="dark"] { --body-line: #5A626D; --body-hair: #3A3F46; --body-fill: #232326; }
+.drink-badge { display: inline-grid; place-items: center; flex: none; border-radius: 50%; color: #fff; background: var(--c); }
+.drink-badge svg { width: 58%; height: 58%; }
+.cup { width: 100%; height: auto; display: block; overflow: visible; }
+.cup-glass { fill: var(--fill); }
+.cup-rim { fill: none; stroke: var(--line); stroke-width: 1.2; }
+.cup.met .cup-rim { stroke: var(--green); }
+.drink-form .drink-amount { justify-content: center; background: none; box-shadow: none; }
+.drink-amount .big-input { text-align: right; font-size: 56px; min-height: 76px; width: 4.2ch; field-sizing: content; min-width: 1.4ch; max-width: 70%; caret-color: var(--accent); }
+.drink-amount .big-unit { font-size: 22px; }
+.drink-unit { display: flex; justify-content: center; margin-top: 16px; }
+.drink-unit .segmented { width: auto; min-width: 180px; }
+.keypad button:disabled { color: var(--ink-3); background: transparent; }

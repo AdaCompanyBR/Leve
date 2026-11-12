@@ -37,10 +37,7 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
   light.append(el('stop', { offset: '.35', 'stop-color': 'var(--person-shade)', 'stop-opacity': 0 }), el('stop', { offset: '1', 'stop-color': 'var(--person-shade)', 'stop-opacity': '.16' }));
   const hairG = el('linearGradient', { id: id + '-hair', x1: 0, x2: 0, y1: 0, y2: 1 });
   hairG.append(el('stop', { offset: '0', 'stop-color': 'var(--person-hair-hi)' }), el('stop', { offset: '1', 'stop-color': 'var(--person-hair)' }));
-  // Recorte das mãos, para a camada própria delas (ver abaixo).
-  const handClip = el('clipPath', { id: id + '-hands' });
-  for (const p of person.base) if (p.kind === 'cut') handClip.append(el('path', { d: p.d }));
-  defs.append(clip, light, hairG, handClip);
+  defs.append(clip, light, hairG);
   svg.append(defs);
 
   const paint = (parts, g) => {
@@ -51,12 +48,12 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
     }
     return g;
   };
-  const figure = paint(person.base.filter(p => !['line', 'cut', 'edge'].includes(p.kind)), el('g', { class: 'person' }));
+  const figure = paint(person.base.filter(p => p.kind !== 'line'), el('g', { class: 'person' }));
   figure.append(el('rect', { x: 0, y: 0, width: W, height: H, fill: `url(#${id}-light)`, 'clip-path': `url(#${id}-clip)` }));
 
   // Líquido: camadas, superfície e bolhas, tudo dentro do contorno.
   const liquid = el('g', { 'clip-path': `url(#${id}-clip)` });
-  const mix = el('g', { class: 'body-liquid', id: id + '-mix' });
+  const mix = el('g', { class: 'body-liquid' });
   const layers = el('g');
   const wave = el('path');
   mix.append(layers, wave);
@@ -67,15 +64,7 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
   const veil = el('g', { class: 'person-veil' });
   for (const p of person.base) if (p.kind === 'cloth' || p.kind === 'shoe') veil.append(el('path', { d: p.d }));
   const ink = paint(person.base.filter(p => p.kind === 'line'), el('g', { class: 'person' }));
-  // As mãos ficam à frente das roupas, numa camada própria por cima de tudo: a pele, o mesmo
-  // líquido (espelhado da camada principal, então sobe junto) e, por último, o contorno.
-  const hands = el('g', { class: 'person' });
-  for (const p of person.base) if (p.kind === 'cut') hands.append(el('path', { d: p.d, class: 'pp-handfill' }));
-  const inHands = el('g', { 'clip-path': `url(#${id}-hands)` });
-  inHands.append(el('rect', { x: 0, y: 0, width: W, height: H, fill: `url(#${id}-light)` }), el('use', { href: `#${id}-mix` }));
-  hands.append(inHands);
-  for (const p of person.base) if (p.kind === 'edge') hands.append(el('path', { d: p.d, class: 'pp-edge' }));
-  svg.append(figure, liquid, veil, ink, hands, paint(person.top, el('g', { class: 'person-top' })));
+  svg.append(figure, liquid, veil, ink, paint(person.top, el('g', { class: 'person-top' })));
 
   let topColor = null;
   function waveAt(shown, phase) {

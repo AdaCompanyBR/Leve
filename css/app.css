@@ -988,8 +988,6 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .pp-hair { stroke: var(--person-line); stroke-width: 1.5; }
 .pp-line { fill: none; stroke: var(--person-line); stroke-width: 1.1; opacity: .75; }
 .pp-strand { fill: none; stroke: var(--person-hair-hi); stroke-width: 1.1; opacity: .8; }
-.pp-handfill { fill: var(--person-skin); stroke: none; }
-.pp-edge { fill: none; stroke: var(--person-line); stroke-width: 1.7; }
 .pp-gloss { fill: var(--person-hair-hi); opacity: .55; stroke: none; }
 .pp-shade { fill: var(--person-shade); opacity: .1; stroke: none; }
 .pp-ground { fill: var(--person-shade); opacity: .1; }

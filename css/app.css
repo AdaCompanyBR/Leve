@@ -287,6 +287,21 @@ button.rt-row { border-radius: 10px; }
 .reveal-h { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
 
 /* ---------- Conta ---------- */
+.auth-screen { min-height: 100dvh; display: flex; flex-direction: column; padding: calc(env(safe-area-inset-top) + 16px) 20px calc(env(safe-area-inset-bottom) + 20px); }
+.auth-top { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; width: 100%; margin: 0 auto; }
+.auth-brand { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; font-size: 20px; font-weight: 750; letter-spacing: -.02em; color: var(--ink); text-decoration: none; }
+.auth-brand .brand-mark { display: block; width: 24px; height: 24px; border-radius: 50%; border: 6px solid var(--accent); border-right-color: var(--track); transform: rotate(35deg); }
+.auth-back { font-size: 15px; display: inline-flex; align-items: center; }
+.auth-main { flex: 1; display: grid; place-items: center; padding: 28px 0; }
+.auth-box { width: 100%; max-width: 420px; background: var(--surface); border-radius: var(--r-card); padding: 28px 24px 24px; }
+.auth-title { font-size: 28px; line-height: 1.15; font-weight: 750; letter-spacing: -.02em; }
+.auth-sub { color: var(--ink-2); margin-top: 8px; font-size: 15px; line-height: 1.45; }
+.auth-box .auth-form .segmented { margin-top: 20px; }
+.auth-box > .btn.block { margin-top: 24px; }
+.auth-alt { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); text-align: center; }
+.auth-alt .link { font-size: 14px; display: inline-flex; align-items: center; }
+.auth-foot { text-align: center; color: var(--ink-2); font-size: 12px; }
+@media (min-width: 720px) { .auth-box { padding: 36px 36px 28px; } .auth-title { font-size: 32px; } }
 .auth-form .segmented { margin-top: 16px; }
 .pw-wrap { position: relative; }
 .pw-wrap input { width: 100%; padding-right: 96px; }
@@ -586,7 +601,7 @@ button.rt-row { border-radius: 10px; }
 }
 @media (min-width: 960px) {
   #app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100dvh; }
-  #app:has(> .ob), #app:has(> .boot), #app:has(> .boot-error) { display: block; }
+  #app:has(> .ob), #app:has(> .boot), #app:has(> .boot-error), #app:has(> .auth-screen), #app:has(> .lock) { display: block; }
   .nav { position: sticky; top: 0; inset: auto; height: 100dvh; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; border: 0; border-right: 1px solid var(--line); padding: 28px 14px 22px; display: flex; flex-direction: column; }
   .brand { display: flex; align-items: center; gap: 10px; padding: 0 12px 26px; }
   .brand-mark { width: 26px; height: 26px; border-radius: 50%; border: 6px solid var(--accent); border-right-color: var(--track); transform: rotate(35deg); }

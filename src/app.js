@@ -13,7 +13,7 @@ import { reload } from './store.js';
 import * as auth from './auth.js';
 import * as bio from './biometric.js';
 import * as sync from './sync.js';
-import { lockScreen, newPasswordSheet, afterLogin, loginSheet, logoutSheet } from './ui/account.js';
+import { lockScreen, newPasswordSheet, afterLogin, loginSheet, logoutSheet, authScreen, localMode } from './ui/account.js';
 
 const root = document.getElementById('app');
 const TABS = [
@@ -92,6 +92,7 @@ async function start() {
     return;
   }
   sync.setReloader(async () => { await reload(); applyTheme(); });
+  applyTheme();
   if (!auth.configured()) { if (/^#(entrar|criar-conta)$/.test(location.hash)) history.replaceState(null, '', location.pathname); return open(); }
   // Links do e-mail (confirmar conta, trocar senha) chegam com a sessão no endereço.
   const redirect = auth.fromRedirect();
@@ -103,12 +104,22 @@ async function start() {
   }
   // Face ID ligado: nada aparece antes do rosto ou da digital.
   if (bio.enabled()) return lockScreen(root, () => { open(); sync.start(); });
-  if (auth.restorePlain()) { open(); sync.start(); return; }
-  open();
-  // Vindo da landing: "Entrar" e "Criar conta" abrem direto a tela da conta.
+  if (auth.restorePlain()) { history.replaceState(null, '', location.pathname); open(); sync.start(); return; }
+  // Sem conta conectada: tela de login, a não ser que a pessoa tenha escolhido usar sem conta.
+  // Vindo da landing, "Criar conta" já abre na aba certa.
   const want = { '#entrar': 'entrar', '#criar-conta': 'criar' }[location.hash];
-  if (want) { history.replaceState(null, '', location.pathname + location.search); loginSheet({ mode: want }); }
+  if (want) history.replaceState(null, '', location.pathname + location.search);
+  if (want || !localMode()) return authScreen(root, { mode: want ?? 'entrar', onEnter: open });
+  open();
 }
+
+// Já dentro do app, um link para #entrar ou #criar-conta abre a conta numa sheet.
+addEventListener('hashchange', () => {
+  const want = { '#entrar': 'entrar', '#criar-conta': 'criar' }[location.hash];
+  if (!want || !auth.configured()) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  if (!auth.current()) loginSheet({ mode: want });
+});
 
 function open() {
   shell = null; lastTab = null;

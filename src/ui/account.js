@@ -33,8 +33,11 @@ export async function afterLogin({ quiet } = {}) {
   if (!bio.enabled() && await bio.available()) setTimeout(offerBiometric, quiet ? 0 : 600);
 }
 
-/** Entrar ou criar conta. */
-export function loginSheet({ mode = 'entrar', onDone } = {}) {
+/**
+ * Formulário de entrar ou criar conta, usado na tela de login e na sheet.
+ * onSuccess: depois de entrar. onRecover(email): "Esqueci a senha". onConfirm(email): conta criada, falta confirmar o e-mail.
+ */
+function authForm({ mode = 'entrar', intro, onSuccess, onRecover, onConfirm, onMode }) {
   let m = mode;
   const email = h('input', { type: 'email', autocomplete: 'username', inputmode: 'email', autocapitalize: 'none', spellcheck: false, required: true, autofocus: true });
   const pw = passwordInput(m === 'criar' ? 'new-password' : 'current-password');
@@ -42,17 +45,17 @@ export function loginSheet({ mode = 'entrar', onDone } = {}) {
   const err = h('p.ob-err', { role: 'alert' });
   const submit = h('button.btn.primary.block', { type: 'submit' });
   const extra = h('div');
+  const pwHint = h('p.field-hint');
 
-  const tabs = segmented([{ id: 'entrar', label: 'Entrar' }, { id: 'criar', label: 'Criar conta' }], m, id => { m = id; err.textContent = ''; paint(); }, 'Entrar ou criar conta');
+  const tabs = segmented([{ id: 'entrar', label: 'Entrar' }, { id: 'criar', label: 'Criar conta' }], m, id => { m = id; err.textContent = ''; paint(); onMode?.(id); }, 'Entrar ou criar conta');
   function paint() {
     pw.input.autocomplete = m === 'criar' ? 'new-password' : 'current-password';
     submit.textContent = m === 'criar' ? 'Criar conta' : 'Entrar';
     extra.replaceChildren(m === 'criar'
       ? pwField('Repita a senha', pw2)
-      : h('button.link.forgot', { type: 'button', onclick: () => { sheet.close(); setTimeout(() => recoverSheet(email.value), 280); } }, 'Esqueci a senha'));
+      : h('button.link.forgot', { type: 'button', onclick: () => onRecover(email.value) }, 'Esqueci a senha'));
     pwHint.textContent = m === 'criar' ? `Pelo menos ${MIN_PASSWORD} caracteres.` : '';
   }
-  const pwHint = h('p.field-hint');
 
   async function go(e) {
     e.preventDefault();
@@ -64,19 +67,12 @@ export function loginSheet({ mode = 'entrar', onDone } = {}) {
     try {
       if (m === 'criar') {
         const r = await auth.signUp(email.value, pw.input.value);
-        if (r.confirm) {
-          sheet.close();
-          openSheet({ title: 'Confirme o seu e-mail', content: [
-            h('p.sheet-text', `Enviamos um link para ${email.value.trim()}. Abra o e-mail neste aparelho e toque no link para ativar a conta. Depois é só entrar.`),
-          ] });
-          return;
-        }
+        if (r.confirm) return onConfirm(email.value.trim());
       } else {
         await auth.signIn(email.value, pw.input.value);
       }
-      sheet.close();
-      await afterLogin();
-      onDone?.();
+      try { localStorage.removeItem(LOCAL_MODE); } catch { /* bloqueado */ }
+      await onSuccess();
     } catch (ex) {
       err.textContent = ex.message;
     } finally {
@@ -84,17 +80,66 @@ export function loginSheet({ mode = 'entrar', onDone } = {}) {
     }
   }
 
+  const form = h('form.auth-form', { onsubmit: go, novalidate: true },
+    intro ? h('p.sheet-text', intro) : null,
+    tabs, field('E-mail', email), pwField('Senha', pw), pwHint, extra, err, submit);
+  paint();
+  return form;
+}
+
+/** Entrar ou criar conta numa sheet (de dentro do app). */
+export function loginSheet({ mode = 'entrar', onDone } = {}) {
   const sheet = openSheet({
     title: 'Sua conta do Leve',
-    content: h('form.auth-form', { onsubmit: go, novalidate: true },
-      h('p.sheet-text', 'Com a conta, seus dados ficam guardados na nuvem e aparecem no celular e no computador.'),
-      tabs,
-      field('E-mail', email),
-      pwField('Senha', pw), pwHint,
-      extra, err, submit),
+    content: authForm({
+      mode, intro: 'Com a conta, seus dados ficam guardados na nuvem e aparecem no celular e no computador.',
+      onSuccess: async () => { sheet.close(); await afterLogin(); onDone?.(); },
+      onRecover: email => { sheet.close(); setTimeout(() => recoverSheet(email), 280); },
+      onConfirm: email => {
+        sheet.close();
+        openSheet({ title: 'Confirme o seu e-mail', content: [h('p.sheet-text', `Enviamos um link para ${email}. Abra o e-mail neste aparelho e toque no link para ativar a conta. Depois é só entrar.`)] });
+      },
+    }),
   });
-  paint();
   return sheet;
+}
+
+// Quem escolheu "usar sem conta" não vê a tela de login de novo neste aparelho.
+const LOCAL_MODE = 'leve-local-mode';
+export const localMode = () => { try { return localStorage.getItem(LOCAL_MODE) === '1'; } catch { return false; } };
+
+/**
+ * Tela de login de página inteira, antes do app. `onEnter` abre o app (depois de entrar,
+ * ou ao escolher usar sem conta).
+ */
+export function authScreen(root, { mode = 'entrar', onEnter }) {
+  const box = h('div.auth-box');
+  function showForm(m = mode) {
+    const title = h('h1.auth-title', m === 'criar' ? 'Crie a sua conta' : 'Entre no Leve');
+    box.replaceChildren(
+      title,
+      h('p.auth-sub', 'Seu diário de calorias, peso e líquidos, igual no celular e no computador.'),
+      authForm({
+        mode: m,
+        onMode: x => { title.textContent = x === 'criar' ? 'Crie a sua conta' : 'Entre no Leve'; },
+        onSuccess: async () => { await afterLogin({ quiet: true }); onEnter(); },
+        onRecover: email => recoverSheet(email),
+        onConfirm: email => box.replaceChildren(
+          h('h1.auth-title', 'Confirme o seu e-mail'),
+          h('p.auth-sub', `Enviamos um link para ${email}. Abra o e-mail, de preferência neste aparelho, e toque no link para ativar a conta. Se não encontrar, veja a caixa de spam.`),
+          h('button.btn.primary.block', { type: 'button', onclick: () => showForm('entrar') }, 'Já confirmei, quero entrar')),
+      }),
+      h('div.auth-alt',
+        h('button.link', { type: 'button', onclick: () => { try { localStorage.setItem(LOCAL_MODE, '1'); } catch { /* bloqueado */ } onEnter(); } }, 'Usar sem conta, só neste aparelho')));
+    box.querySelector('input')?.focus({ preventScroll: true });
+  }
+  root.replaceChildren(h('div.auth-screen',
+    h('header.auth-top',
+      h('a.auth-brand', { href: '../', 'aria-label': 'Voltar ao site do Leve' }, h('span.brand-mark', { 'aria-hidden': 'true' }), h('span', 'Leve')),
+      h('a.link.auth-back', { href: '../' }, 'Voltar ao site')),
+    h('main.auth-main', box),
+    h('p.auth-foot', 'O Leve não substitui médico ou nutricionista.')));
+  showForm();
 }
 
 export function recoverSheet(prefill = '') {
@@ -181,7 +226,7 @@ export function lockScreen(root, onUnlock) {
       h('h1', 'Leve'),
       h('p.lock-sub', 'Seus dados estão protegidos.'),
       btn, msg,
-      h('button.link', { type: 'button', onclick: () => { bio.disable(); auth.forget(); loginSheet({ onDone: onUnlock }); } }, 'Usar e-mail e senha'))));
+      h('button.link', { type: 'button', onclick: () => { bio.disable(); auth.forget(); authScreen(root, { mode: 'entrar', onEnter: onUnlock }); } }, 'Usar e-mail e senha'))));
   btn.focus();
 }
 
@@ -255,7 +300,9 @@ export function logoutSheet() {
     bio.disable();
     await auth.signOut();
     sheet.close();
-    if (erase) await wipe(); else toast('Você saiu da conta');
+    if (erase) await wipe();
+    // Volta para a tela de login.
+    location.replace(location.pathname);
   }
 }
 

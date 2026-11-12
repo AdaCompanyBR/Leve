@@ -180,6 +180,11 @@ export function weekDetail(drinks, legacy, goalFor, today, selected = today) {
 // ---------------------------------------------------------------------------
 // Atalhos: as combinações de bebida e volume mais usadas nos últimos 30 dias.
 
+/** Bebidas pré-definidas de quem ainda não cadastrou as suas. */
+export const DEFAULT_PRESETS = [
+  { id: 'p-agua-250', type: 'agua', ml: 250 }, { id: 'p-agua-500', type: 'agua', ml: 500 }, { id: 'p-cafe-150', type: 'cafe', ml: 150 },
+  { id: 'p-cha-200', type: 'cha', ml: 200 }, { id: 'p-suco-300', type: 'suco', ml: 300 }, { id: 'p-leite-200', type: 'leite', ml: 200 },
+];
 export const DEFAULT_SHORTCUTS = [{ type: 'agua', ml: 250 }, { type: 'agua', ml: 500 }, { type: 'cafe', ml: 150 }, { type: 'cha', ml: 200 }];
 export function shortcuts(drinks, today, n = 4) {
   const since = addDays(today, -30);

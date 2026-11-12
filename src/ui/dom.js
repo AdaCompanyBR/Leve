@@ -25,6 +25,7 @@ export function svg(markup, cls = 'icon') {
 
 // Ícones próprios no espírito dos SF Symbols: caixa de 24, traço de 1,75, pontas arredondadas.
 export const ICONS = {
+  list: '<path d="M9 7h10.5M9 12h10.5M9 17h10.5"/><path d="M4.6 7h.01M4.6 12h.01M4.6 17h.01" stroke-width="2.6"/>',
   mic: '<rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.75 11.5a6.25 6.25 0 0 0 12.5 0M12 17.75V21"/>',
   delete: '<path d="M9 5.5h10.5a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5H9l-6-6.5z"/><path d="m12 9.5 5 5M17 9.5l-5 5"/>',
   today: '<circle cx="12" cy="12" r="8.25" opacity=".35"/><path d="M12 3.75a8.25 8.25 0 1 1-7.4 4.6" stroke-width="2.4"/>',

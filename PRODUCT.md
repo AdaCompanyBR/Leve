@@ -9,7 +9,7 @@ Responder, em poucos segundos, três perguntas: quanto ainda posso comer hoje, e
 ## Telas
 1. **Hoje.** Anel de calorias, macros, refeições, água, "O que cabe?". Setas levam a dias anteriores.
 2. **Registrar.** Um campo só. Com número ou mais de um item, vira frase; sem isso, é busca. Abaixo: recentes, favoritos e modelos.
-3. **Líquidos.** O corpo enche com as bebidas do dia, em camadas coloridas na ordem em que foram tomadas; total, meta, porcentagem e quanto falta. Menu do + com atalhos aprendidos, outra bebida (valor exato, tipo, data, horário) e registro por voz; tamanhos rápidos; registros editáveis com apagar e desfazer; semana em copos com detalhe por dia e resumo (média, total, dias na meta, maior consumo); meta diária com sugestão (35 ml por kg, mais rotina e clima). Mudar a meta vale a partir de hoje: os dias anteriores mantêm a meta que tinham.
+3. **Líquidos.** O corpo enche com as bebidas do dia, em camadas coloridas na ordem em que foram tomadas; total, meta, porcentagem e quanto falta. Botão + no centro com as bebidas pré-definidas e suas quantidades, outra bebida (valor exato, tipo, data, horário) e registro por voz; ao lado, a tela para cadastrar as bebidas pré-definidas (tipo, quantidade e nome); registros editáveis com apagar e desfazer; semana em copos com detalhe por dia e resumo (média, total, dias na meta, maior consumo); meta diária com sugestão (35 ml por kg, mais rotina e clima). Mudar a meta vale a partir de hoje: os dias anteriores mantêm a meta que tinham.
 4. **Progresso.** Peso real e tendência, projeção, "e se", saldo da semana, gasto adaptativo, pesagens.
 5. **Ajustes.** Plano, dados, meta, tema, backup, aviso de saúde.
 

@@ -90,7 +90,7 @@ O resultado deve transmitir o mesmo cuidado dos apps nativos da Apple: precisão
 ### Decisões
 - **Tema:** segue o aparelho (claro ou escuro), e a pessoa pode fixar um em Ajustes.
 - **Destaque:** azul do sistema. Verde, vermelho e laranja só para sucesso, erro e alerta.
-- **Navegação no celular:** 4 abas (Hoje, Líquidos, Progresso, Ajustes) numa barra de vidro, e um botão **+** flutuante para registrar comida (na aba Líquidos, ele abre o menu de bebidas).
+- **Navegação no celular:** 4 abas (Hoje, Líquidos, Progresso, Ajustes) numa barra de vidro, e um botão **+** flutuante para registrar comida. A aba Líquidos não usa o flutuante: tem o seu próprio **+** no centro, sob o corpo, com um botão de lista ao lado.
 - **Navegação no computador:** sidebar de vidro, em grupos, que pode ser recolhida (a escolha fica guardada).
 - **Landing:** usa o mesmo sistema.
 

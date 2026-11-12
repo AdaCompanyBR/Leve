@@ -4,7 +4,7 @@
 // cabelo próprios, com a mesma espessura de linha e o mesmo acabamento.
 //
 // Coordenadas num quadro de 240 × 600. Cada parte é { d, kind, fill? }:
-//   kind: skin | cloth | shoe | hair | line (traço de detalhe) | shade (sombra) | cut (recorte da mão)
+//   kind: skin | cloth | shoe | hair | line (traço de detalhe) | shade (sombra) | cut e edge (área e contorno da mão)
 //   fill: true quando a parte entra na área que o líquido preenche.
 
 export const W = 240, H = 600, TOP = 12, BOTTOM = 590;
@@ -34,30 +34,40 @@ const line = (...ds) => ds.map(d => ({ d, kind: 'line' }));
 const both = (...ds) => ds.flatMap(d => [d, mirror(d)]);
 
 // ---------------------------------------------------------------------------
-// Mão: vista pelo dorso, relaxada ao lado da coxa, com os cinco dedos lado a lado. Um único
-// contorno em curvas: palma que alarga a partir do punho, mínimo, anelar, médio (o mais longo)
-// e indicador com reentrâncias entre eles, e o polegar saindo em diagonal da lateral da palma,
-// voltado para o corpo. Desenhada num sistema local (punho no centro, dedos para baixo, corpo
-// para a direita) e levada para o lugar de cada figura com escala.
+// Mão: desenhada à parte, numa prancha maior (punho de 26 de largura no topo, dedos para baixo,
+// corpo para a direita), e depois levada para cada figura com escala e uma leve inclinação.
+// Vista pelo dorso, relaxada: a palma alarga a partir do punho; mínimo, anelar, médio (o mais
+// longo) e indicador afinam até a ponta e ficam juntos, cada um com a sua ponta; o polegar
+// nasce da lateral da palma, com a base larga, e desce em diagonal. O contorno é um só: a
+// separação entre dois dedos é o próprio contorno que sobe até a base deles e volta pelo mesmo
+// caminho, então o traço tem a mesma espessura em toda a mão, sem linhas duplicadas.
 
-const place = (d, cx, cy, k) => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${r(cx + parseFloat(x) * k)} ${r(cy + parseFloat(y) * k)}`);
+const slit = (x1, y1, c1x, c1y, c2x, c2y, x2, y2) => ` C${c1x} ${c1y} ${c2x} ${c2y} ${x2} ${y2} C${c2x} ${c2y} ${c1x} ${c1y} ${x1} ${y1}`;
 const HAND = {
-  outline: ' C-5.2 4 -8.4 8.5 -8.8 15' // borda de fora da palma
-    + ' C-9.2 20 -9 25 -7.8 29 C-7.2 31.6 -4.7 31.4 -4.6 27.5' // mínimo
-    + ' C-4.6 30.5 -4.2 33 -3.6 35 C-3 37.8 -0.3 37.4 -0.2 33' // anelar
-    + ' C-0.1 35 0.4 36.6 1 37.8 C1.8 40.6 4.8 40 4.6 33' // médio
-    + ' C4.9 34 5.4 35 5.9 35.6 C6.9 37.6 9.8 36.8 9.6 34 C9.3 28 9 21 8.6 15.5' // indicador
-    + ' C10 17.5 11.6 21 12.6 24.6 C13.4 27.4 16.2 26.8 16 24 C15.6 18.5 13 11 9.4 6.4 C7.8 4.2 6.4 2 5.5 0', // polegar
-  // Traços finos: a separação entre os dedos, até os nós.
-  lines: ['M-4.6 27.5 C-4.9 24.5 -5.1 21.5 -5.1 18.5', 'M-0.2 33 C-0.5 28.5 -0.6 23.5 -0.5 19', 'M4.6 33 C4.5 28.5 4.3 23.5 4.2 19'],
+  outline: ' C-13.6 9 -19.4 20 -21 33 C-21.5 37 -21.4 41 -21.2 45' // borda de fora da palma
+    + ' C-21.2 60 -20.8 70 -19.4 77.5 C-18.6 81.5 -14.6 82.2 -13.4 78.6' // mínimo
+    + slit(-13.4, 78.6, -13.2, 70, -12.8, 60, -12.4, 50)
+    + ' C-13.4 84 -12.6 90 -11 94 C-9.8 97.6 -5 97.8 -4.2 94' // anelar
+    + slit(-4.2, 94, -3.8, 82, -3, 67, -2.4, 53)
+    + ' C-4.2 97 -3.6 100 -2.8 102 C-1.4 105.6 3.6 105.4 4.4 101.6 C4.9 99 5.3 96 5.5 93' // médio
+    + slit(5.5, 93, 6, 82, 7, 67, 7.4, 53)
+    + ' C6 96.6 11.4 97 12.6 93 C14.2 82 16 68 16.4 56' // indicador
+    + ' C16.6 51 17.6 47 19.8 47 C21.8 47 23.2 51 24.8 57 C26.2 62.5 27 68 27.6 73' // vão e lado de dentro do polegar
+    + ' C28.4 77.6 34.2 77.2 34.4 72.4 C34.6 64 32.5 54 28.6 44 C25.5 36 20 26 16.5 16 C14.8 10.5 13.6 5 13 0', // polegar e sua base
 };
-/** Mão esquerda de quem olha, com o punho em (cx, cy). */
+const TILT = -5 * Math.PI / 180, COS = Math.cos(TILT), SIN = Math.sin(TILT);
+const place = (d, cx, cy, k) => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => {
+  const px = parseFloat(x), py = parseFloat(y);
+  return `${r(cx + k * (px * COS - py * SIN))} ${r(cy + k * (px * SIN + py * COS))}`;
+});
+/** Mão esquerda de quem olha, com o centro do punho em (cx, cy). */
 const hand = (cx, cy, k) => ({
-  outer: `${r(cx - 5.5 * k)} ${cy}`,
+  outer: place('-13 0', cx, cy, k),
   outline: place(HAND.outline, cx, cy, k),
-  lines: HAND.lines.map(d => place(d, cx, cy, k)),
-  // A mão fechada no punho: recorta o véu das roupas e os traços que passariam por cima dela.
-  cut: `M${r(cx - 5.5 * k)} ${cy}${place(HAND.outline, cx, cy, k)} Z`,
+  // A mão fechada no punho: a área da camada própria das mãos.
+  cut: `M${place('-13 0', cx, cy, k)}${place(HAND.outline, cx, cy, k)} Z`,
+  // O mesmo contorno, aberto no punho, para o traço.
+  edge: `M${place('-13 0', cx, cy, k)}${place(HAND.outline, cx, cy, k)}`,
 });
 
 // ---------------------------------------------------------------------------
@@ -70,7 +80,7 @@ F.head = sym([C, 18], [[104, 18, 95, 31, 95, 49], [95, 65, 99, 77, 106, 85], [11
 F.neck = sym([C, 80], [[111, 80], [111, 90, 111, 98, 110, 103], [108, 108, 104, 111, 99, 114], [C, 114]]);
 F.torso = sym([C, 116], [[113, 116, 108.5, 112, 107.5, 105], [97, 108, 83, 112, 73, 117], [70, 130, 74, 142, 79, 152], [82, 180, 86, 206, 87.5, 234], [88, 252], [C, 252]]);
 F.sleeve = 'M75 115 C64 119 58 129 56.5 143 C55.5 153 55.5 163 56 171 C64 175 74 177 84.5 176 C83.5 166 82 156 80 146 C78 132 77 122 75 115 Z';
-F.hand = hand(68.6, 313.5, 1.2);
+F.hand = hand(68.6, 313.5, 0.46);
 F.arm = `M60 152 C57.5 176 56 198 56.5 222 C57 232 57.5 238 58.5 245 C59 266 60.5 290 ${F.hand.outer}${F.hand.outline} C73.5 292 73 266 73.5 246 C73.5 222 75 196 78 160 Z`;
 F.shorts = sym([C, 240], [[87.5, 240], [83, 258, 78.5, 273, 76.5, 290], [75.5, 303, 75, 313, 75, 324], [86, 328, 104, 327, 117, 321], [118, 312, 119, 306, C, 300]]);
 F.leg = 'M78 302 C77.5 338 80.5 377 86.5 408 C85.5 424 82.5 440 83.5 457 C84.5 481 90 507 94 530 L109.5 530 C110.5 507 112.5 483 113.5 459 C114.5 441 112.5 425 112.5 411 C114.5 381 117 343 119 306 Z';
@@ -88,11 +98,12 @@ const female = [
   { d: F.neck, kind: 'skin', fill: true },
   { d: F.torso, kind: 'cloth', fill: true },
   { d: F.shorts, kind: 'cloth', fill: true },
+  ...both('M75 324 C86 328 104 327 117 321 C117 327 104 333 77 331 Z').map(d => ({ d, kind: 'shade' })),
   ...pair(F.arm, 'skin'),
   ...pair(F.sleeve, 'cloth'),
   { d: F.head, kind: 'skin', fill: true },
   // Sombras: sob a manga, nas laterais da camiseta, sob o shorts e no pescoço.
-  ...both('M56 171 C64 175 74 177 84.5 176 C83 184 74 186 59 183 Z', 'M79 152 C82 180 86 206 87.5 234 L94 234 C92 206 89 178 85 154 Z', 'M75 324 C86 328 104 327 117 321 C117 327 104 333 77 331 Z').map(d => ({ d, kind: 'shade' })),
+  ...both('M56 171 C64 175 74 177 84.5 176 C83 184 74 186 59 183 Z', 'M79 152 C82 180 86 206 87.5 234 L94 234 C92 206 89 178 85 154 Z').map(d => ({ d, kind: 'shade' })),
   ...line(
     'M107.5 105 C111 116 129 116 132.5 105', 'M104.5 107 C109 121 131 121 135.5 107', // gola
     ...both('M56 164 C64 168 74 170 83.5 169'), // barra da manga
@@ -103,7 +114,7 @@ const female = [
     ...both('M93 402 C97 406 102 406.5 106 403.5',  'M96.5 541 L107 541', 'M95.5 547 L108 547', 'M88.5 560 C95 556.5 108 556.5 114.5 560', 'M86.5 573 C92 579 110 579 116 573', 'M94 533 C99 536.5 105.5 536.5 109.5 533'), // joelho, polegar, dedo, sola, gola do tênis
   ),
 ];
-female.push(...both(F.hand.cut).map(d => ({ d, kind: 'cut' })), ...both(...F.hand.lines).map(d => ({ d, kind: 'line', top: true })));
+female.push(...both(F.hand.cut).map(d => ({ d, kind: 'cut' })), ...both(F.hand.edge).map(d => ({ d, kind: 'edge' })));
 const femaleTop = [
   { d: F.hairLeft, kind: 'hair' },
   { d: F.hairFront, kind: 'hair' },
@@ -121,7 +132,7 @@ M.ear = 'M95 50 C89.5 48.5 88 56 90 62.5 C91.5 67 94 68 96 66 Z';
 M.neck = sym([C, 82], [[108.5, 82], [108.5, 92, 108, 100, 107, 105], [104, 111, 99, 115, 94, 117], [C, 117]]);
 M.torso = sym([C, 117], [[113, 117, 108, 113, 107, 107], [96, 109, 80, 113, 66, 119], [63.5, 131, 66, 145, 70, 157], [71, 191, 72, 231, 72, 264], [90, 268, 108, 268.5, C, 268.5]]);
 M.sleeve = 'M68 117 C58 121 52 133 50.5 149 C49.5 161 49.5 171 50 181 C58 185 68 187 78.5 185 C77.5 175 75 165 72.5 153 C71 137 70 127 68 117 Z';
-M.hand = hand(62.6, 323.5, 1.3);
+M.hand = hand(62.6, 323.5, 0.5);
 M.arm = `M54 162 C51 188 49.5 212 49.5 236 C49.5 244 50 250 51 256 C52.5 278 54 302 ${M.hand.outer}${M.hand.outline} C67.5 296 66.5 270 66.5 250 C66.5 226 68 202 70.5 178 Z`;
 M.shorts = sym([C, 254], [[74, 254], [73.5, 280, 74, 302, 75, 322], [75.5, 334, 76, 344, 77, 354], [90, 357, 106, 357, 117.5, 352], [118.5, 332, 119.5, 318, C, 309]]);
 M.leg = 'M78.5 332 C78.5 367 82 399 87.5 425 C86.5 441 83.5 456 84.5 471 C85.5 494 90 514 94 532 L110.5 532 C111.5 510 114.5 488 115.5 467 C116.5 447 114.5 433 113.5 425 C115.5 393 117.5 361 119 334 Z';
@@ -149,7 +160,7 @@ const male = [
     ...both('M92 57 C91 59 91.5 62 93 63.5'), // orelha
   ),
 ];
-male.push(...both(M.hand.cut).map(d => ({ d, kind: 'cut' })), ...both(...M.hand.lines).map(d => ({ d, kind: 'line', top: true })));
+male.push(...both(M.hand.cut).map(d => ({ d, kind: 'cut' })), ...both(M.hand.edge).map(d => ({ d, kind: 'edge' })));
 const maleTop = [
   { d: M.hair, kind: 'hair' },
   ...line('M110 17 C114 21 117 25 118.5 30', 'M127 15 C134 18 140 23 143.5 30', 'M100 22 C98 27 96.5 33 96 39').map(p => ({ ...p, kind: 'strand' })),

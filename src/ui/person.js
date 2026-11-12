@@ -4,7 +4,7 @@
 // cabelo próprios, com a mesma espessura de linha e o mesmo acabamento.
 //
 // Coordenadas num quadro de 240 × 600. Cada parte é { d, kind, fill? }:
-//   kind: skin | cloth | shoe | hair | line (traço de detalhe) | shade (sombra)
+//   kind: skin | cloth | shoe | hair | line (traço de detalhe) | shade (sombra) | cut (recorte da mão)
 //   fill: true quando a parte entra na área que o líquido preenche.
 
 export const W = 240, H = 600, TOP = 12, BOTTOM = 590;
@@ -34,30 +34,30 @@ const line = (...ds) => ds.map(d => ({ d, kind: 'line' }));
 const both = (...ds) => ds.flatMap(d => [d, mirror(d)]);
 
 // ---------------------------------------------------------------------------
-// Mão: vista pelo lado do polegar, com a palma voltada para a coxa, como num braço solto.
-// Cada dedo é uma forma própria, levemente curvada; ficam em degraus atrás do indicador e o
-// polegar vem na frente. Desenhada num sistema local (punho no centro, dedos para baixo) e
-// levada para o lugar de cada figura com escala.
+// Mão: vista pelo dorso, relaxada ao lado da coxa, com os cinco dedos lado a lado. Um único
+// contorno em curvas: palma que alarga a partir do punho, mínimo, anelar, médio (o mais longo)
+// e indicador com reentrâncias entre eles, e o polegar saindo em diagonal da lateral da palma,
+// voltado para o corpo. Desenhada num sistema local (punho no centro, dedos para baixo, corpo
+// para a direita) e levada para o lugar de cada figura com escala.
 
 const place = (d, cx, cy, k) => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${r(cx + parseFloat(x) * k)} ${r(cy + parseFloat(y) * k)}`);
 const HAND = {
-  palm: ' C-7.2 5 -8.2 11 -7.8 17 C-5 21.5 4 21.8 7.2 18 C7.4 11.5 6.8 5 5.5 0',
-  fingers: [
-    'M-7.2 15 C-8 20 -7.6 25.5 -5.6 29.6 C-4.2 32.6 -0.6 31.6 -1.2 28.4 C-1.9 24 -2.4 19.5 -2.2 15 Z', // mínimo
-    'M-5.6 16 C-6.2 22.5 -5.2 29.5 -2.6 34.6 C-1 37.8 2.8 36.6 2.2 33.2 C1.4 27.5 0.4 21.5 0.4 16 Z', // anelar
-    'M-3.2 16.5 C-3.4 24 -2 31.8 0.8 37.4 C2.4 40.6 6.4 39.4 5.8 35.8 C4.8 29.5 3.6 22.5 3.4 16.5 Z', // médio
-    'M0 16 C0.2 23 1.8 29.8 4.6 35 C6.2 38 10 36.8 9.4 33.4 C8.4 27.5 7.2 21.5 7 16 Z', // indicador
-  ],
-  thumb: 'M5.4 0.5 C8.6 4 10.8 8.5 11.2 13.5 C11.6 18.5 11.4 23 9.8 25.4 C8.2 27.6 5.4 26.4 5.2 23.2 C5 19.5 4.6 15 4.6 11 C4.6 7.5 4.9 3.8 5.4 0.5 Z',
-  lines: ['M2.9 27 C4.3 26.3 6.3 26.5 7.9 27.6', 'M6.6 21.8 C7.5 23.2 9 23.2 9.9 21.9'],
+  outline: ' C-5.2 4 -8.4 8.5 -8.8 15' // borda de fora da palma
+    + ' C-9.2 20 -9 25 -7.8 29 C-7.2 31.6 -4.7 31.4 -4.6 27.5' // mínimo
+    + ' C-4.6 30.5 -4.2 33 -3.6 35 C-3 37.8 -0.3 37.4 -0.2 33' // anelar
+    + ' C-0.1 35 0.4 36.6 1 37.8 C1.8 40.6 4.8 40 4.6 33' // médio
+    + ' C4.9 34 5.4 35 5.9 35.6 C6.9 37.6 9.8 36.8 9.6 34 C9.3 28 9 21 8.6 15.5' // indicador
+    + ' C10 17.5 11.6 21 12.6 24.6 C13.4 27.4 16.2 26.8 16 24 C15.6 18.5 13 11 9.4 6.4 C7.8 4.2 6.4 2 5.5 0', // polegar
+  // Traços finos: a separação entre os dedos, até os nós.
+  lines: ['M-4.6 27.5 C-4.9 24.5 -5.1 21.5 -5.1 18.5', 'M-0.2 33 C-0.5 28.5 -0.6 23.5 -0.5 19', 'M4.6 33 C4.5 28.5 4.3 23.5 4.2 19'],
 };
 /** Mão esquerda de quem olha, com o punho em (cx, cy). */
 const hand = (cx, cy, k) => ({
   outer: `${r(cx - 5.5 * k)} ${cy}`,
-  palm: place(HAND.palm, cx, cy, k),
-  fingers: HAND.fingers.map(d => place(d, cx, cy, k)),
-  thumb: place(HAND.thumb, cx, cy, k),
+  outline: place(HAND.outline, cx, cy, k),
   lines: HAND.lines.map(d => place(d, cx, cy, k)),
+  // A mão fechada no punho: recorta o véu das roupas e os traços que passariam por cima dela.
+  cut: `M${r(cx - 5.5 * k)} ${cy}${place(HAND.outline, cx, cy, k)} Z`,
 });
 
 // ---------------------------------------------------------------------------
@@ -70,8 +70,8 @@ F.head = sym([C, 18], [[104, 18, 95, 31, 95, 49], [95, 65, 99, 77, 106, 85], [11
 F.neck = sym([C, 80], [[111, 80], [111, 90, 111, 98, 110, 103], [108, 108, 104, 111, 99, 114], [C, 114]]);
 F.torso = sym([C, 116], [[113, 116, 108.5, 112, 107.5, 105], [97, 108, 83, 112, 73, 117], [70, 130, 74, 142, 79, 152], [82, 180, 86, 206, 87.5, 234], [88, 252], [C, 252]]);
 F.sleeve = 'M75 115 C64 119 58 129 56.5 143 C55.5 153 55.5 163 56 171 C64 175 74 177 84.5 176 C83.5 166 82 156 80 146 C78 132 77 122 75 115 Z';
-F.hand = hand(68.6, 313.5, 1.12);
-F.arm = `M60 152 C57.5 176 56 198 56.5 222 C57 232 57.5 238 58.5 245 C59 266 60.5 290 ${F.hand.outer}${F.hand.palm} C73.5 292 73 266 73.5 246 C73.5 222 75 196 78 160 Z`;
+F.hand = hand(68.6, 313.5, 1.2);
+F.arm = `M60 152 C57.5 176 56 198 56.5 222 C57 232 57.5 238 58.5 245 C59 266 60.5 290 ${F.hand.outer}${F.hand.outline} C73.5 292 73 266 73.5 246 C73.5 222 75 196 78 160 Z`;
 F.shorts = sym([C, 240], [[87.5, 240], [83, 258, 78.5, 273, 76.5, 290], [75.5, 303, 75, 313, 75, 324], [86, 328, 104, 327, 117, 321], [118, 312, 119, 306, C, 300]]);
 F.leg = 'M78 302 C77.5 338 80.5 377 86.5 408 C85.5 424 82.5 440 83.5 457 C84.5 481 90 507 94 530 L109.5 530 C110.5 507 112.5 483 113.5 459 C114.5 441 112.5 425 112.5 411 C114.5 381 117 343 119 306 Z';
 F.shoe = 'M93.5 524 C90 540 86 555 86 569 C86 580 92 586 101 586 C110 586 116.5 581 116.5 571 C116.5 556 112.5 540 110 524 Z';
@@ -88,9 +88,7 @@ const female = [
   { d: F.neck, kind: 'skin', fill: true },
   { d: F.torso, kind: 'cloth', fill: true },
   { d: F.shorts, kind: 'cloth', fill: true },
-  ...F.hand.fingers.flatMap(d => pair(d, 'skin')),
   ...pair(F.arm, 'skin'),
-  ...pair(F.hand.thumb, 'skin'),
   ...pair(F.sleeve, 'cloth'),
   { d: F.head, kind: 'skin', fill: true },
   // Sombras: sob a manga, nas laterais da camiseta, sob o shorts e no pescoço.
@@ -102,9 +100,10 @@ const female = [
     'M87 252.5 C100 254.5 140 254.5 153 252.5', // cós
     ...both('M93 240 L93 253', 'M88 257 C94.5 259 99 264 100.5 272', 'M75.3 315 C87 319 104 318 117.5 312'), // passantes, bolsos, barra dobrada
     'M124 253 C124.5 270 124 283 120 293', // braguilha
-    ...both('M93 402 C97 406 102 406.5 106 403.5', ...F.hand.lines, 'M96.5 541 L107 541', 'M95.5 547 L108 547', 'M88.5 560 C95 556.5 108 556.5 114.5 560', 'M86.5 573 C92 579 110 579 116 573', 'M94 533 C99 536.5 105.5 536.5 109.5 533'), // joelho, polegar, dedo, sola, gola do tênis
+    ...both('M93 402 C97 406 102 406.5 106 403.5',  'M96.5 541 L107 541', 'M95.5 547 L108 547', 'M88.5 560 C95 556.5 108 556.5 114.5 560', 'M86.5 573 C92 579 110 579 116 573', 'M94 533 C99 536.5 105.5 536.5 109.5 533'), // joelho, polegar, dedo, sola, gola do tênis
   ),
 ];
+female.push(...both(F.hand.cut).map(d => ({ d, kind: 'cut' })), ...both(...F.hand.lines).map(d => ({ d, kind: 'line', top: true })));
 const femaleTop = [
   { d: F.hairLeft, kind: 'hair' },
   { d: F.hairFront, kind: 'hair' },
@@ -122,8 +121,8 @@ M.ear = 'M95 50 C89.5 48.5 88 56 90 62.5 C91.5 67 94 68 96 66 Z';
 M.neck = sym([C, 82], [[108.5, 82], [108.5, 92, 108, 100, 107, 105], [104, 111, 99, 115, 94, 117], [C, 117]]);
 M.torso = sym([C, 117], [[113, 117, 108, 113, 107, 107], [96, 109, 80, 113, 66, 119], [63.5, 131, 66, 145, 70, 157], [71, 191, 72, 231, 72, 264], [90, 268, 108, 268.5, C, 268.5]]);
 M.sleeve = 'M68 117 C58 121 52 133 50.5 149 C49.5 161 49.5 171 50 181 C58 185 68 187 78.5 185 C77.5 175 75 165 72.5 153 C71 137 70 127 68 117 Z';
-M.hand = hand(62.6, 323.5, 1.25);
-M.arm = `M54 162 C51 188 49.5 212 49.5 236 C49.5 244 50 250 51 256 C52.5 278 54 302 ${M.hand.outer}${M.hand.palm} C67.5 296 66.5 270 66.5 250 C66.5 226 68 202 70.5 178 Z`;
+M.hand = hand(62.6, 323.5, 1.3);
+M.arm = `M54 162 C51 188 49.5 212 49.5 236 C49.5 244 50 250 51 256 C52.5 278 54 302 ${M.hand.outer}${M.hand.outline} C67.5 296 66.5 270 66.5 250 C66.5 226 68 202 70.5 178 Z`;
 M.shorts = sym([C, 254], [[74, 254], [73.5, 280, 74, 302, 75, 322], [75.5, 334, 76, 344, 77, 354], [90, 357, 106, 357, 117.5, 352], [118.5, 332, 119.5, 318, C, 309]]);
 M.leg = 'M78.5 332 C78.5 367 82 399 87.5 425 C86.5 441 83.5 456 84.5 471 C85.5 494 90 514 94 532 L110.5 532 C111.5 510 114.5 488 115.5 467 C116.5 447 114.5 433 113.5 425 C115.5 393 117.5 361 119 334 Z';
 M.shoe = 'M93 526 C89 542 84 557 84 571 C84 582 91 588 101 588 C111 588 118 582 118 572 C118 558 114 542 111.5 526 Z';
@@ -135,9 +134,7 @@ const male = [
   ...pair(M.shoe, 'shoe'),
   { d: M.neck, kind: 'skin', fill: true },
   { d: M.shorts, kind: 'cloth', fill: true },
-  ...M.hand.fingers.flatMap(d => pair(d, 'skin')),
   ...pair(M.arm, 'skin'),
-  ...pair(M.hand.thumb, 'skin'),
   { d: M.torso, kind: 'cloth', fill: true },
   ...pair(M.sleeve, 'cloth'),
   ...pair(M.ear, 'skin'),
@@ -147,11 +144,12 @@ const male = [
     'M107 107 C111 118.5 129 118.5 133 107', 'M104 109 C109 123 131 123 136 109', // gola
     ...both('M50 173 C58 177 68 179 77.5 178'), // barra da manga
     'M98 190 C102 210 104 232 102 258', 'M143 196 C139 216 137 238 139 260', 'M72.5 256 C90 260 150 260 167.5 256', // dobras e barra da camiseta
-    ...both('M76.2 343 C90 347 106 346.5 117.7 341.5', 'M77 276 C82 284 86 292 88 302', 'M92.5 413 C96.5 417 102 417.5 107 414.5', ...M.hand.lines, 'M96 543 L108.5 543', 'M95 549 L109.5 549', 'M86.5 562 C93 558.5 110 558.5 116 562', 'M84.5 575 C92 581 110 581 117.5 575', 'M93.5 535 C99 538.5 105.5 538.5 110.5 535'), // barra, bolso, joelho, polegar, dedo, sola, tênis
+    ...both('M76.2 343 C90 347 106 346.5 117.7 341.5', 'M77 276 C82 284 86 292 88 302', 'M92.5 413 C96.5 417 102 417.5 107 414.5',  'M96 543 L108.5 543', 'M95 549 L109.5 549', 'M86.5 562 C93 558.5 110 558.5 116 562', 'M84.5 575 C92 581 110 581 117.5 575', 'M93.5 535 C99 538.5 105.5 538.5 110.5 535'), // barra, bolso, joelho, polegar, dedo, sola, tênis
     'M120 276 C121 290 121 300 118 309', // costura do shorts
     ...both('M92 57 C91 59 91.5 62 93 63.5'), // orelha
   ),
 ];
+male.push(...both(M.hand.cut).map(d => ({ d, kind: 'cut' })), ...both(...M.hand.lines).map(d => ({ d, kind: 'line', top: true })));
 const maleTop = [
   { d: M.hair, kind: 'hair' },
   ...line('M110 17 C114 21 117 25 118.5 30', 'M127 15 C134 18 140 23 143.5 30', 'M100 22 C98 27 96.5 33 96 39').map(p => ({ ...p, kind: 'strand' })),

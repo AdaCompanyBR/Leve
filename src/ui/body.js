@@ -37,7 +37,11 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
   light.append(el('stop', { offset: '.35', 'stop-color': 'var(--person-shade)', 'stop-opacity': 0 }), el('stop', { offset: '1', 'stop-color': 'var(--person-shade)', 'stop-opacity': '.16' }));
   const hairG = el('linearGradient', { id: id + '-hair', x1: 0, x2: 0, y1: 0, y2: 1 });
   hairG.append(el('stop', { offset: '0', 'stop-color': 'var(--person-hair-hi)' }), el('stop', { offset: '1', 'stop-color': 'var(--person-hair)' }));
-  defs.append(clip, light, hairG);
+  // As mãos ficam à frente das roupas: o véu e os traços das roupas não passam por cima delas.
+  const mask = el('mask', { id: id + '-hands', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: W, height: H });
+  mask.append(el('rect', { x: 0, y: 0, width: W, height: H, fill: '#fff' }));
+  for (const p of person.base) if (p.kind === 'cut') mask.append(el('path', { d: p.d, fill: '#000' }));
+  defs.append(clip, light, hairG, mask);
   svg.append(defs);
 
   const paint = (parts, g) => {
@@ -48,7 +52,7 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
     }
     return g;
   };
-  const figure = paint(person.base.filter(p => p.kind !== 'line'), el('g', { class: 'person' }));
+  const figure = paint(person.base.filter(p => p.kind !== 'line' && p.kind !== 'cut'), el('g', { class: 'person' }));
   figure.append(el('rect', { x: 0, y: 0, width: W, height: H, fill: `url(#${id}-light)`, 'clip-path': `url(#${id}-clip)` }));
 
   // Líquido: camadas, superfície e bolhas, tudo dentro do contorno.
@@ -61,10 +65,11 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
   const bubbles = el('g', { class: 'body-bubbles' });
   liquid.append(mix, surface, bubbles);
   // Por cima do líquido: um véu claro nas roupas (para separá-las da pele) e os traços de detalhe.
-  const veil = el('g', { class: 'person-veil' });
+  const veil = el('g', { class: 'person-veil', mask: `url(#${id}-hands)` });
   for (const p of person.base) if (p.kind === 'cloth' || p.kind === 'shoe') veil.append(el('path', { d: p.d }));
-  const ink = paint(person.base.filter(p => p.kind === 'line'), el('g', { class: 'person' }));
-  svg.append(figure, liquid, veil, ink, paint(person.top, el('g', { class: 'person-top' })));
+  const ink = paint(person.base.filter(p => p.kind === 'line' && !p.top), el('g', { class: 'person', mask: `url(#${id}-hands)` }));
+  const inkTop = paint(person.base.filter(p => p.kind === 'line' && p.top), el('g', { class: 'person' }));
+  svg.append(figure, liquid, veil, ink, inkTop, paint(person.top, el('g', { class: 'person-top' })));
 
   let topColor = null;
   function waveAt(shown, phase) {

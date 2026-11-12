@@ -6,7 +6,7 @@ import { routinePreview } from './routine.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
 import { saveProfile } from '../store.js';
 import { configured } from '../auth.js';
-import { loginSheet } from './account.js';
+import { goToLogin } from './account.js';
 
 export function onboarding(root) {
   const data = { name: '', goal: null, sex: null, birthDate: '', heightCm: null, weightKg: null, activity: null, pace: null, gainPace: null, meals: null, wake: null };
@@ -70,7 +70,7 @@ export function onboarding(root) {
       body,
       h('p.ob-err', { id: 'ob-err', role: 'alert' }),
       s.auto ? null : h('button.btn.primary.block', { type: 'submit' }, 'Continuar'),
-      step === 0 && configured() ? h('button.link.ob-login', { type: 'button', onclick: () => loginSheet({ mode: 'entrar' }) }, 'Já tenho conta: entrar e trazer meus dados') : null);
+      step === 0 && configured() ? h('button.link.ob-login', { type: 'button', onclick: () => goToLogin('entrar') }, 'Já tenho conta: entrar e trazer meus dados') : null);
     root.replaceChildren(h('div.ob',
       h('header.ob-top',
         step > 0 ? h('button.icon-btn', { 'aria-label': 'Voltar', onclick: back }, icon('back')) : h('span.icon-btn.placeholder'),

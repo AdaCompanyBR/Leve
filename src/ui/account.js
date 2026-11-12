@@ -104,6 +104,13 @@ export function loginSheet({ mode = 'entrar', onDone } = {}) {
   return sheet;
 }
 
+/** Vai para a tela de login de página inteira (de qualquer lugar do app). */
+export function goToLogin(mode = 'entrar') {
+  try { localStorage.removeItem(LOCAL_MODE); } catch { /* bloqueado */ }
+  history.replaceState(null, '', location.pathname + (mode === 'criar' ? '#criar-conta' : '#entrar'));
+  location.reload();
+}
+
 // Quem escolheu "usar sem conta" não vê a tela de login de novo neste aparelho.
 const LOCAL_MODE = 'leve-local-mode';
 export const localMode = () => { try { return localStorage.getItem(LOCAL_MODE) === '1'; } catch { return false; } };
@@ -256,8 +263,8 @@ export function accountCard({ row }) {
     return h('section.card.set-card.account', { 'aria-label': 'Conta' }, h('h3', 'Conta'),
       h('p.card-sub', 'Entre para guardar seus dados na nuvem e usar o Leve no celular e no computador com os mesmos registros.'),
       h('div.data-actions',
-        h('button.btn.primary', { onclick: () => loginSheet({ mode: 'entrar' }) }, 'Entrar'),
-        h('button.btn.tonal', { onclick: () => loginSheet({ mode: 'criar' }) }, 'Criar conta')));
+        h('button.btn.primary', { onclick: () => goToLogin('entrar') }, 'Entrar'),
+        h('button.btn.tonal', { onclick: () => goToLogin('criar') }, 'Criar conta')));
   }
   const st = sync.getStatus();
   const statusEl = h('p.card-sub.sync-status', { role: 'status', 'aria-live': 'polite' }, statusText(st));

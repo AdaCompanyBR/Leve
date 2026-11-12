@@ -13,7 +13,7 @@ import { reload } from './store.js';
 import * as auth from './auth.js';
 import * as bio from './biometric.js';
 import * as sync from './sync.js';
-import { lockScreen, newPasswordSheet, afterLogin, loginSheet, logoutSheet, authScreen, localMode } from './ui/account.js';
+import { lockScreen, newPasswordSheet, afterLogin, logoutSheet, authScreen, localMode, goToLogin } from './ui/account.js';
 
 const root = document.getElementById('app');
 const TABS = [
@@ -47,7 +47,7 @@ function paintAccount(foot) {
       h('button.nav-item.nav-logout', { type: 'button', onclick: logoutSheet }, icon('logout'), h('span', 'Sair')))
     : h('div.nav-account',
       h('p', 'Seus dados estão só neste aparelho.'),
-      h('button.btn.primary.nav-login', { type: 'button', onclick: () => loginSheet({ mode: 'entrar' }) }, icon('settings'), 'Entrar')));
+      h('button.btn.primary.nav-login', { type: 'button', onclick: () => goToLogin('entrar') }, icon('settings'), 'Entrar')));
 }
 
 function render() {
@@ -117,8 +117,7 @@ async function start() {
 addEventListener('hashchange', () => {
   const want = { '#entrar': 'entrar', '#criar-conta': 'criar' }[location.hash];
   if (!want || !auth.configured()) return;
-  history.replaceState(null, '', location.pathname + location.search);
-  if (!auth.current()) loginSheet({ mode: want });
+  if (!auth.current()) goToLogin(want); else history.replaceState(null, '', location.pathname + location.search);
 });
 
 function open() {

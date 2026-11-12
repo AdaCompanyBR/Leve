@@ -1,43 +1,42 @@
 # Leve: direção visual
 
-Referência: os apps Saúde e Fitness da Apple. Superfícies calmas, números grandes, um único ponto de cor.
+Referência: "teatro escuro com hardware luminoso" (estilo das páginas de produto da Apple), enviada pelo dono do projeto. Vale para o app e para a landing (`site/`).
 
 ## Cor
-Uma cor de destaque, íris, usada para progresso e ação. Nada de vermelho ou verde de julgamento.
+Preto como palco, grafite nas superfícies, texto quase branco e **um único azul de ação**. Nada de tinta colorida em fundos.
 
-| Papel | Claro | Escuro |
+| Papel | Escuro (padrão) | Claro |
 | --- | --- | --- |
-| Fundo | `#F3F3F8` | `#000000` |
-| Superfície | `#FFFFFF` | `#17171D` |
-| Superfície 2 | `#ECECF3` | `#24242D` |
-| Texto | `#15151C` | `#F5F5FA` |
-| Texto secundário | `#5E5F6C` | `#A9AAB8` |
-| Destaque | `#5856D6` | `#8E8BFF` |
-| Destaque claro (anel) | `#9A8CFF` | `#C4B8FF` |
+| Fundo | `#000000` | `#F5F5F7` |
+| Superfície (cartões) | `#1D1D1F` | `#FFFFFF` |
+| Superfície 2 (campos, botões secundários) | `#333336` | `#E8E8ED` |
+| Texto | `#F5F5F7` | `#1D1D1F` |
+| Texto secundário | `#A1A1A6` | `#6E6E73` |
+| Ação (botão principal, anel, barras) | `#0071E3` | `#0071E3` |
+| Links e texto em azul | `#2997FF` | `#0066CC` |
 
-Texto e texto secundário passam de AA sobre as superfícies. O tema segue o sistema e pode ser fixado nos Ajustes.
+- O azul `#0071E3` é o único preenchimento colorido. Botões secundários são neutros (`#333336` / `#E8E8ED`).
+- O gradiente prismático (`#0090F7 → #BA62FC → #F2416B → #F55600`) só aparece em "selos": o ícone do app e o selo da landing.
+- Sem sombras e sem gradientes de fundo. A elevação vem do tom (`#1D1D1F` sobre `#000`) e do raio.
 
 ## Tipografia
-Fonte do sistema (`-apple-system`, SF Pro quando houver). Números grandes em `ui-rounded` (SF Pro Rounded nos aparelhos Apple), sempre tabulares. Títulos de tela em 34 px (40 px no desktop), peso 750, entrelinha 1,1.
+Fonte do sistema (SF Pro Display e SF Pro Text nos aparelhos Apple), Inter como substituta. Pesos 400 e 600, nunca acima. Corpo em 17 px com entrelinha 1,47 e −0,022 em. Títulos de tela em 40 px (56 px no computador), peso 600. Títulos de cartão em 21 px. Na landing, títulos de 40 a 80 px com espaçamento negativo.
 
 ## Forma e espaço
-Cartões com raio de 26 px, sem sombra, separados do fundo só pelo tom. Controles com raio de 15 px e altura mínima de 44 px. Espaço de 14 a 20 px entre blocos.
+Cartões com raio de 28 px. Botões e campos em pílula. Botões com texto em peso 400. Espaços de 14 a 28 px entre blocos no app e de 80 a 104 px entre seções na landing.
 
 ## O elemento de assinatura
-O anel de calorias, em canvas. Ele anima com uma mola a cada registro e um brilho percorre devagar o trecho preenchido. Acima de 100%, a segunda volta passa por cima da primeira, na mesma cor. Todo o resto da interface fica quieto para que o anel seja o que se lembra.
+O anel de calorias, agora em azul, sobre o grafite. Ele anima com uma mola a cada registro. Na landing, a tela real do app aparece como o "produto" iluminado no palco preto.
 
 ## Movimento
-- Mola no anel; curva `cubic-bezier(.32,.72,0,1)` em sheets, barras e botões.
-- Um único momento orquestrado: a revelação do plano no fim do onboarding.
-- Gestos: arrastar um item para a esquerda apaga (com "Desfazer"); arrastar a alça fecha a sheet.
-- `prefers-reduced-motion` desliga mola, brilho e transições.
+Mola no anel; curva `cubic-bezier(.32,.72,0,1)` em sheets, barras e botões. `prefers-reduced-motion` desliga tudo.
 
 ## Layout
 - **Celular:** barra de abas inferior translúcida, uma coluna, safe areas respeitadas.
-- **Desktop (960 px ou mais):** barra lateral e grade de duas ou três colunas por tela. Sheets viram diálogos centrados.
+- **Computador (960 px ou mais):** barra lateral e grade de duas ou três colunas. Sheets viram diálogos centrados.
 
 ## Acessibilidade
-Foco visível em tudo, navegação por teclado (inclusive controles segmentados e sheets com foco preso e Esc), rótulos ARIA em ícones, anel e gráficos com descrição em texto, apagar item também disponível por botão.
+Foco visível em azul, navegação por teclado, rótulos ARIA, contraste AA nos textos (o cinza secundário do escuro é `#A1A1A6`, um tom acima do `#86868B` da referência, para passar no AA sobre `#1D1D1F`).
 
 ## Voz
-Frases curtas, sem culpa. Botões dizem o que acontece ("Adicionar ao diário", "Salvar peso"). Erros dizem o que houve e como resolver.
+Frases curtas, sem culpa. Botões dizem o que acontece. Erros dizem o que houve e como resolver.

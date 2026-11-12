@@ -4,253 +4,225 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Leve: diário de calorias, peso e líquidos</title>
-  <meta name="description" content="Diário de calorias, peso e líquidos em português. Registro por frase, alimentos da tabela TACO, trocas mais leves e travas de segurança. Funciona sem internet; com conta, sincroniza e entra com Face ID.">
-  <meta name="theme-color" content="#f2f2f4">
-  <meta name="color-scheme" content="light">
+  <meta name="description" content="Perder peso, ganhar massa, definir ou comer melhor: o Leve monta o plano e a rotina. Registro por frase, alimentos da tabela TACO, líquidos e travas de segurança.">
+  <meta name="theme-color" content="#000000">
+  <meta name="color-scheme" content="dark">
   <meta property="og:title" content="Leve: diário de calorias, peso e líquidos">
-  <meta property="og:description" content="Quanto ainda posso comer hoje, estou no caminho certo, quando chego. Respondido em segundos.">
+  <meta property="og:description" content="Seu objetivo, seu plano e a sua rotina. Respondido em segundos.">
   <meta property="og:type" content="website">
   <meta property="og:locale" content="pt_BR">
   <link rel="icon" href="app/icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="app/icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300..500&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
   <script>
     // Já conectado neste aparelho? A landing troca "Entrar / Criar conta" por "Abrir o Leve".
     try { if (localStorage.getItem('leve-session') || localStorage.getItem('leve-biometric')) document.documentElement.classList.add('logged'); } catch { /* armazenamento bloqueado */ }
   </script>
   <style>
     :root {
-      --ink: #0f1012;
-      --ink-strong: #020201;
-      --canvas: #f2f2f4;
-      --surface: #fdfdfd;
-      --muted: #5e5e5e;
-      --label: #6b6b6b;
-      --blue: #0071e3;        /* contornos */
-      --blue-text: #0066cc;   /* texto pequeno em azul: 5:1 no fundo */
-      --blue-dark: #4da3ff;   /* links no rodapé escuro */
-      --hair: rgba(0, 0, 0, .06);
-      --hair-2: rgba(0, 0, 0, .1);
-      --wash: rgba(12, 13, 15, .05);
-      --font: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --black: #000000;
+      --charcoal: #1d1d1f;
+      --smoke: #333336;
+      --graphite: #424245;
+      --ash: #86868b;
+      --platinum: #cccccc;
+      --silk: #f5f5f7;
+      --white: #ffffff;
+      --blue: #0071e3;          /* único botão colorido */
+      --link: #2997ff;          /* links sobre o preto */
+      --link-light: #0066cc;    /* links sobre o claro */
+      --spectrum: linear-gradient(108deg, #0090f7, #ba62fc 33%, #f2416b 66%, #f55600);
+      --display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', 'Segoe UI', Roboto, sans-serif;
+      --text: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, sans-serif;
       --max: 1200px;
-      --gap: 96px;
-      --pad-card: 69px;
-      --r-card: 54px;
+      --gap: 104px;
+      --r-card: 28px;
       --ease: cubic-bezier(.32, .72, 0, 1);
-      color-scheme: light;
+      color-scheme: dark;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
     body {
-      background: var(--canvas); color: var(--ink);
-      font: 350 16px/1.45 var(--font); letter-spacing: -.02em;
-      font-feature-settings: 'ss01' on, 'cv11' on;
-      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
-      overflow-x: hidden;
+      background: var(--black); color: var(--silk);
+      font: 400 17px/1.47 var(--text); letter-spacing: -.022em;
+      -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: hidden;
     }
     img, svg { display: block; max-width: 100%; }
     a { color: inherit; text-decoration: none; }
     ul, ol { list-style: none; }
-    b, strong { font-weight: 400; color: var(--ink-strong); }
-    :focus-visible { outline: 1.5px solid var(--blue); outline-offset: 3px; border-radius: 8px; }
-    .skip { position: absolute; left: 16px; top: -60px; z-index: 50; padding: 10px 16px; border-radius: 999px; background: var(--surface); border: .5px solid var(--blue); color: var(--blue-text); }
-    .skip:focus { top: 16px; }
-    .wrap { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 24px; }
-
-    /* ---------- Menu flutuante ---------- */
-    .nav {
-      position: fixed; top: 22px; left: 50%; transform: translateX(-50%); z-index: 40;
-      display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 16px;
-      background: rgba(253, 253, 253, .82); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px);
-      border: .5px solid var(--hair); border-radius: 14px; width: max-content; max-width: calc(100vw - 32px);
-    }
-    .brand { display: flex; align-items: center; gap: 9px; margin-right: 12px; min-height: 40px; }
-    .mark { width: 22px; height: 22px; flex: none; }
-    .brand span { font-size: 17px; }
-    .nav-links { display: none; gap: 2px; }
-    .nav-links a { padding: 0 12px; min-height: 40px; display: inline-flex; align-items: center; border-radius: 10px; color: var(--ink); font-size: 15px; transition: background .2s; }
-    .nav-links a:hover { background: var(--wash); }
-    .nav .pill { margin-left: 6px; }
-    .nav-login { display: inline-flex; align-items: center; min-height: 40px; padding: 0 12px; border-radius: 10px; font-size: 15px; margin-left: 6px; transition: background .2s; }
-    .nav-login:hover { background: var(--wash); }
+    b, strong { font-weight: 600; }
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 10px; }
+    .skip { position: absolute; left: 16px; top: -60px; z-index: 60; padding: 10px 18px; border-radius: 999px; background: var(--blue); color: var(--white); }
+    .skip:focus { top: 8px; }
+    .wrap { width: 100%; max-width: var(--max); margin: 0 auto; padding: 0 22px; }
     html.logged .when-out, html:not(.logged) .when-in { display: none !important; }
-    .final-cta { display: flex; flex-wrap: wrap; gap: 10px; }
 
-    /* ---------- Botões e etiquetas ---------- */
-    .pill {
-      display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px;
-      border-radius: 26px; background: var(--wash); color: var(--ink-strong); font-weight: 400; font-size: 15px;
-      transition: background .2s, transform .25s var(--ease);
-    }
-    .pill:hover { background: rgba(12, 13, 15, .09); }
-    .pill:active { transform: scale(.97); }
-    .pill .ic { width: 16px; height: 16px; color: var(--blue); flex: none; }
-    .pill.big { min-height: 52px; padding: 0 26px; font-size: 16px; }
-    .pill.dark { background: var(--ink); color: var(--surface); }
-    .pill.dark:hover { background: #26272b; }
-    .pill.dark .ic { color: var(--blue-dark); }
-    .tag {
-      display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 9999px;
-      border: .5px solid var(--blue); color: var(--blue-text); font-size: 12px; line-height: 1.3; background: transparent;
-    }
-    .link { color: var(--blue-text); border-bottom: .5px solid transparent; transition: border-color .2s; }
-    .link:hover { border-bottom-color: var(--blue); }
+    /* ---------- Navegação: barra fina, opaca ---------- */
+    .nav { position: sticky; top: 0; z-index: 50; height: 48px; background: rgba(22, 22, 23, .8); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+    .nav .wrap { height: 100%; display: flex; align-items: center; gap: 8px; }
+    .brand { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-right: auto; font-size: 17px; color: var(--silk); }
+    .mark { width: 20px; height: 20px; flex: none; }
+    .nav-links { display: none; gap: 4px; margin-right: auto; }
+    .nav-links a, .nav-text { display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; font-size: 12px; letter-spacing: -.01em; color: rgba(204, 204, 204, .8); transition: color .2s; }
+    .nav-links a:hover, .nav-text:hover { color: var(--white); }
+    .nav .btn { min-height: 30px; padding: 0 14px; font-size: 12px; letter-spacing: -.01em; margin-left: 4px; }
+    .promo { background: var(--charcoal); font-size: 14px; color: var(--silk); }
+    .promo .wrap { min-height: 52px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 10px; padding-top: 10px; padding-bottom: 10px; text-align: center; }
+    .promo .new { color: #ff8a3d; }
+
+    /* ---------- Botões e links ---------- */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 22px; border-radius: 9999px; font: 400 17px/1 var(--text); letter-spacing: -.022em; transition: filter .2s, background .2s, transform .25s var(--ease); white-space: nowrap; }
+    .btn:active { transform: scale(.97); }
+    .btn.buy { background: var(--blue); color: var(--white); }
+    .btn.buy:hover { filter: brightness(1.1); }
+    .btn.ghost { color: rgba(255, 255, 255, .8); border: 1px solid rgba(255, 255, 255, .28); }
+    .btn.ghost:hover { color: var(--white); border-color: rgba(255, 255, 255, .5); }
+    .more { color: var(--link); display: inline-flex; align-items: center; gap: 4px; }
+    .more::after { content: '›'; font-size: 1.15em; line-height: 1; transform: translateY(-.02em); transition: transform .2s; }
+    .more:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .more:hover::after { transform: translateX(2px); }
 
     /* ---------- Abertura ---------- */
-    .hero { min-height: 100svh; display: flex; align-items: center; padding: 120px 0 72px; }
-    .hero-grid { display: grid; gap: 40px; align-items: center; }
-    .banner { display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 6px; border-radius: 999px; background: var(--surface); border: .5px solid var(--hair); font-size: 13px; color: var(--muted); }
-    .hero h1 { font-weight: 350; font-size: clamp(40px, 7.4vw, 76px); line-height: 1.04; letter-spacing: -.035em; margin-top: 26px; max-width: 13ch; }
-    .hero h1 span { color: var(--muted); }
-    .hero-sub { font-size: 18px; line-height: 1.45; color: var(--muted); margin-top: 22px; max-width: 34em; }
-    .hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-top: 34px; }
-    .hero-note { font-size: 13px; color: var(--label); margin-top: 18px; }
+    .hero { padding: 72px 0 0; overflow: hidden; }
+    .hero-grid { display: grid; gap: 48px; align-items: center; }
+    .eyebrow { display: flex; align-items: center; gap: 10px; font-size: 17px; color: var(--silk); }
+    .badge { width: 34px; height: 34px; border-radius: 20%; background: var(--spectrum); display: grid; place-items: center; flex: none; }
+    .badge svg { width: 20px; height: 20px; }
+    .hero h1 { font: 600 clamp(48px, 8.2vw, 80px)/1.05 var(--display); letter-spacing: -.015em; margin-top: 18px; max-width: 11ch; }
+    .hero-sub { font: 600 21px/1.24 var(--display); letter-spacing: .011em; color: var(--ash); margin-top: 22px; max-width: 30em; }
+    .hero-sub b { color: var(--silk); font-weight: 600; }
+    .hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 36px; }
+    .hero-note { font-size: 14px; color: var(--ash); margin-top: 20px; }
+    .hero-note a { color: var(--link); }
 
-    .ring-wrap { position: relative; width: min(100%, 520px); margin: 0 auto; aspect-ratio: 1; }
-    .ring { width: 100%; height: 100%; }
-    .ring .track { fill: none; stroke: var(--hair-2); stroke-width: 1; }
-    .ring .inner { fill: none; stroke: var(--hair); stroke-width: 1; }
-    .ring .tick { stroke: rgba(0, 0, 0, .14); stroke-width: 1; }
-    .ring .arc { fill: none; stroke: var(--blue); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 51.5 100; animation: draw 1.6s var(--ease) .2s both; }
-    .ring .dot { fill: var(--surface); stroke: var(--blue); stroke-width: 2; }
-    @keyframes draw { from { stroke-dasharray: 0 100; } }
-    .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-    .ring-num { font-size: clamp(64px, 17vw, 112px); line-height: 1; letter-spacing: -.045em; font-variant-numeric: tabular-nums; }
-    .ring-label { font-size: 15px; color: var(--muted); margin-top: 8px; }
-    .ring-stats { display: flex; gap: 22px; margin-top: 22px; font-size: 13px; color: var(--label); }
-    .ring-stats b { display: block; font-size: 18px; color: var(--ink); font-variant-numeric: tabular-nums; }
-    .ring-caption { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%); font-size: 12px; color: var(--label); white-space: nowrap; }
+    .stage { position: relative; display: flex; justify-content: center; padding-bottom: 40px; }
+    .device { position: relative; width: min(78vw, 340px); border-radius: 56px; padding: 11px; background: #111113; border: 1px solid #2a2a2d; }
+    .device img { width: 100%; height: auto; border-radius: 46px; }
+    .glass {
+      position: absolute; right: 0; bottom: 8px; display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 22px;
+      border-radius: 36px; background: rgba(66, 66, 69, .72); backdrop-filter: blur(20px) saturate(1); -webkit-backdrop-filter: blur(20px) saturate(1);
+      color: rgba(255, 255, 255, .8); font-size: 14px; line-height: 1.3; max-width: calc(100% - 16px);
+    }
+    .glass b { display: block; color: var(--white); font-size: 17px; }
 
     /* ---------- Seções ---------- */
-    section { scroll-margin-top: 90px; }
-    .section { padding: var(--gap) 0 0; }
-    .label { font-size: 13px; color: var(--label); }
-    .h2 { font-weight: 350; font-size: clamp(27px, 3.4vw, 40px); line-height: 1.12; letter-spacing: -.03em; margin-top: 8px; max-width: 18ch; }
-    .lead { font-size: 18px; line-height: 1.45; color: var(--muted); max-width: 32em; }
-    .head-grid { display: grid; gap: 14px 40px; }
-    .card { background: var(--surface); border: .5px solid var(--hair); border-radius: var(--r-card); padding: var(--pad-card); }
-    .h3 { font-weight: 350; font-size: 27px; line-height: 1.2; letter-spacing: -.02em; }
-    .body { color: var(--muted); margin-top: 10px; }
+    section { scroll-margin-top: 64px; }
+    .band { padding: var(--gap) 0; }
+    .band.light { background: var(--silk); color: #1d1d1f; }
+    .band.light .lead, .band.light .body { color: #6e6e73; }
+    .band.light .more { color: var(--link-light); }
+    .band + .band:not(.light):not(.after-light) { padding-top: 0; }
+    .head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px 32px; margin-bottom: 48px; }
+    .h2 { font: 600 clamp(40px, 5.6vw, 56px)/1.07 var(--display); letter-spacing: -.005em; max-width: 16ch; }
+    .lead { font: 600 21px/1.24 var(--display); letter-spacing: .011em; color: var(--ash); max-width: 28em; margin-top: 14px; }
+    .card { background: var(--charcoal); border-radius: var(--r-card); padding: 28px; }
+    .band.light .card { background: var(--white); }
+    .h3 { font: 600 28px/1.14 var(--display); letter-spacing: .007em; }
+    .body { color: var(--ash); margin-top: 12px; }
+    .label { font-size: 12px; letter-spacing: -.01em; color: var(--ash); }
+    .band.light .label { color: #6e6e73; }
 
-    /* Como funciona */
-    .steps { display: grid; gap: 14px; margin-top: 40px; }
-    .step { padding: 36px; border-radius: 34px; background: var(--surface); border: .5px solid var(--hair); }
-    .step-n { font-size: 13px; color: var(--blue-text); font-variant-numeric: tabular-nums; }
-    .step h3 { font-weight: 350; font-size: 22px; line-height: 1.25; margin-top: 30px; letter-spacing: -.02em; }
-    .step p { color: var(--muted); margin-top: 8px; }
-    .step q { quotes: '“' '”'; color: var(--ink); }
+    /* O essencial */
+    .grid3 { display: grid; gap: 16px; }
+    .feature { display: flex; flex-direction: column; min-height: 300px; }
+    .feature .ic { width: 40px; height: 40px; color: var(--silk); margin-bottom: auto; }
+    .feature .h3 { margin-top: 40px; }
+    .parse { margin-top: 22px; border-top: 1px solid rgba(255, 255, 255, .1); }
+    .parse li { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, .1); font-size: 14px; color: var(--ash); }
+    .parse li span:first-child { color: var(--silk); }
+
+    /* Objetivos (faixa clara) */
+    .goals { display: grid; gap: 16px; }
+    .goal { display: flex; flex-direction: column; gap: 10px; min-height: 220px; }
+    .goal .tag { font-size: 12px; color: #6e6e73; }
+    .goal .h3 { font-size: 28px; }
+    .goal .body { margin-top: 0; }
+    .goal-k { margin-top: auto; padding-top: 18px; border-top: 1px solid rgba(0, 0, 0, .08); font-size: 14px; color: #1d1d1f; }
+    .goal-chip { display: grid; place-items: end start; padding: 22px; color: var(--white); background: var(--spectrum); border-radius: var(--r-card); min-height: 220px; }
+    .goal-chip .h3 { font-size: 32px; max-width: 9ch; }
+    .goal-chip p { color: rgba(255, 255, 255, .86); margin-top: 8px; font-size: 15px; }
 
     /* Telas */
-    .screens { margin-top: 40px; padding: 48px 0 40px; overflow: hidden; }
-    .screens-row { display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 var(--pad-card) 8px; scrollbar-width: none; }
-    .screens-row::-webkit-scrollbar { display: none; }
-    .shot { flex: 0 0 auto; width: 236px; scroll-snap-align: center; }
-    .shot img { width: 100%; height: auto; border-radius: 34px; border: .5px solid var(--hair-2); background: var(--canvas); }
-    .shot figcaption { font-size: 14px; color: var(--muted); margin-top: 14px; padding: 0 6px; }
-    .shot figcaption b { display: block; color: var(--ink); font-size: 15px; }
-    .screens-note { font-size: 12px; color: var(--label); margin: 18px var(--pad-card) 0; }
+    .screens { display: flex; gap: 24px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 22px 12px; margin: 0 -22px; scrollbar-width: none; }
+    .screens::-webkit-scrollbar { display: none; }
+    .shot { flex: 0 0 auto; width: 250px; scroll-snap-align: start; }
+    .shot .frame { border-radius: 44px; padding: 8px; background: #111113; border: 1px solid #2a2a2d; }
+    .shot img { width: 100%; height: auto; border-radius: 36px; }
+    .shot figcaption { margin-top: 16px; font-size: 14px; color: var(--ash); }
+    .shot figcaption b { display: block; color: var(--silk); font: 600 19px/1.21 var(--display); letter-spacing: .012em; margin-bottom: 2px; }
+    .note { font-size: 12px; color: var(--ash); margin-top: 18px; }
 
-    /* Recursos */
-    .features { display: grid; gap: 14px; margin-top: 40px; }
-    .feature { display: flex; flex-direction: column; align-items: flex-start; }
-    .feature .h3 { margin-top: 26px; }
-    .feature .body { margin-top: 12px; }
-    .parse { margin-top: auto; padding-top: 30px; width: 100%; }
-    .parse-in { font-size: 15px; color: var(--ink); padding: 14px 18px; border-radius: 18px; background: var(--canvas); }
-    .parse ul { margin-top: 10px; }
-    .parse li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; padding: 12px 4px; border-bottom: .5px solid var(--hair-2); font-size: 14px; color: var(--muted); }
-    .parse li:last-child { border-bottom: 0; }
-    .parse li span:first-child { color: var(--ink); }
-    .parse li b { font-weight: 350; color: var(--ink); font-variant-numeric: tabular-nums; }
-    @media (max-width: 480px) { .parse li { grid-template-columns: 1fr auto; } .parse li span:nth-child(2) { grid-column: 1; grid-row: 2; } .parse li b { grid-row: 1 / span 2; grid-column: 2; align-self: center; } }
-
-    /* Saúde */
+    /* Saúde (faixa clara) */
     .safety { display: grid; gap: 40px; }
-    .rules { border-top: .5px solid var(--hair-2); }
-    .rules li { display: grid; grid-template-columns: 34px 1fr; gap: 12px; padding: 20px 0; border-bottom: .5px solid var(--hair-2); font-size: 17px; line-height: 1.4; }
-    .rules .ic { width: 20px; height: 20px; color: var(--blue); margin-top: 2px; }
-    .notice { font-size: 14px; color: var(--muted); margin-top: 24px; max-width: 46em; }
+    .rules li { display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 22px 0; border-top: 1px solid rgba(0, 0, 0, .1); font: 600 21px/1.24 var(--display); letter-spacing: .011em; }
+    .rules li:last-child { border-bottom: 1px solid rgba(0, 0, 0, .1); }
+    .rules .ic { width: 22px; height: 22px; color: #1d1d1f; margin-top: 2px; }
+    .notice { font-size: 14px; color: #6e6e73; margin-top: 22px; max-width: 46em; }
+    .notice b { color: #1d1d1f; }
 
-    /* Privacidade */
-    .privacy { display: grid; gap: 14px; margin-top: 40px; }
-    .privacy ul { margin-top: 22px; display: grid; gap: 10px; }
-    .privacy li { display: flex; gap: 10px; color: var(--muted); }
-    .privacy li .ic { width: 18px; height: 18px; color: var(--blue); flex: none; margin-top: 2px; }
-
-    /* Instalar */
-    .install { display: grid; gap: 14px; margin-top: 40px; }
-    .install ol { margin-top: 18px; display: grid; gap: 10px; counter-reset: s; }
-    .install li { counter-increment: s; display: grid; grid-template-columns: 26px 1fr; color: var(--muted); }
-    .install li::before { content: counter(s); font-size: 13px; color: var(--blue-text); padding-top: 2px; font-variant-numeric: tabular-nums; }
+    /* Privacidade e instalar */
+    .grid2 { display: grid; gap: 16px; }
+    .checks { margin-top: 22px; display: grid; gap: 12px; }
+    .checks li { display: flex; gap: 12px; color: var(--ash); }
+    .checks .ic { width: 20px; height: 20px; color: var(--silk); flex: none; margin-top: 2px; }
+    .steps { margin-top: 18px; display: grid; gap: 12px; counter-reset: s; }
+    .steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; color: var(--ash); }
+    .steps li::before { content: counter(s); color: var(--silk); font-variant-numeric: tabular-nums; }
 
     /* Chamada final */
-    .final { margin-top: var(--gap); text-align: left; }
-    .final .wrap { display: flex; flex-direction: column; gap: 26px; }
-    .final .h2 { max-width: 16ch; }
+    .final { text-align: left; }
+    .final .row { display: flex; flex-direction: column; gap: 28px; }
 
     /* Rodapé */
-    footer { background: var(--ink); color: #c9c9ce; margin-top: var(--gap); padding: 64px 0 calc(48px + env(safe-area-inset-bottom)); font-size: 14px; }
-    .foot-grid { display: grid; gap: 36px; }
-    .foot-brand { display: flex; align-items: center; gap: 10px; color: var(--surface); font-size: 20px; }
-    .foot-brand .mark .t { stroke: rgba(255, 255, 255, .22); }
-    .foot-tag { color: #a1a1a6; margin-top: 10px; max-width: 30em; }
-    .foot-links { display: grid; gap: 4px; align-content: start; }
-    .foot-links h4 { font-weight: 350; font-size: 12px; color: #a1a1a6; margin-bottom: 6px; }
-    .foot-links a { color: var(--surface); display: inline-flex; min-height: 32px; align-items: center; width: max-content; }
-    .foot-links a:hover { color: var(--blue-dark); }
-    .foot-fine { border-top: .5px solid rgba(255, 255, 255, .12); margin-top: 44px; padding-top: 24px; color: #a1a1a6; font-size: 12px; line-height: 1.5; display: grid; gap: 8px; }
-    .foot-fine a { color: var(--blue-dark); }
+    footer { background: var(--charcoal); color: var(--ash); font-size: 12px; line-height: 1.33; letter-spacing: -.01em; padding: 36px 0 calc(28px + env(safe-area-inset-bottom)); }
+    .foot-top { display: grid; gap: 28px; padding-bottom: 24px; border-bottom: 1px solid rgba(255, 255, 255, .12); }
+    .foot-brand { display: flex; align-items: center; gap: 8px; color: var(--silk); font-size: 17px; }
+    .foot-col h4 { font-weight: 600; color: var(--silk); margin-bottom: 8px; font-size: 12px; }
+    .foot-col a { display: flex; align-items: center; min-height: 30px; color: var(--ash); width: max-content; }
+    .foot-col a:hover { color: var(--silk); text-decoration: underline; }
+    .foot-fine { padding-top: 18px; display: grid; gap: 8px; }
+    .foot-fine a { color: var(--link); }
 
-    /* Entrada das seções */
-    .reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .8s var(--ease), transform .8s var(--ease); }
     .reveal.in { opacity: 1; transform: none; }
 
-    /* ---------- Telas maiores ---------- */
-    @media (min-width: 720px) {
+    @media (min-width: 734px) {
       .wrap { padding: 0 40px; }
-      .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .features .wide-3 { grid-column: 1 / -1; }
-      .privacy { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .screens { padding: 4px 40px 12px; margin: 0 -40px; }
+      .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .goals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .install { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .shot { width: 260px; }
-      .foot-grid { grid-template-columns: 1.6fr 1fr 1fr; }
+      .foot-top { grid-template-columns: 2fr 1fr 1fr; }
+      .shot { width: 270px; }
     }
-    @media (min-width: 900px) {
+    @media (min-width: 1024px) {
       .nav-links { display: flex; }
-      .hero-grid { grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); gap: 56px; }
-      .head-grid { grid-template-columns: 180px minmax(0, 1.3fr) minmax(0, 1fr); align-items: end; }
-      .head-grid .label { align-self: start; padding-top: 14px; }
-      .head-grid .h2 { margin-top: 0; }
-      .safety { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 72px; }
-      .features { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .features .wide-2 { grid-column: span 2; }
-      .features .wide-3 { grid-column: 1 / -1; }
-      .features .wide-3 .body { max-width: 46em; }
-      .final .wrap { flex-direction: row; align-items: flex-end; justify-content: space-between; }
+      .hero { padding-top: 96px; }
+      .hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 40px; }
+      .device { width: 360px; }
+      .glass { right: -12px; bottom: 56px; }
+      .grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grid3 .wide { grid-column: span 2; }
+      .goals { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .safety { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 80px; }
+      .final .row { flex-direction: row; align-items: flex-end; justify-content: space-between; }
     }
-    @media (min-width: 720px) and (max-width: 1099px) {
-      :root { --pad-card: 40px; --r-card: 40px; }
-      .step { padding: 28px; }
-    }
-    @media (max-width: 719px) {
-      :root { --gap: 64px; --pad-card: 28px; --r-card: 30px; }
-      .hero { padding-top: 104px; min-height: auto; }
-      .hero-grid { gap: 8px; }
-      .ring-wrap { width: min(100%, 340px); margin-top: 28px; }
-      .step { padding: 28px; border-radius: 26px; }
-      .step h3 { margin-top: 20px; }
-      .screens { padding: 30px 0 28px; }
-      .rules li { font-size: 16px; }
+    @media (max-width: 733px) {
+      :root { --gap: 80px; }
+      .hero { padding-top: 48px; }
+      .glass { position: relative; right: auto; bottom: auto; margin: -36px auto 0; }
+      .stage { flex-direction: column; align-items: center; }
+      .feature { min-height: 0; }
+      .feature .h3 { margin-top: 28px; }
+      .nav .when-out.nav-text { display: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      .ring .arc { animation: none; }
       .reveal { opacity: 1; transform: none; transition: none; }
-      .pill { transition: none; }
+      .btn, .more::after { transition: none; }
     }
   </style>
 </head>
@@ -259,245 +231,197 @@
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
-      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-      <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-      <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8 12.4l2.7 2.6L16 9.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="1.3"/></symbol>
-      <symbol id="i-mark" viewBox="0 0 24 24"><circle class="t" cx="12" cy="12" r="9" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2.6"/><path d="M12 3a9 9 0 0 1 8.3 12.5" fill="none" stroke="#0071e3" stroke-width="2.6" stroke-linecap="round"/></symbol>
+      <linearGradient id="spec" x1="0" y1="0" x2="1" y2=".32"><stop offset="0" stop-color="#0090F7"/><stop offset=".33" stop-color="#BA62FC"/><stop offset=".66" stop-color="#F2416B"/><stop offset="1" stop-color="#F55600"/></linearGradient>
+      <symbol id="i-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="#333336" stroke-width="3.4"/><path d="M12 4a8 8 0 1 1-7.9 9.4" fill="none" stroke="url(#spec)" stroke-width="3.4" stroke-linecap="round"/></symbol>
+      <symbol id="i-ring" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="3"/><path d="M12 4a8 8 0 1 1-7.9 9.4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 12.4l2.7 2.6L16 9.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-text" viewBox="0 0 40 40"><rect x="5" y="9" width="30" height="22" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 17h18M11 23h11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+      <symbol id="i-leaf" viewBox="0 0 40 40"><path d="M9 31c0-12 8-21 22-22-1 14-10 22-22 22z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 31l12-12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+      <symbol id="i-scale" viewBox="0 0 40 40"><rect x="7" y="7" width="26" height="26" rx="7" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14 16a8 8 0 0 1 12 0M20 15v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+      <symbol id="i-drop" viewBox="0 0 40 40"><path d="M20 6c6 7 10 12 10 18a10 10 0 0 1-20 0c0-6 4-11 10-18z" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+      <symbol id="i-swap" viewBox="0 0 40 40"><path d="M12 8l-5 5 5 5M7 13h22M28 32l5-5-5-5M33 27H11" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-cal" viewBox="0 0 40 40"><rect x="7" y="9" width="26" height="24" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 16h26M14 6v6M26 6v6M14 23h4M22 23h4M14 28h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
     </defs>
   </svg>
 
   <nav class="nav" aria-label="Principal">
-    <a class="brand" href="#topo" aria-label="Leve, início"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg><span>Leve</span></a>
-    <div class="nav-links">
-      <a href="#como-funciona">Como funciona</a>
-      <a href="#recursos">Recursos</a>
-      <a href="#saude">Saúde</a>
-      <a href="#privacidade">Privacidade</a>
+    <div class="wrap">
+      <a class="brand" href="#topo" aria-label="Leve, início"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Leve</a>
+      <div class="nav-links">
+        <a href="#essencial">O essencial</a>
+        <a href="#objetivos">Objetivos</a>
+        <a href="#saude">Saúde</a>
+        <a href="#privacidade">Privacidade</a>
+        <a href="#instalar">Instalar</a>
+      </div>
+      <a class="nav-text when-out" href="app/#entrar">Entrar</a>
+      <a class="btn buy when-out" href="app/#criar-conta">Criar conta</a>
+      <a class="btn buy when-in" href="app/">Abrir o Leve</a>
     </div>
-    <a class="nav-login when-out" href="app/#entrar">Entrar</a>
-    <a class="pill when-out" href="app/#criar-conta">Criar conta</a>
-    <a class="pill when-in" href="app/">Abrir o app<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
   </nav>
+  <p class="promo"><span class="wrap"><span><span class="new">Novo</span> · Escolha o seu objetivo e receba uma rotina pronta.</span> <a class="more when-out" href="app/#criar-conta">Criar conta</a><a class="more when-in" href="app/">Abrir o Leve</a></span></p>
 
   <main id="conteudo">
     <header class="hero" id="topo">
       <div class="wrap hero-grid">
         <div>
-          <p class="banner"><span class="tag">Novo</span>Escolha o seu objetivo e receba uma rotina pronta</p>
-          <h1>Emagrecer sem culpa, <span>com números que você entende.</span></h1>
-          <p class="hero-sub">Perder peso, ganhar massa, definir, manter ou só comer melhor: o Leve monta o seu plano e uma rotina com horários e hábitos, e responde em segundos quanto ainda cabe no dia.</p>
+          <p class="eyebrow"><span class="badge" aria-hidden="true"><svg><use href="#i-ring"/></svg></span>Leve</p>
+          <h1>Seu plano. Sua rotina. No seu ritmo.</h1>
+          <p class="hero-sub">Perder peso, ganhar massa, definir ou só comer melhor. <b>O Leve monta as calorias, a proteína e os horários</b>, e responde em segundos quanto ainda cabe no dia.</p>
           <div class="hero-cta">
-            <a class="pill big dark when-out" href="app/#criar-conta">Criar conta<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-            <a class="pill big when-out" href="app/#entrar">Entrar</a>
-            <a class="pill big dark when-in" href="app/">Abrir o Leve<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-            <a class="link" href="#como-funciona">Ver como funciona</a>
+            <a class="btn buy when-out" href="app/#criar-conta">Criar conta</a>
+            <a class="btn ghost when-out" href="app/#entrar">Entrar</a>
+            <a class="btn buy when-in" href="app/">Abrir o Leve</a>
+            <a class="more" href="#essencial">Ver como funciona</a>
           </div>
-          <p class="hero-note when-out">Com a conta, o seu diário fica no celular e no computador. Prefere sem cadastro? <a class="link" href="app/">Usar só neste aparelho</a>.</p>
+          <p class="hero-note when-out">Prefere sem cadastro? <a href="app/">Usar só neste aparelho</a></p>
           <p class="hero-note when-in">Você já está conectado neste aparelho.</p>
         </div>
-
-        <div class="ring-wrap" role="img" aria-label="Exemplo do anel de calorias do app: 748 kcal restantes, 795 consumidas de uma meta de 1.543.">
-          <svg class="ring" viewBox="0 0 400 400" aria-hidden="true">
-            <g id="ticks"></g>
-            <circle class="track" cx="200" cy="200" r="168"/>
-            <circle class="inner" cx="200" cy="200" r="138"/>
-            <circle class="arc" cx="200" cy="200" r="168" pathLength="100" transform="rotate(-90 200 200)"/>
-            <circle class="dot" cx="184.2" cy="367.3" r="5"/>
-          </svg>
-          <div class="ring-center" aria-hidden="true">
-            <span class="ring-num">748</span>
-            <span class="ring-label">kcal restantes hoje</span>
-            <span class="ring-stats"><span><b>795</b>consumidas</span><span><b>1.543</b>meta do dia</span></span>
-          </div>
-          <span class="ring-caption" aria-hidden="true">Exemplo de um dia</span>
+        <div class="stage">
+          <div class="device"><img src="img/tela-hoje.png" width="390" height="844" alt="Tela Hoje do Leve: anel com 748 kcal restantes, 795 consumidas e meta de 1.543, e barras de proteína, carboidrato e gordura." fetchpriority="high"></div>
+          <div class="glass" aria-hidden="true"><span><b>748 kcal</b>restantes hoje</span><a class="btn buy when-out" href="app/#criar-conta" tabindex="-1">Começar</a><a class="btn buy when-in" href="app/" tabindex="-1">Abrir</a></div>
         </div>
       </div>
     </header>
 
-    <section class="section" id="como-funciona" aria-labelledby="t-como">
+    <section class="band after-light" id="essencial" aria-labelledby="t-ess">
       <div class="wrap">
-        <div class="head-grid reveal">
-          <p class="label">Como funciona</p>
-          <h2 class="h2" id="t-como">Três passos, nenhum cadastro de receita.</h2>
-          <p class="lead">Você escreve como fala. O Leve faz as contas, mostra de onde vieram os números e deixa você decidir.</p>
+        <div class="head reveal">
+          <div><h2 class="h2" id="t-ess">O essencial.</h2><p class="lead">Você escreve como fala. O Leve faz as contas e mostra de onde vieram os números.</p></div>
         </div>
-        <ol class="steps">
-          <li class="step reveal">
-            <span class="step-n">01</span>
-            <h3>Escreva o que comeu</h3>
-            <p>Uma frase basta: <q>2 ovos mexidos e 1 pão francês</q>. O app separa os itens, as quantidades e as porções.</p>
-          </li>
-          <li class="step reveal">
-            <span class="step-n">02</span>
-            <h3>Confira e salve</h3>
-            <p>Nada é gravado sem a sua confirmação. Porções estimadas aparecem com “≈” e podem ser ajustadas em gramas.</p>
-          </li>
-          <li class="step reveal">
-            <span class="step-n">03</span>
-            <h3>Veja a meta se ajustar</h3>
-            <p>Com 14 dias de registros e pesagens, o Leve mede o seu gasto real e propõe uma meta nova. Você aceita ou recusa.</p>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="t-telas">
-      <div class="wrap">
-        <div class="head-grid reveal">
-          <p class="label">O app</p>
-          <h2 class="h2" id="t-telas">Calmo, direto, sem julgamento.</h2>
-          <p class="lead">Passar da meta não deixa nada vermelho. O app explica o que acontece nos próximos dias e segue em frente.</p>
-        </div>
-        <div class="card screens reveal">
-          <div class="screens-row" tabindex="0" aria-label="Telas do app. Role para o lado para ver todas.">
-            <figure class="shot"><img src="img/tela-hoje.png" width="390" height="844" alt="Tela Hoje: anel com 748 kcal restantes, 795 consumidas e meta de 1.543, e barras de proteína, carboidrato e gordura." loading="lazy" decoding="async"><figcaption><b>Hoje</b>Quanto ainda cabe no dia.</figcaption></figure>
-            <figure class="shot"><img src="img/tela-frase.png" width="390" height="844" alt="Tela de confirmação de uma frase: 2 ovos mexidos, 1 pão francês e 1 suco de laranja, cada um com quantidade e calorias." loading="lazy" decoding="async"><figcaption><b>Registro por frase</b>Confira antes de salvar.</figcaption></figure>
-            <figure class="shot"><img src="img/tela-troca.png" width="390" height="844" alt="Suco de uva de 300 ml com 174 kcal e o quadro Opção mais leve sugerindo água, refrigerante zero ou chá, com o motivo." loading="lazy" decoding="async"><figcaption><b>Trocas mais leves</b>Com o motivo de cada uma.</figcaption></figure>
-            <figure class="shot"><img src="img/tela-liquidos.png" width="390" height="844" alt="Tela Líquidos com o total do dia em mililitros, a meta e botões de tamanho rápido." loading="lazy" decoding="async"><figcaption><b>Líquidos</b>Água e bebidas, ao mililitro.</figcaption></figure>
-            <figure class="shot"><img src="img/tela-progresso.png" width="390" height="844" alt="Tela Progresso com o peso tendência de 80,1 kg, gráfico com projeção até a meta e saldo da semana." loading="lazy" decoding="async"><figcaption><b>Progresso</b>Tendência, projeção e semana.</figcaption></figure>
-          </div>
-          <p class="screens-note">Telas reais do app, com dados de exemplo.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="recursos" aria-labelledby="t-recursos">
-      <div class="wrap">
-        <div class="head-grid reveal">
-          <p class="label">Recursos</p>
-          <h2 class="h2" id="t-recursos">Tudo o que o dia a dia pede, e nada além.</h2>
-          <p class="lead">Feito para a comida brasileira, com fontes abertas e números que você consegue conferir.</p>
-        </div>
-        <div class="features">
-          <article class="card feature wide-2 reveal">
-            <span class="tag">Registrar</span>
-            <h3 class="h3">Registro por frase</h3>
-            <p class="body">Escreva “2 ovos mexidos e 1 pão francês” ou busque um alimento. Recentes, favoritos e modelos de refeição repetem o que você come sempre com um toque.</p>
-            <div class="parse" aria-label="Exemplo: a frase vira itens com calorias">
-              <p class="parse-in">“2 ovos mexidos e 1 pão francês”</p>
-              <ul>
-                <li><span>Ovo de galinha, frito</span><span>2 un · ≈ 100 g</span><b>240 kcal</b></li>
-                <li><span>Pão francês</span><span>1 un · ≈ 50 g</span><b>150 kcal</b></li>
-              </ul>
-            </div>
-          </article>
-          <article class="card feature reveal">
-            <span class="tag">TACO</span>
-            <h3 class="h3">Mais de 590 alimentos brasileiros</h3>
-            <p class="body">Valores da Tabela Brasileira de Composição de Alimentos (NEPA/UNICAMP). Produtos industrializados entram pelo código de barras, com dados do Open Food Facts.</p>
-          </article>
-          <article class="card feature reveal">
-            <span class="tag">Estimativas</span>
-            <h3 class="h3">Para o que não tem rótulo</h3>
-            <p class="body">Sanduíche natural, prato feito, açaí na tigela: 32 receitas típicas com a conta à mostra, ingrediente por ingrediente. Sempre marcado como estimativa.</p>
-          </article>
-          <article class="card feature reveal">
-            <span class="tag">Líquidos</span>
-            <h3 class="h3">Água e bebidas, ao mililitro</h3>
-            <p class="body">Valor exato em ml ou litros, tipo e horário. Bebida alcoólica fica registrada, mas não conta para a meta de líquidos.</p>
-          </article>
-          <article class="card feature reveal">
-            <span class="tag">Rotina</span>
-            <h3 class="h3">Um objetivo, uma rotina</h3>
-            <p class="body">Perder peso, ganhar massa, definir, manter ou comer melhor. O Leve calcula as calorias e a proteína, distribui pelas refeições nos seus horários e monta os hábitos do dia, como treino de força, água e sono. Peso tendência e data de chegada mostram o caminho.</p>
-          </article>
-          <article class="card feature wide-3 reveal">
-            <span class="tag">Trocas</span>
-            <h3 class="h3">Trocas mais leves, com o motivo</h3>
-            <p class="body">Um copo de 300 ml de suco de uva tem 174 kcal. O Leve sugere água ou refrigerante zero e explica por quê: o suco concentra o açúcar de várias frutas e quase não tem fibra. A sugestão vale para a próxima vez, sem culpa.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="saude" aria-labelledby="t-saude">
-      <div class="wrap">
-        <div class="card safety reveal">
-          <div>
-            <p class="label">Saúde em primeiro lugar</p>
-            <h2 class="h2" id="t-saude">Travas que nenhuma meta atravessa.</h2>
-            <p class="body">Elas valem em todo lugar onde uma meta é calculada, inclusive no “e se” e no ajuste pelo seu gasto real.</p>
-          </div>
-          <div>
-            <ul class="rules">
-              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Nunca abaixo de 1.200 kcal por dia para mulheres e de 1.500 kcal para homens.</span></li>
-              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Déficit de no máximo 25% do seu gasto diário.</span></li>
-              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Peso-alvo só dentro da faixa saudável, de IMC 18,5 a 24,9.</span></li>
-              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Nenhum plano de déficit para menores de 18 anos.</span></li>
-              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>A meta só muda quando você aceita.</span></li>
-            </ul>
-            <p class="notice"><b>O Leve não substitui médico ou nutricionista.</b> As metas são estimativas baseadas em fórmulas populacionais (Mifflin-St Jeor para o metabolismo e a faixa de IMC da OMS). Gestantes, lactantes e pessoas com condições de saúde devem seguir orientação profissional.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="privacidade" aria-labelledby="t-priv">
-      <div class="wrap">
-        <div class="head-grid reveal">
-          <p class="label">Seus dados</p>
-          <h2 class="h2" id="t-priv">Seu diário é só seu.</h2>
-          <p class="lead">Você escolhe: tudo no aparelho, ou uma conta para usar o mesmo diário em qualquer lugar.</p>
-        </div>
-        <div class="privacy">
-          <article class="card reveal">
-            <span class="tag">Sem conta</span>
-            <h3 class="h3" style="margin-top:26px">Tudo fica no aparelho</h3>
-            <ul>
-              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Sem cadastro: abra e comece.</li>
-              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Funciona sem internet depois da primeira abertura.</li>
-              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Backup em arquivo quando você quiser.</li>
+        <div class="grid3">
+          <article class="card feature wide reveal">
+            <svg class="ic" aria-hidden="true"><use href="#i-text"/></svg>
+            <h3 class="h3">Registro por frase.</h3>
+            <p class="body">Escreva “2 ovos mexidos e 1 pão francês”. O app separa os itens, estima as porções e mostra tudo para você conferir antes de salvar.</p>
+            <ul class="parse" aria-label="Exemplo: a frase vira itens com calorias">
+              <li><span>Ovo de galinha, frito · 2 un</span><span>240 kcal</span></li>
+              <li><span>Pão francês · 1 un</span><span>150 kcal</span></li>
             </ul>
           </article>
+          <article class="card feature reveal">
+            <svg class="ic" aria-hidden="true"><use href="#i-leaf"/></svg>
+            <h3 class="h3">Mais de 590 alimentos brasileiros.</h3>
+            <p class="body">Tabela TACO (NEPA/UNICAMP), código de barras pelo Open Food Facts e 32 receitas típicas com a conta à mostra.</p>
+          </article>
+          <article class="card feature reveal">
+            <svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>
+            <h3 class="h3">Uma rotina com horários.</h3>
+            <p class="body">Refeições a partir da hora em que você acorda, com calorias e proteína de cada uma, e hábitos que se marcam sozinhos.</p>
+          </article>
+          <article class="card feature reveal">
+            <svg class="ic" aria-hidden="true"><use href="#i-drop"/></svg>
+            <h3 class="h3">Líquidos ao mililitro.</h3>
+            <p class="body">Água e outras bebidas em ml ou litros, com horário. Bebida alcoólica é registrada, mas não conta para a meta.</p>
+          </article>
+          <article class="card feature reveal">
+            <svg class="ic" aria-hidden="true"><use href="#i-swap"/></svg>
+            <h3 class="h3">Trocas mais leves, com o motivo.</h3>
+            <p class="body">300 ml de suco de uva têm 174 kcal. O Leve sugere água ou refrigerante zero e explica por quê. Sem culpa: vale para a próxima vez.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band light" id="objetivos" aria-labelledby="t-obj">
+      <div class="wrap">
+        <div class="head reveal">
+          <div><h2 class="h2" id="t-obj">Um objetivo. Um plano.</h2><p class="lead">Cada objetivo tem o seu cálculo e a sua rotina. Dá para mudar quando quiser.</p></div>
+        </div>
+        <div class="goals">
+          <div class="goal-chip reveal"><div><h3 class="h3">Cinco objetivos.</h3><p>Escolha no cadastro. O Leve faz o resto.</p></div></div>
+          <article class="card goal reveal"><span class="tag">Perder peso</span><h3 class="h3">Déficit seguro.</h3><p class="body">No ritmo que você escolher, de 0,25 a 0,75 kg por semana, sempre dentro das travas.</p><p class="goal-k">Proteína: 1,6 g por kg · movimento e vegetais</p></article>
+          <article class="card goal reveal"><span class="tag">Ganhar massa</span><h3 class="h3">Superávit pequeno.</h3><p class="body">De 200 a 500 kcal acima do gasto, para o ganho ser mais músculo do que gordura.</p><p class="goal-k">Proteína: 1,8 g por kg · treino de força</p></article>
+          <article class="card goal reveal"><span class="tag">Definir o corpo</span><h3 class="h3">Gordura cai, músculo fica.</h3><p class="body">Déficit de 10% do gasto e proteína alta para preservar os músculos.</p><p class="goal-k">Proteína: 2,0 g por kg · treino de força</p></article>
+          <article class="card goal reveal"><span class="tag">Manter o peso</span><h3 class="h3">Equilíbrio.</h3><p class="body">Comer o quanto você gasta e acompanhar a tendência uma vez por semana.</p><p class="goal-k">Proteína: 1,2 g por kg · frutas e verduras</p></article>
+          <article class="card goal reveal"><span class="tag">Comer melhor</span><h3 class="h3">Sem foco na balança.</h3><p class="body">Comida de verdade, 400 g de frutas e verduras no dia, água, sono e movimento.</p><p class="goal-k">Guia Alimentar para a População Brasileira</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band after-light" aria-labelledby="t-telas">
+      <div class="wrap">
+        <div class="head reveal">
+          <div><h2 class="h2" id="t-telas">Mais de perto.</h2><p class="lead">Calmo, direto, sem julgamento. Passar da meta não deixa nada vermelho.</p></div>
+          <a class="more when-out" href="app/#criar-conta">Criar a sua conta</a>
+        </div>
+        <div class="screens reveal" tabindex="0" aria-label="Telas do app. Role para o lado para ver todas.">
+          <figure class="shot"><div class="frame"><img src="img/tela-rotina.png" width="390" height="844" alt="Cartão Sua rotina: refeições com horário, calorias e proteína, e hábitos do dia com marcações." loading="lazy" decoding="async"></div><figcaption><b>Sua rotina</b>Horários e hábitos do dia.</figcaption></figure>
+          <figure class="shot"><div class="frame"><img src="img/tela-frase.png" width="390" height="844" alt="Confirmação da frase: 2 ovos mexidos, 1 pão francês e 1 suco de laranja, cada um com quantidade e calorias." loading="lazy" decoding="async"></div><figcaption><b>Registro por frase</b>Confira antes de salvar.</figcaption></figure>
+          <figure class="shot"><div class="frame"><img src="img/tela-troca.png" width="390" height="844" alt="Suco de uva de 300 ml com 174 kcal e o quadro Opção mais leve com água, refrigerante zero e chá." loading="lazy" decoding="async"></div><figcaption><b>Trocas mais leves</b>Com o motivo de cada uma.</figcaption></figure>
+          <figure class="shot"><div class="frame"><img src="img/tela-liquidos.png" width="390" height="844" alt="Tela Líquidos com 1.500 de 2.000 ml e botões de tamanho rápido." loading="lazy" decoding="async"></div><figcaption><b>Líquidos</b>Água e bebidas, ao mililitro.</figcaption></figure>
+          <figure class="shot"><div class="frame"><img src="img/tela-progresso.png" width="390" height="844" alt="Tela Progresso com o peso tendência, gráfico com projeção até a meta e saldo da semana." loading="lazy" decoding="async"></div><figcaption><b>Progresso</b>Tendência, projeção e semana.</figcaption></figure>
+        </div>
+        <p class="note">Telas reais do app, com dados de exemplo.</p>
+      </div>
+    </section>
+
+    <section class="band light" id="saude" aria-labelledby="t-saude">
+      <div class="wrap safety">
+        <div class="reveal">
+          <h2 class="h2" id="t-saude">Saúde em primeiro lugar.</h2>
+          <p class="lead">Travas que nenhuma meta atravessa, em todo lugar onde uma meta é calculada.</p>
+        </div>
+        <div class="reveal">
+          <ul class="rules">
+            <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Nunca abaixo de 1.200 kcal por dia para mulheres e de 1.500 para homens.</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Déficit de no máximo 25% do gasto. Superávit de no máximo 15%.</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Peso-alvo só dentro da faixa saudável, de IMC 18,5 a 24,9.</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Nenhuma meta de calorias para menores de 18 anos.</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>A meta só muda quando você aceita.</span></li>
+          </ul>
+          <p class="notice"><b>O Leve não substitui médico ou nutricionista.</b> As metas são estimativas baseadas em fórmulas populacionais (Mifflin-St Jeor e a faixa de IMC da OMS). Gestantes, lactantes e pessoas com condições de saúde devem seguir orientação profissional.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="band after-light" id="privacidade" aria-labelledby="t-priv">
+      <div class="wrap">
+        <div class="head reveal"><div><h2 class="h2" id="t-priv">Seu diário é só seu.</h2><p class="lead">Tudo no aparelho, ou uma conta para usar o mesmo diário em qualquer lugar.</p></div></div>
+        <div class="grid2">
           <article class="card reveal">
-            <span class="tag"><svg class="ic" style="width:12px;height:12px" aria-hidden="true"><use href="#i-lock"/></svg>Com conta</span>
-            <h3 class="h3" style="margin-top:26px">O mesmo diário em todos os aparelhos</h3>
-            <ul>
+            <p class="label">Com conta</p>
+            <h3 class="h3" style="margin-top:10px">O mesmo diário em todos os aparelhos.</h3>
+            <ul class="checks">
               <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Sincroniza o celular e o computador, mesmo depois de um tempo sem internet.</li>
               <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Entre com Face ID ou digital, sem digitar a senha.</li>
               <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Cada conta só enxerga os próprios registros.</li>
             </ul>
           </article>
+          <article class="card reveal">
+            <p class="label">Sem conta</p>
+            <h3 class="h3" style="margin-top:10px">Tudo fica no aparelho.</h3>
+            <ul class="checks">
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Sem cadastro: abra e comece.</li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Funciona sem internet depois da primeira abertura.</li>
+              <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>Backup em arquivo quando você quiser.</li>
+            </ul>
+          </article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="instalar" aria-labelledby="t-instalar">
+    <section class="band" id="instalar" aria-labelledby="t-inst">
       <div class="wrap">
-        <div class="head-grid reveal">
-          <p class="label">Instalar</p>
-          <h2 class="h2" id="t-instalar">Na tela inicial em um minuto.</h2>
-          <p class="lead">O Leve é um app web: não precisa de loja. Abra o endereço e adicione à tela inicial.</p>
-        </div>
-        <div class="install">
-          <article class="card reveal">
-            <h3 class="h3">iPhone</h3>
-            <ol><li>Abra o Leve no Safari.</li><li>Toque em Compartilhar.</li><li>Escolha Adicionar à Tela de Início.</li></ol>
-          </article>
-          <article class="card reveal">
-            <h3 class="h3">Android</h3>
-            <ol><li>Abra o Leve no Chrome.</li><li>Toque no menu de três pontos.</li><li>Escolha Instalar app.</li></ol>
-          </article>
-          <article class="card reveal">
-            <h3 class="h3">Computador</h3>
-            <ol><li>Abra o Leve no Chrome ou no Edge.</li><li>Clique no ícone de instalar na barra de endereço.</li><li>Confirme.</li></ol>
-          </article>
+        <div class="head reveal"><div><h2 class="h2" id="t-inst">Na tela inicial em um minuto.</h2><p class="lead">Sem loja de aplicativos: abra o endereço e adicione à tela inicial.</p></div></div>
+        <div class="grid2 install">
+          <article class="card reveal"><h3 class="h3">iPhone</h3><ol class="steps"><li>Abra o Leve no Safari.</li><li>Toque em Compartilhar.</li><li>Escolha Adicionar à Tela de Início.</li></ol></article>
+          <article class="card reveal"><h3 class="h3">Android</h3><ol class="steps"><li>Abra o Leve no Chrome.</li><li>Toque no menu de três pontos.</li><li>Escolha Instalar app.</li></ol></article>
+          <article class="card reveal"><h3 class="h3">Computador</h3><ol class="steps"><li>Abra o Leve no Chrome ou no Edge.</li><li>Clique em instalar, na barra de endereço.</li><li>Confirme.</li></ol></article>
         </div>
       </div>
     </section>
 
-    <section class="final" aria-labelledby="t-final">
-      <div class="wrap reveal">
+    <section class="band final" aria-labelledby="t-final" style="padding-top:0">
+      <div class="wrap row reveal">
         <div>
-          <p class="label">Comece hoje</p>
-          <h2 class="h2" id="t-final">Leva um minuto para criar o seu plano.</h2>
-          <p class="body">Crie a conta, responda seis perguntas, uma por tela, e o Leve mostra a sua meta diária, o gasto estimado e a faixa saudável.</p>
+          <h2 class="h2" id="t-final">Comece hoje.</h2>
+          <p class="lead">Crie a conta, escolha o objetivo e responda algumas perguntas. O plano e a rotina saem na hora.</p>
         </div>
-        <div class="final-cta">
-          <a class="pill big dark when-out" href="app/#criar-conta">Criar conta<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-          <a class="pill big when-out" href="app/#entrar">Entrar</a>
-          <a class="pill big dark when-in" href="app/">Abrir o Leve<svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <div class="hero-cta" style="margin-top:0">
+          <a class="btn buy when-out" href="app/#criar-conta">Criar conta</a>
+          <a class="btn ghost when-out" href="app/#entrar">Entrar</a>
+          <a class="btn buy when-in" href="app/">Abrir o Leve</a>
         </div>
       </div>
     </section>
@@ -505,46 +429,35 @@
 
   <footer>
     <div class="wrap">
-      <div class="foot-grid">
+      <div class="foot-top">
         <div>
           <p class="foot-brand"><svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>Leve</p>
-          <p class="foot-tag">Diário de calorias, peso e líquidos em português do Brasil.</p>
+          <p style="margin-top:8px">Diário de calorias, peso e líquidos em português do Brasil.</p>
         </div>
-        <nav class="foot-links" aria-label="Rodapé">
+        <nav class="foot-col" aria-label="Rodapé">
           <h4>O app</h4>
           <a class="when-out" href="app/#criar-conta">Criar conta</a>
           <a class="when-out" href="app/#entrar">Entrar</a>
           <a class="when-in" href="app/">Abrir o Leve</a>
-          <a href="#como-funciona">Como funciona</a>
-          <a href="#recursos">Recursos</a>
+          <a href="#essencial">O essencial</a>
           <a href="#instalar">Instalar</a>
         </nav>
-        <div class="foot-links">
+        <div class="foot-col">
           <h4>Sobre</h4>
+          <a href="#objetivos">Objetivos</a>
           <a href="#saude">Saúde e segurança</a>
           <a href="#privacidade">Privacidade</a>
           <a href="https://github.com/AdaCompanyBR/Leve">Código no GitHub</a>
         </div>
       </div>
       <div class="foot-fine">
-        <p>O Leve não substitui médico ou nutricionista. As metas são estimativas baseadas em fórmulas populacionais.</p>
+        <p>O Leve não substitui médico, nutricionista ou profissional de educação física. As metas são estimativas baseadas em fórmulas populacionais.</p>
         <p>Dados nutricionais: Tabela Brasileira de Composição de Alimentos (TACO), 4ª edição revisada e ampliada, NEPA/UNICAMP, 2011. Produtos com código de barras: <a href="https://world.openfoodfacts.org">Open Food Facts</a>, licença ODbL.</p>
       </div>
     </div>
   </footer>
 
   <script>
-    // Marcas do anel (60 traços finos).
-    const g = document.getElementById('ticks');
-    for (let i = 0; i < 60; i++) {
-      const a = (i / 60) * Math.PI * 2, r1 = i % 5 ? 184 : 180, r2 = 190;
-      const l = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      l.setAttribute('class', 'tick');
-      l.setAttribute('x1', 200 + Math.sin(a) * r1); l.setAttribute('y1', 200 - Math.cos(a) * r1);
-      l.setAttribute('x2', 200 + Math.sin(a) * r2); l.setAttribute('y2', 200 - Math.cos(a) * r2);
-      g.append(l);
-    }
-    // Entrada suave das seções.
     const items = document.querySelectorAll('.reveal');
     if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
       const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });

@@ -412,22 +412,20 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 /* =========================================================================
    8. Líquidos
    ========================================================================= */
-/* Corpo e números */
-.liq-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center; gap: 12px; padding: 4px 0 8px; }
-.liq-body { height: min(64vh, 480px); min-height: 340px; }
-.liq-stats { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-.liq-pct { font: 700 17px/1 var(--font-num); color: var(--accent-ink); }
-.liq-total { margin-top: 6px; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; }
-.liq-num { font: 700 44px/1.02 var(--font-num); letter-spacing: -.03em; }
-.liq-unit { color: var(--ink-2); font-size: var(--fs-body); }
-.liq-left { margin-top: 4px; color: var(--ink-2); }
+/* Corpo, botões e barra de progresso */
+.liq-hero { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 12px; padding: 4px 0 8px; }
+.liq-body { height: min(58vh, 480px); min-height: 340px; width: 100%; }
+.liq-progress { width: 100%; max-width: 460px; margin-top: 8px; }
+.liq-progress-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.liq-progress-now { font: 600 20px/1.2 var(--font-num); letter-spacing: -.01em; }
+.liq-progress-now span { color: var(--ink-2); font-weight: 500; }
+.liq-left { color: var(--ink-2); font-size: var(--fs-sub); text-align: right; }
 .liq-left.done { color: var(--green-ink); font-weight: 600; }
-.liq-legend { margin-top: 14px; display: grid; gap: 6px; font-size: var(--fs-sub); color: var(--ink-2); width: 100%; }
-.liq-legend li { display: flex; align-items: center; gap: 8px; }
-.liq-legend b { margin-left: auto; color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
-.liq-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-.liq-stats .fine { margin-top: 10px; }
-.liq-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; margin-top: 8px; }
+.liq-bar { display: flex; height: 8px; margin-top: 10px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.liq-bar span { height: 100%; transition: width .5s var(--ease); }
+.liq-progress-goal { margin-top: 6px; color: var(--ink-2); font-size: 13px; }
+.liq-progress .fine { margin-top: 6px; }
+.liq-actions { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; margin-top: 8px; }
 .liq-plus { grid-column: 2; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: var(--on-accent); box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 34%, transparent); transition: transform var(--dur) var(--ease), background var(--dur) var(--ease); }
 .liq-plus .icon { width: 30px; height: 30px; stroke-width: 2.4; }
 .liq-plus:active { transform: scale(.94); background: var(--accent-press); }
@@ -905,10 +903,7 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
   .liquids-grid, .settings-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
   .liquids-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); }
   .liquids-grid .col-hero { position: sticky; top: 72px; }
-  .liq-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; }
-  .liq-stats { align-items: center; }
-  .liq-total { justify-content: center; }
-  .liq-body { height: clamp(340px, calc(100vh - 450px), 560px); width: 100%; }
+  .liq-body { height: clamp(340px, calc(100vh - 400px), 580px); }
 }
 
 @media (min-width: 960px) {

@@ -145,19 +145,22 @@ export function liquidsScreen() {
   const actions = h('div.liq-actions',
     h('button.liq-plus', { type: 'button', 'aria-label': 'Adicionar bebida', 'aria-haspopup': 'menu', 'aria-expanded': 'false', onclick: e => drinkMenu(e.currentTarget, date) }, icon('plus')),
     h('button.liq-list-btn', { type: 'button', 'aria-label': 'Bebidas cadastradas', onclick: () => presetsSheet() }, icon('list')));
-  const legend = layers.length > 1 ? h('ul.liq-legend', { 'aria-label': 'Bebidas do dia' },
-    Object.entries(layers.reduce((m, l) => ({ ...m, [l.type]: (m[l.type] ?? 0) + l.ml }), {}))
-      .map(([t, ml]) => h('li', h('span.liq-dot', { style: { background: drinkById(t).color } }), h('span', drinkById(t).label), h('b', amount(ml))))) : null;
+  // Barra de progresso: o mesmo preenchimento do corpo, deitado, com a cor de cada bebida.
+  const status = left > 0 ? `Faltam ${int(left)} ml` : left < 0 ? `Meta atingida, ${int(-left)} ml acima` : 'Meta atingida';
+  const progress = h('div.liq-progress',
+    h('div.liq-progress-row',
+      h('p.liq-progress-now', h('b', `${int(total)} ml`), h('span', ` · ${pct}%`)),
+      h('p.liq-left' + (left <= 0 ? '.done' : ''), status)),
+    h('div.liq-bar', { role: 'progressbar', 'aria-label': 'Líquidos do dia', 'aria-valuemin': 0, 'aria-valuemax': goal, 'aria-valuenow': Math.min(total, goal),
+      'aria-valuetext': `${int(total)} ml de ${int(goal)} ml, ${pct}%. ${status}.` },
+    bands.map(b => h('span', { style: { width: `${((b.to - b.from) * 100).toFixed(2)}%`, background: drinkById(b.type).color } }))),
+    h('p.liq-progress-goal', `Meta de ${int(goal)} ml`),
+    other > 0 ? h('p.fine', `${int(other)} ml de bebida alcoólica não contam para a meta.`) : null);
   const hero = h('section.liq-hero', { 'aria-label': 'Líquidos do dia' },
     h('div.liq-body', bodyFigure({ style: bodyStyle(), bands, level, key: date,
       label: `Corpo preenchido até ${Math.min(100, pct)}% da meta de líquidos${layers.length ? ': ' + layers.map(l => `${drinkById(l.type).label.toLowerCase()} ${int(l.ml)} ml`).join(', ') : ''}` })),
-    h('div.liq-stats',
-      h('p.liq-pct', { 'aria-hidden': 'true' }, `${pct}%`),
-      h('p.liq-total', h('span.liq-num', int(total)), h('span.liq-unit', `de ${int(goal)} ml`)),
-      h('p.liq-left' + (left <= 0 ? '.done' : ''), left > 0 ? `Faltam ${int(left)} ml` : left < 0 ? `Meta atingida, ${int(-left)} ml acima` : 'Meta atingida'),
-      legend,
-      other > 0 ? h('p.fine', `${int(other)} ml de bebida alcoólica não contam para a meta.`) : null),
-    actions);
+    actions,
+    progress);
 
   // ----- Registros do dia -----
   const items = dayDrinks(date);

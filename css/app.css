@@ -414,7 +414,7 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
    ========================================================================= */
 /* Corpo e números */
 .liq-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center; gap: 12px; padding: 4px 0 8px; }
-.liq-body { height: min(62vh, 440px); min-height: 300px; }
+.liq-body { height: min(64vh, 480px); min-height: 340px; }
 .liq-stats { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 .liq-pct { font: 700 17px/1 var(--font-num); color: var(--accent-ink); }
 .liq-total { margin-top: 6px; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; }
@@ -914,7 +914,7 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
   .liq-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; }
   .liq-stats { align-items: center; }
   .liq-total { justify-content: center; }
-  .liq-body { height: min(56vh, 460px); width: 100%; }
+  .liq-body { height: clamp(380px, calc(100vh - 340px), 580px); width: 100%; }
 }
 
 @media (min-width: 960px) {
@@ -981,16 +981,26 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 /* =========================================================================
    15. Corpo e copos (aba Líquidos)
    ========================================================================= */
-.body-figure { display: block; width: 100%; height: 100%; overflow: visible; }
-.body-outline > * { fill: none; stroke: var(--body-line, #8E9AA8); stroke-width: 4.4; stroke-linejoin: round; }
-.body-base > * { fill: var(--body-fill, var(--surface)); stroke: none; }
-.body-hair .hair { fill: var(--body-hair, #B8C1CC); stroke: var(--body-line, #8E9AA8); stroke-width: 2.2; stroke-linejoin: round; }
+.body-figure { display: block; width: 100%; height: 100%; overflow: visible; isolation: isolate; }
+.person path, .person-top path { stroke-linejoin: round; stroke-linecap: round; }
+.pp-skin { fill: var(--person-skin); stroke: var(--person-line); stroke-width: 1.7; }
+.pp-cloth, .pp-shoe { fill: var(--person-cloth); stroke: var(--person-line); stroke-width: 1.7; }
+.pp-hair { stroke: var(--person-line); stroke-width: 1.5; }
+.pp-line { fill: none; stroke: var(--person-line); stroke-width: 1.1; opacity: .75; }
+.pp-strand { fill: none; stroke: var(--person-hair-hi); stroke-width: 1.1; opacity: .8; }
+.pp-shade { fill: var(--person-shade); opacity: .1; stroke: none; }
+.pp-ground { fill: var(--person-shade); opacity: .1; }
+/* O líquido tinge o desenho por multiplicação: roupas e traços seguem visíveis. */
+.body-liquid { mix-blend-mode: multiply; opacity: .88; }
+.person-veil path { fill: #fff; opacity: .2; stroke: var(--person-line); stroke-width: 1.7; stroke-opacity: .55; }
+.body-surface { fill: none; stroke: rgba(255, 255, 255, .7); stroke-width: 1.4; }
 .body-band { shape-rendering: crispEdges; }
-.body-bubble { fill: rgba(255, 255, 255, .7); animation: bubble 3.5s ease-in infinite; opacity: 0; }
+.body-bubble { fill: rgba(255, 255, 255, .75); animation: bubble 3.5s ease-in infinite; opacity: 0; }
 @keyframes bubble { 10% { opacity: .9; } 90% { opacity: .6; } to { transform: translateY(var(--rise)); opacity: 0; } }
-:root { --body-line: #A7B1BD; --body-hair: #C9D0D8; --body-fill: #FFFFFF; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --body-line: #5A626D; --body-hair: #3A3F46; --body-fill: #232326; } }
-:root[data-theme="dark"] { --body-line: #5A626D; --body-hair: #3A3F46; --body-fill: #232326; }
+/* A ilustração é clara nos dois temas (roupas brancas); no escuro, um pouco mais baixa. */
+:root { --person-line: #4F6274; --person-skin: #F1F4F7; --person-cloth: #FFFFFF; --person-shade: #3E5266; --person-hair: #4A5562; --person-hair-hi: #77838F; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --person-line: #3B4A59; --person-skin: #D9DFE5; --person-cloth: #EDF0F3; --person-hair: #3A434D; --person-hair-hi: #6B7783; } }
+:root[data-theme="dark"] { --person-line: #3B4A59; --person-skin: #D9DFE5; --person-cloth: #EDF0F3; --person-hair: #3A434D; --person-hair-hi: #6B7783; }
 .drink-badge { display: inline-grid; place-items: center; flex: none; border-radius: 50%; color: #fff; background: var(--c); }
 .drink-badge svg { width: 58%; height: 58%; }
 .cup { width: 100%; height: auto; display: block; overflow: visible; }

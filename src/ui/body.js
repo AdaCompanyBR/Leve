@@ -1,53 +1,18 @@
-// Corpo da aba Líquidos: silhueta de frente (feminina ou masculina) que enche de baixo para cima,
-// com uma camada de cor por bebida. O preenchimento mostra os líquidos registrados em relação à
-// meta do dia; não é uma medida do corpo. Tudo em SVG, recortado pela própria silhueta.
+// Corpo da aba Líquidos: a ilustração de uma pessoa (feminina ou masculina, em person.js) que
+// enche de baixo para cima com uma camada de cor por bebida. O líquido fica recortado pelo
+// contorno do corpo e das roupas e se mistura ao desenho (multiplicação), então roupas,
+// dobras e traços continuam visíveis mesmo com o corpo cheio. O cabelo fica por cima.
+// O preenchimento mostra os líquidos registrados em relação à meta; não é uma medida do corpo.
 import { drinkById } from '../lib/hydration.js';
 import { reducedMotion } from './dom.js';
+import { PEOPLE, W, H, TOP, BOTTOM } from './person.js';
 
 const NS = 'http://www.w3.org/2000/svg';
-const W = 200, TOP = 14, BOTTOM = 452;
-const mirror = d => d.replace(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g, (_, x, y) => `${(W - parseFloat(x)).toFixed(1)} ${y}`);
-
-// Partes de cada silhueta. Os braços e as pernas da direita são o espelho da esquerda.
-const SHAPES = {
-  f: {
-    hair: 'M100 19 C80 19 70 34 70 55 C70 74 73 89 78 101 C81 101 84 99 86 97 C84 88 83 78 84 64 L116 64 C117 78 116 88 114 97 C116 99 119 101 122 101 C127 89 130 74 130 55 C130 34 120 19 100 19 Z',
-    head: { cx: 100, cy: 50, rx: 19.5, ry: 25 },
-    neck: 'M92 70 L108 70 L109 90 L91 90 Z',
-    torso: 'M100 86 C88 86 74 88 64 93 C56 97 54 106 56 118 L60 146 C62 160 68 170 72 180 C66 194 61 212 62 238 L138 238 C139 212 134 194 128 180 C132 170 138 160 140 146 L144 118 C146 106 144 97 136 93 C126 88 112 86 100 86 Z',
-    arm: 'M62 96 C51 99 47 108 46 122 L42 176 C40 198 37 220 36 238 C35 248 40 254 45 251 C48 247 49 238 51 226 L57 180 L62 140 Z',
-    leg: 'M64 232 L101 232 L99 256 C97 300 95 342 93 384 C92 408 91 424 91 436 L75 436 C74 414 72 386 70 346 C67 304 63 266 64 232 Z',
-    foot: { cx: 82, cy: 441, rx: 12.5, ry: 6 },
-  },
-  m: {
-    hair: 'M100 18 C80 18 74 30 75 48 C76 42 82 36 100 36 C118 36 124 42 125 48 C126 30 120 18 100 18 Z',
-    head: { cx: 100, cy: 50, rx: 21, ry: 26 },
-    neck: 'M90 70 L110 70 L112 92 L88 92 Z',
-    torso: 'M100 88 C86 88 68 89 56 95 C47 100 45 110 47 124 L53 160 C56 178 60 196 62 238 L138 238 C140 196 144 178 147 160 L153 124 C155 110 153 100 144 95 C132 89 114 88 100 88 Z',
-    arm: 'M55 98 C44 102 39 112 38 128 L35 182 C33 204 31 224 31 240 C31 250 37 256 42 252 C45 248 46 238 48 226 L54 182 L58 142 Z',
-    leg: 'M63 232 L101 232 L99 258 C98 302 96 344 94 386 C93 410 92 426 92 438 L74 438 C73 416 71 388 69 348 C67 306 62 266 63 232 Z',
-    foot: { cx: 82, cy: 443, rx: 13.5, ry: 6 },
-  },
-};
 
 function el(tag, attrs = {}) {
   const e = document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
   return e;
-}
-
-const hair = style => el('path', { d: (SHAPES[style] ?? SHAPES.f).hair, class: 'hair' });
-
-function parts(style) {
-  const s = SHAPES[style] ?? SHAPES.f;
-  const list = [];
-  list.push(el('ellipse', { cx: s.head.cx, cy: s.head.cy, rx: s.head.rx, ry: s.head.ry }));
-  list.push(el('path', { d: s.neck }));
-  list.push(el('path', { d: s.arm }), el('path', { d: mirror(s.arm) }));
-  list.push(el('path', { d: s.leg }), el('path', { d: mirror(s.leg) }));
-  list.push(el('path', { d: s.torso }));
-  list.push(el('ellipse', { cx: s.foot.cx, cy: s.foot.cy, rx: s.foot.rx, ry: s.foot.ry }), el('ellipse', { cx: W - s.foot.cx, cy: s.foot.cy, rx: s.foot.rx, ry: s.foot.ry }));
-  return list;
 }
 
 const yOf = f => BOTTOM - f * (BOTTOM - TOP);
@@ -62,49 +27,65 @@ let uid = 0;
  */
 export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label = '' }) {
   const id = 'body' + (++uid);
-  const svg = el('svg', { viewBox: `0 0 ${W} 460`, class: 'body-figure', role: 'img', 'aria-label': label });
+  const person = PEOPLE[style] ?? PEOPLE.f;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'body-figure', role: 'img', 'aria-label': label, preserveAspectRatio: 'xMidYMid meet' });
   const defs = el('defs');
   const clip = el('clipPath', { id: id + '-clip' });
-  parts(style).forEach(p => clip.append(p));
-  // Volume: claro à esquerda, sombra à direita, como luz de cima.
-  const sheen = el('linearGradient', { id: id + '-sheen', x1: 0, x2: 1, y1: 0, y2: 0 });
-  sheen.append(el('stop', { offset: '0', 'stop-color': '#fff', 'stop-opacity': '.32' }), el('stop', { offset: '.42', 'stop-color': '#fff', 'stop-opacity': '0' }),
-    el('stop', { offset: '.8', 'stop-color': '#000', 'stop-opacity': '0' }), el('stop', { offset: '1', 'stop-color': '#000', 'stop-opacity': '.12' }));
-  defs.append(clip, sheen);
+  for (const p of person.base) if (p.fill) clip.append(el('path', { d: p.d }));
+  // Luz de cima e da esquerda: roupas um pouco mais escuras à direita.
+  const light = el('linearGradient', { id: id + '-light', x1: 0, x2: 1, y1: 0, y2: 0 });
+  light.append(el('stop', { offset: '.35', 'stop-color': 'var(--person-shade)', 'stop-opacity': 0 }), el('stop', { offset: '1', 'stop-color': 'var(--person-shade)', 'stop-opacity': '.16' }));
+  const hairG = el('linearGradient', { id: id + '-hair', x1: 0, x2: 0, y1: 0, y2: 1 });
+  hairG.append(el('stop', { offset: '0', 'stop-color': 'var(--person-hair-hi)' }), el('stop', { offset: '1', 'stop-color': 'var(--person-hair)' }));
+  defs.append(clip, light, hairG);
   svg.append(defs);
 
-  // Cabelo atrás da cabeça e fora do líquido.
-  const hairG = el('g', { class: 'body-hair' });
-  hairG.append(hair(style));
-  const outline = el('g', { class: 'body-outline' });
-  parts(style).forEach(p => outline.append(p));
-  const fill = el('g', { class: 'body-base' });
-  parts(style).forEach(p => fill.append(p));
-  const liquid = el('g', { 'clip-path': `url(#${id}-clip)` });
-  const layers = el('g', { class: 'body-layers' });
-  const wave = el('path', { class: 'body-wave' });
-  const bubbles = el('g', { class: 'body-bubbles' });
-  liquid.append(layers, wave, bubbles, el('rect', { x: 0, y: 0, width: W, height: 460, fill: `url(#${id}-sheen)`, class: 'body-sheen' }));
-  svg.append(hairG, outline, fill, liquid);
+  const paint = (parts, g) => {
+    for (const p of parts) {
+      const a = { d: p.d, class: 'pp-' + p.kind };
+      if (p.kind === 'hair') a.fill = `url(#${id}-hair)`;
+      g.append(el('path', a));
+    }
+    return g;
+  };
+  const figure = paint(person.base.filter(p => p.kind !== 'line'), el('g', { class: 'person' }));
+  figure.append(el('rect', { x: 0, y: 0, width: W, height: H, fill: `url(#${id}-light)`, 'clip-path': `url(#${id}-clip)` }));
 
+  // Líquido: camadas, superfície e bolhas, tudo dentro do contorno.
+  const liquid = el('g', { 'clip-path': `url(#${id}-clip)` });
+  const mix = el('g', { class: 'body-liquid' });
+  const layers = el('g');
+  const wave = el('path');
+  mix.append(layers, wave);
+  const surface = el('path', { class: 'body-surface' });
+  const bubbles = el('g', { class: 'body-bubbles' });
+  liquid.append(mix, surface, bubbles);
+  // Por cima do líquido: um véu claro nas roupas (para separá-las da pele) e os traços de detalhe.
+  const veil = el('g', { class: 'person-veil' });
+  for (const p of person.base) if (p.kind === 'cloth' || p.kind === 'shoe') veil.append(el('path', { d: p.d }));
+  const ink = paint(person.base.filter(p => p.kind === 'line'), el('g', { class: 'person' }));
+  svg.append(figure, liquid, veil, ink, paint(person.top, el('g', { class: 'person-top' })));
+
+  let topColor = null;
+  function waveAt(shown, phase) {
+    if (!topColor || shown <= .002) { wave.setAttribute('d', ''); surface.setAttribute('d', ''); return; }
+    const y = yOf(shown), amp = shown >= .999 ? 0 : 2.4;
+    let top = '';
+    for (let x = 0; x <= W; x += 12) top += ` L${x} ${(y + Math.sin(x / 26 + phase) * amp).toFixed(2)}`;
+    wave.setAttribute('d', `M0 ${y + 8}${top} L${W} ${y + 8} Z`);
+    wave.setAttribute('fill', topColor);
+    surface.setAttribute('d', amp ? 'M' + top.slice(2) : '');
+  }
   function draw(shown, phase) {
     layers.replaceChildren();
-    let top = null;
+    topColor = null;
     for (const b of bands) {
       if (b.from >= shown) break;
       const to = Math.min(b.to, shown);
-      const d = drinkById(b.type);
-      layers.append(el('rect', { x: 0, y: yOf(to), width: W, height: yOf(b.from) - yOf(to) + .6, fill: d.color, class: 'body-band' }));
-      top = d;
+      topColor = drinkById(b.type).color;
+      layers.append(el('rect', { x: 0, y: yOf(to), width: W, height: yOf(b.from) - yOf(to) + .6, fill: topColor, class: 'body-band' }));
     }
-    if (!top || shown <= .002) { wave.setAttribute('d', ''); return; }
-    // Superfície: uma onda baixa e lenta, só no topo.
-    const y = yOf(shown), amp = shown >= .999 ? 0 : 2.2;
-    let dpath = `M0 ${y + 6}`;
-    for (let x = 0; x <= W; x += 10) dpath += ` L${x} ${(y + Math.sin(x / 22 + phase) * amp).toFixed(2)}`;
-    dpath += ` L${W} ${y + 6} Z`;
-    wave.setAttribute('d', dpath);
-    wave.setAttribute('fill', top.color);
+    waveAt(shown, phase);
   }
 
   function makeBubbles() {
@@ -113,11 +94,11 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
     for (const b of bands) {
       if (!drinkById(b.type).fizz) continue;
       const y1 = yOf(Math.min(b.to, level)), y0 = yOf(b.from), span = y0 - y1;
-      if (span < 8) continue;
-      const n = Math.min(10, Math.max(3, Math.round(span / 18)));
+      if (span < 10) continue;
+      const n = Math.min(12, Math.max(3, Math.round(span / 20)));
       for (let i = 0; i < n; i++) {
-        const c = el('circle', { cx: 74 + ((i * 37) % 52), cy: y0 - 4, r: 1.2 + (i % 3) * .5, class: 'body-bubble' });
-        c.style.setProperty('--rise', `${-(span - 6)}px`);
+        const c = el('circle', { cx: 94 + ((i * 37) % 54), cy: y0 - 4, r: 1.3 + (i % 3) * .55, class: 'body-bubble' });
+        c.style.setProperty('--rise', `${-(span - 8)}px`);
         c.style.animationDelay = `${(i * .6) % 3.6}s`;
         c.style.animationDuration = `${3 + (i % 3)}s`;
         bubbles.append(c);
@@ -125,10 +106,22 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
     }
   }
 
+  // Em repouso, só a superfície se move, cerca de 20 vezes por segundo; cheio, fica parado.
+  function idle() {
+    if (level <= .002 || level >= .999) return;
+    let last = 0;
+    const loop = now => {
+      if (!svg.isConnected) return;
+      if (now - last > 50) { last = now; waveAt(level, now / 1400); }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
   const from = shownByKey.get(key) ?? 0;
   shownByKey.set(key, level);
   makeBubbles();
-  if (reducedMotion() || Math.abs(level - from) < .001) { draw(level, 0); if (!reducedMotion()) idle(); return svg; }
+  if (reducedMotion() || Math.abs(level - from) < .001) { draw(level, 0); if (!reducedMotion()) requestAnimationFrame(idle); return svg; }
   // Sobe com uma curva suave e assenta; depois a superfície fica ondulando devagar.
   const t0 = performance.now(), dur = 1100;
   const step = now => {
@@ -138,23 +131,6 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
     if (p < 1) requestAnimationFrame(step); else idle();
   };
   requestAnimationFrame(step);
-  // Em repouso, só a superfície se move, cerca de 20 vezes por segundo; cheio, fica parado.
-  function idle() {
-    if (level <= .002 || level >= .999) return;
-    let last = 0;
-    const loop = now => {
-      if (!svg.isConnected) return;
-      if (now - last > 50) { last = now; waveOnly(now / 1400); }
-      requestAnimationFrame(loop);
-    };
-    requestAnimationFrame(loop);
-  }
-  function waveOnly(phase) {
-    const y = yOf(level);
-    let dpath = `M0 ${y + 6}`;
-    for (let x = 0; x <= W; x += 10) dpath += ` L${x} ${(y + Math.sin(x / 22 + phase) * 2.2).toFixed(2)}`;
-    wave.setAttribute('d', dpath + ` L${W} ${y + 6} Z`);
-  }
   draw(from, 0);
   return svg;
 }

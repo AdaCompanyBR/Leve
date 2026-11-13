@@ -48,7 +48,7 @@ function personRow(p, { big = false } = {}) {
 }
 
 const placeholderRow = () => h('div.person-row.placeholder',
-  h('div.person-fig.empty', icon('plus')),
+  h('div.person-add', { 'aria-hidden': 'true' }, icon('plus')),
   h('p.person-name.muted', 'Seu amigo aqui'),
   h('button.btn.tonal.poke-btn', { type: 'button', onclick: e => { e.stopPropagation(); inviteSheet(); } }, 'Convidar'));
 

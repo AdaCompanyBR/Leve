@@ -1090,8 +1090,12 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .person-row.big { min-height: 132px; padding: 14px 16px 14px 10px; border-radius: 22px; background: var(--surface); }
 .person-fig { flex: none; width: 44px; height: 64px; }
 .person-row.big .person-fig { width: 64px; height: 104px; }
-.person-fig.empty { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; border: 6px solid var(--fill); color: var(--accent-ink); }
-.person-fig.empty .icon { width: 22px; height: 22px; stroke-width: 2.4; }
+/* Lugar vazio: anel claro e grosso com o + azul no centro (nome próprio, sem herdar .empty). */
+.person-add { flex: none; display: grid; place-items: center; box-sizing: border-box; width: 56px; height: 56px; padding: 0; border-radius: 50%;
+  border: 8px solid var(--fill); background: var(--surface); color: var(--accent-ink); }
+.person-add .icon { width: 22px; height: 22px; stroke-width: 2.4; }
+.person-row.big .person-add, .friends-list .person-add { width: 64px; height: 64px; border-width: 9px; }
+.person-row.big .person-add .icon, .friends-list .person-add .icon { width: 24px; height: 24px; }
 .person-info { flex: 1; min-width: 0; }
 .person-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .person-name.muted { flex: 1; color: var(--ink-2); }
@@ -1127,7 +1131,6 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .invite-back { margin-top: 16px; }
 .invite-back .set-row { align-items: center; }
 .friends-more { white-space: nowrap; }
-.person-row .person-fig.empty, .person-row.big .person-fig.empty { width: 52px; height: 52px; }
 
 /* Puxar para atualizar */
 .ptr { position: fixed; top: calc(env(safe-area-inset-top) + 8px); left: 50%; z-index: 90; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
@@ -1140,3 +1143,4 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .ptr.loading .ptr-icon { display: none; }
 .ptr.loading .ptr-spin { display: block; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.friends-card .friends-more { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }

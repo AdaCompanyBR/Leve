@@ -92,6 +92,9 @@ export const ICONS = {
   coffee: '<path d="M4.5 9.5h12v4.25a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M16.5 10.5h1.25a2.5 2.5 0 0 1 0 5H16M8.5 3.5c-.6.9-.6 1.9 0 2.75M12 3.5c-.6.9-.6 1.9 0 2.75"/>',
   plate: '<circle cx="12" cy="12" r="8.25"/><circle cx="12" cy="12" r="4.75"/>',
   apple: '<path d="M12 7.5c-1.8-1.4-6-1.2-6 3.6 0 4.2 2.7 8.4 4.6 8.4.6 0 1-.4 1.4-.4s.8.4 1.4.4c1.9 0 4.6-4.2 4.6-8.4 0-4.8-4.2-5-6-3.6z"/><path d="M12 7.5c0-2 .8-3.4 2.4-4"/>',
+  // Símbolos do resumo de calorias (família própria: mesmo aro, traço fino e pontas arredondadas).
+  'kcal-in': '<circle cx="12" cy="12" r="8.75"/><path d="M7.4 12.1h9.2a4.6 4.6 0 0 1-9.2 0z"/><path d="M12 12.1c0-2.3 1.25-3.95 3.3-4.35-.1 2.3-1.4 3.95-3.3 4.35z"/>',
+  'kcal-out': '<path d="M16.38 4.42A8.75 8.75 0 1 1 10.48 3.38"/><path d="m12.85 7.1-3.1 5.15h3.05L11.15 16.9l3.1-5.15H11.2z"/>',
 };
 export const icon = (name, cls) => svg(ICONS[name], cls);
 

@@ -5,7 +5,8 @@ import { reducedMotion } from './dom.js';
 let shown = 0; // valor exibido persiste entre renderizações: o anel anima de onde estava
 let velocity = 0;
 
-export function createRing(canvas, getTarget) {
+/** `thickness`: espessura do anel em fração da largura (o padrão é o anel grande). */
+export function createRing(canvas, getTarget, { thickness = 0.105, min = 18 } = {}) {
   const ctx = canvas.getContext('2d');
   let raf = 0, last = 0, size = 0, colors = readColors();
 
@@ -23,7 +24,7 @@ export function createRing(canvas, getTarget) {
   }
 
   function draw(value, time) {
-    const w = size, c = w / 2, lw = Math.max(18, w * 0.105), r = c - lw / 2 - 6;
+    const w = size, c = w / 2, lw = Math.max(min, w * thickness), r = c - lw / 2 - 6;
     const start = -Math.PI / 2;
     ctx.clearRect(0, 0, w, w);
     ctx.lineCap = 'round';

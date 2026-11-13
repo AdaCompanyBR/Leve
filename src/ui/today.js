@@ -16,6 +16,7 @@ import { todayISO, addDays, fmtDate } from '../lib/dates.js';
 import { mealSchedule } from '../lib/routine.js';
 import { dayInsights } from '../lib/dayInsights.js';
 import { typeById, activityKcal } from '../lib/activity.js';
+import { createRing } from './ring.js';
 import { mealPhoto, photoKind, photoUrl, MEAL_PHOTO } from '../lib/foodPhotos.js';
 import { env, onEnv } from '../env.js';
 import { addFoodSheet } from './log.js';
@@ -110,7 +111,10 @@ export function todayScreen() {
   const over = remaining != null && remaining < 0;
   const dayPct = target ? (t.kcal / target) * 100 : 0;
   const m = plan?.macros;
-  const stat = (cls, value, label) => h('div.sum-stat' + cls, h('span.sum-value', value), h('span.sum-label', label));
+  const side = (ic, value, label) => h('div.sum-side', h('span.sum-sym', { 'aria-hidden': 'true' }, icon(ic, 'icon sum-sym-svg')), h('span.sum-value', value), h('span.sum-label', label));
+  // Anel central: preenchimento proporcional às calorias consumidas, com as restantes no meio.
+  const canvas = h('canvas.ring-canvas', { role: 'img', 'aria-label': target ? `${int(t.kcal)} de ${int(target)} kcal consumidas` : `${int(t.kcal)} kcal consumidas` });
+  requestAnimationFrame(() => createRing(canvas, () => (target ? t.kcal / target : 0), { thickness: 0.085, min: 11 }));
   const macro = (k, label, value, goal) => {
     const pct = goal ? (value / goal) * 100 : 0;
     return h('div.sum-macro', { 'data-m': k },
@@ -121,12 +125,14 @@ export function todayScreen() {
   };
   const ringCard = h('section.card.sum-card', { 'aria-label': 'Resumo nutricional do dia' },
     h('div.sum-stats',
-      stat('', int(t.kcal), 'Consumidas'),
-      stat('.hero' + (over ? '.over' : ''), target == null ? '—' : int(Math.abs(remaining)), target == null ? 'Sem meta' : over ? 'Acima da meta' : plan?.mode === 'superavit' ? 'Para a meta' : 'Restantes'),
-      stat('', int(burned), 'Queimadas')),
-    target != null ? h('div.sum-day',
-      h('div.sum-track.big' + (over ? '.over' : ''), { role: 'progressbar', 'aria-label': `${int(t.kcal)} de ${int(target)} kcal consumidas`, 'aria-valuemin': 0, 'aria-valuemax': Math.round(target), 'aria-valuenow': Math.round(t.kcal) }, animatedFill('kcal', dayPct)),
-      h('div.sum-day-foot', h('span', `${Math.round(dayPct)}% da meta`), h('span', `${budget?.adjusted ? 'Meta ajustada' : 'Meta do dia'}: ${int(target)} kcal`))) : null,
+      side('kcal-in', int(t.kcal), 'Consumidas'),
+      h('div.sum-ring',
+        canvas,
+        h('div.sum-ring-center' + (over ? '.over' : ''),
+          h('span.sum-ring-num', target == null ? int(t.kcal) : int(Math.abs(remaining))),
+          h('span.sum-ring-label', target == null ? 'kcal hoje' : over ? 'acima da meta' : plan?.mode === 'superavit' ? 'para a meta' : 'restantes'))),
+      side('kcal-out', int(burned), 'Queimadas')),
+    target != null ? h('p.sum-goal', `${Math.round(dayPct)}% de ${int(target)} kcal · ${budget?.adjusted ? 'meta ajustada' : 'meta do dia'}`) : null,
     h('div.sum-macros', macro('p', 'Proteína', t.p, m?.protein), macro('c', 'Carboidratos', t.c, m?.carbs), macro('f', 'Gorduras', t.f, m?.fat)),
     burned ? h('p.ring-note', 'Queimadas: estimativa das atividades feitas hoje. A meta já considera o seu nível de atividade, então não muda.') : null,
     over && budget ? h('p.ring-note', 'Um dia acima da meta não desfaz o plano. O saldo da semana equilibra os próximos dias.') : null,

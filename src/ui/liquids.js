@@ -6,6 +6,7 @@ import { state, subscribe, addDrink, removeDrink, restoreDrink, clearLegacyWater
 import { drinkSwaps } from './swaps.js';
 import { drinkSheet, typePicker } from './drink.js';
 import { friendsCard } from './friends.js';
+import { hydrationNote } from './environment.js';
 import { bodyFigure, drinkBadge, cupFigure } from './body.js';
 import { drinkById, dayLayers, fillBands, weekDetail, suggestWaterGoal, parseDrinkSpeech, parseAmount } from '../lib/hydration.js';
 import { todayISO, addDays, fmtDate, toISO } from '../lib/dates.js';
@@ -156,6 +157,7 @@ export function liquidsScreen() {
       'aria-valuetext': `${int(total)} ml de ${int(goal)} ml, ${pct}%. ${status}.` },
     bands.map(b => h('span', { style: { width: `${((b.to - b.from) * 100).toFixed(2)}%`, background: drinkById(b.type).color } }))),
     h('p.liq-progress-goal', `Meta de ${int(goal)} ml`),
+    isToday ? hydrationNote() : null,
     other > 0 ? h('p.fine', `${int(other)} ml de bebida alcoólica não contam para a meta.`) : null);
   const hero = h('section.liq-hero', { 'aria-label': 'Líquidos do dia' },
     h('div.liq-body', bodyFigure({ style: bodyStyle(), bands, level, key: date,

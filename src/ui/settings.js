@@ -8,6 +8,8 @@ import { goalWizard, routineSheet } from './routine.js';
 import { todayISO } from '../lib/dates.js';
 import { accountCard } from './account.js';
 import * as auth from '../auth.js';
+import { location as envLocation, placeName, ALERT_CATEGORIES, alertOn } from '../env.js';
+import { locationSheet } from './environment.js';
 
 export function applyTheme() {
   const t = state.settings.theme;
@@ -104,7 +106,16 @@ export function settingsScreen() {
     row('Meta diária', select(goalIds.map(v => ({ id: String(v), label: `${dec1(v / 1000)} L${v === suggested ? ' (sugerida)' : ''}` })), String(goalNow), v => setWaterGoal(Number(v)), 'Meta diária de líquidos'),
       suggested ? `Sugerida: ${dec1(suggested / 1000)} L, pelo seu peso, rotina e clima. A meta nova vale a partir de hoje.` : 'A meta nova vale a partir de hoje.'),
     p ? row('Clima onde você mora', select(CLIMATES.map(c => ({ id: c.id, label: c.label })), p.climate ?? 'temperado', v => saveProfile({ climate: v }), 'Clima')) : null,
-    row('Corpo na aba Líquidos', segmented([{ id: 'f', label: 'Feminino' }, { id: 'm', label: 'Masculino' }], bodyStyle(), v => saveSettings({ body: v }), 'Corpo na aba Líquidos')));
+    row('Corpo na aba Líquidos', segmented([{ id: 'f', label: 'Feminino' }, { id: 'm', label: 'Masculino' }], bodyStyle(), v => saveSettings({ body: v }), 'Corpo na aba Líquidos')),
+    row('Orientação médica para limitar líquidos', h('button.switch', { role: 'switch', 'aria-checked': String(!!s.fluidRestriction), 'aria-label': 'Orientação médica para limitar líquidos', onclick: () => saveSettings({ fluidRestriction: !s.fluidRestriction }) }, h('span')),
+      'Ligado, o clima nunca sugere beber mais: as orientações de calor pedem para seguir o seu médico.'));
+
+  // Clima e localização: de onde vem a previsão e quais avisos aparecem.
+  const loc = envLocation();
+  const envCard = h('section.card.set-card', { 'aria-label': 'Clima e localização' }, h('h3', 'Clima e localização'),
+    row('Localização', valueBtn(loc ? placeName(loc) : 'Não definida', () => locationSheet(), 'Alterar localização'), loc ? (loc.mode === 'gps' ? 'Pelo GPS do aparelho' : 'Escolhida pelo nome') : 'Para o clima, o índice UV e a qualidade do ar do dia'),
+    ...ALERT_CATEGORIES.map(c => row(`Avisos de ${c.label.toLowerCase()}`, h('button.switch', { role: 'switch', 'aria-checked': String(alertOn(c.id)), 'aria-label': `Avisos de ${c.label.toLowerCase()}`,
+      onclick: () => saveSettings({ envAlerts: { ...(s.envAlerts ?? {}), [c.id]: !alertOn(c.id) } }) }, h('span')), c.hint)));
 
   const file = h('input', { type: 'file', accept: 'application/json,.json', hidden: true, onchange: async e => {
     const f = e.target.files[0]; if (!f) return;
@@ -130,8 +141,8 @@ export function settingsScreen() {
     h('p.fine', 'Alimentos: tabela TACO (NEPA/UNICAMP, 2011) e Open Food Facts (ODbL).'),
     h('p.fine', h('a.link.inline', { href: '../' }, 'Sobre o Leve')));
 
-  [profileCard, goalCard, prefCard, liqCard, dataCard].filter(Boolean).forEach(groupRows);
+  [profileCard, goalCard, prefCard, liqCard, envCard, dataCard].filter(Boolean).forEach(groupRows);
   return h('div.screen.settings',
     h('header.screen-head', h('div', h('h1', 'Ajustes'))),
-    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', groupRows(accountCard({ row })), prefCard, liqCard, dataCard, about)));
+    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', groupRows(accountCard({ row })), prefCard, liqCard, envCard, dataCard, about)));
 }

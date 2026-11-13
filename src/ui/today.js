@@ -5,6 +5,7 @@ import { foodSheet, undoToast } from './food.js';
 import { daySwaps, swapSheet } from './swaps.js';
 import { drinkSheet } from './drink.js';
 import { routineCard } from './routine.js';
+import { conditionsCard } from './environment.js';
 import { ui, go } from './state.js';
 import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, waterGoalOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
@@ -205,7 +206,7 @@ export function todayScreen() {
         h('button.icon-btn', { 'aria-label': 'Dia anterior', onclick: () => go('hoje', { date: addDays(date, -1) }) }, icon('back')),
         h('button.icon-btn', { 'aria-label': 'Próximo dia', disabled: isToday, onclick: () => go('hoje', { date: addDays(date, 1) }) }, icon('next')))),
     h('div.today-grid',
-      h('div.col.col-hero', ringCard, macrosCard),
+      h('div.col.col-hero', ringCard, macrosCard, isToday ? conditionsCard() : null),
       h('div.col.col-meals', weightCard, routineCard(date), mealsCard),
       h('div.col.col-side', waterCard, swapsCard, fitsCard)));
 }

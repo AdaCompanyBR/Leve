@@ -18,6 +18,8 @@ import { toast } from './ui/dom.js';
 import { captureInvite, checkInvite } from './ui/friends.js';
 import { initPullToRefresh } from './ui/pull.js';
 import { startUpdateChecks } from './update.js';
+import { startEnv, setEnvNotifier } from './env.js';
+import { showAlert } from './ui/environment.js';
 
 // Link de convite (#convite=...): guarda o código antes de o app limpar o endereço.
 captureInvite();
@@ -186,8 +188,10 @@ function open() {
     if (auth.current()) { share.start(); setTimeout(() => state.profile && checkInvite(), 600); } else share.stop();
   });
   share.setNotifier(msg => toast(msg));
+  setEnvNotifier(showAlert);
   render();
   share.start();
+  startEnv();
   setTimeout(() => state.profile && checkInvite(), 600);
   // Pede ao navegador para não apagar os dados sob pressão de espaço.
   navigator.storage?.persist?.().catch(() => {});

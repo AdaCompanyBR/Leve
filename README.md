@@ -9,6 +9,7 @@ Diário de calorias e peso em português do Brasil, feito para uma pessoa só. �
 - **Objetivo e rotina.** Perder peso, ganhar massa muscular, definir o corpo, manter o peso ou comer melhor. Cada objetivo tem o seu cálculo (déficit, superávit pequeno, déficit de 10% com proteína alta ou manutenção) e gera uma rotina: horários das refeições a partir da hora de acordar, com calorias e proteína de cada uma, e hábitos do dia (água, proteína, treino de força, movimento, vegetais, sono, pesagem). Água, proteína, pesagem e refeições se marcam sozinhas.
 - **Registro por frase.** Escreva "2 ovos mexidos e um pão francês"; o app separa itens, quantidades e calorias e mostra tudo para você confirmar antes de salvar.
 - **Gasto adaptativo.** Com 14 dias ou mais de registros e pesagens, calcula o seu gasto real e propõe uma nova meta. Você aceita ou recusa.
+- **Condições de hoje.** Com a localização (GPS ou cidade pelo nome), a aba Hoje mostra temperatura, sensação térmica, umidade, índice UV e qualidade do ar, com a classificação do dia por regras oficiais (OMS, EPA, NWS, INMET), os melhores horários para atividade ao ar livre e a previsão de 7 dias. A aba Líquidos ganha uma orientação de hidratação nos dias quentes ou secos, sem mudar a meta, e alertas de calor, sol, ar e tempo aparecem no app. Dados da Open-Meteo; detalhes e regras em `AMBIENTE.md`.
 - **Aba Líquidos.** Uma ilustração de pessoa (feminina ou masculina, à escolha em Ajustes) enche de baixo para cima com uma camada de cor por bebida, na ordem do dia, com total, meta, porcentagem e quanto falta. O + no centro abre as bebidas pré-definidas, já com a quantidade, "Outra bebida…" (valor exato em ml ou litros, tipo, data e horário, teclado numérico no celular) e "Falar" ("300 ml de café"). O botão de lista ao lado abre a tela onde essas bebidas são cadastradas, corrigidas e removidas. Lista do dia editável, semana em 7 copos com detalhe por dia e resumo, e meta de 1,5 a 3,5 L com sugestão pelo peso, rotina e clima. Cada dia guarda a meta que tinha. Com conta, dá para compartilhar o progresso de líquidos com amigos por um link de convite: cada um vê o nome, a meta e quanto o outro bebeu no dia (nunca cada bebida), pode cutucar ou aplaudir, e o app avisa quando um amigo bate a meta. Bebida alcoólica fica registrada, mas não conta para a meta.
 - **Trocas mais leves.** Ao abrir um alimento, depois de registrar e no cartão "Trocas para a próxima vez" em Hoje, o app mostra opções com menos calorias e o motivo (suco de uva → água ou refrigerante zero, batata frita → batata cozida, picanha → patinho ou frango). As calorias das alternativas vêm da TACO, na mesma quantidade. Dá para desligar em Ajustes.
 - **Peso tendência.** Média móvel exponencial que esconde a oscilação diária de água.
@@ -108,6 +109,8 @@ src/config.js          endereço e chave do Supabase
 supabase/schema.sql    tabela e regras da nuvem
 supabase/sharing.sql   compartilhamento entre amigos (rodar depois do schema.sql)
 src/share.js           resumo do dia para os amigos, convites e cutucadas
+src/env.js             localização, clima e qualidade do ar (Open-Meteo), cache e alertas
+src/lib/environment.js regras do contexto ambiental (ver AMBIENTE.md)
 src/ui/                telas e componentes
 tests/                 node --test
 ```

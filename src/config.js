@@ -5,3 +5,12 @@
 // Vazio = o app funciona só neste aparelho, sem login.
 export const SUPABASE_URL = 'https://vsbjlovtoppdagmahtem.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_eQge7F1YKRRX3I50CSiZzg_VILNLOyT';
+
+// Clima e qualidade do ar (Open-Meteo). A versão gratuita é só para uso não comercial e não usa
+// chave. Para uso comercial, troque estes endereços pelos de um servidor intermediário que guarde
+// a chave (por exemplo, uma função do Supabase); a chave nunca deve ficar aqui no app.
+export const WEATHER = {
+  forecast: 'https://api.open-meteo.com/v1/forecast',
+  air: 'https://air-quality-api.open-meteo.com/v1/air-quality',
+  geocoding: 'https://geocoding-api.open-meteo.com/v1/search',
+};

@@ -22,7 +22,7 @@ const DEFAULT_SETTINGS = { theme: 'auto', weightReminder: true, waterGoal: 2000,
 
 export const state = {
   ready: false, profile: null, settings: { ...DEFAULT_SETTINGS }, entries: [], weights: [], foods: [], templates: [],
-  favorites: [], water: {}, drinks: [], routine: {}, goalLog: [], presets: null, activities: [], envHistory: {}, adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
+  favorites: [], water: {}, drinks: [], routine: {}, goalLog: [], presets: null, activities: [], envHistory: {}, avatar: null, adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
 };
 
 const listeners = new Set();
@@ -47,7 +47,7 @@ export async function load() {
   }
   Object.assign(state, {
     ready: true, profile: map.profile ?? null, settings: { ...DEFAULT_SETTINGS, ...map.settings }, entries, weights, foods, templates,
-    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, routine: map.routine ?? {}, goalLog: map.goalLog ?? [], presets: map.presets ?? null, activities: map.activities ?? [], envHistory: map.envHistory ?? {}, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
+    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, routine: map.routine ?? {}, goalLog: map.goalLog ?? [], presets: map.presets ?? null, activities: map.activities ?? [], envHistory: map.envHistory ?? {}, avatar: map.avatar ?? null, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
   });
   state.recipes = buildRecipeFoods(taco);
   registerServings([...state.recipes, ...state.foods]);
@@ -189,6 +189,9 @@ export async function recordEnvDay(rec) {
   await kv('envHistory', state.envHistory);   // sem emit: não precisa redesenhar a tela
 }
 
+/** Foto de perfil: imagem pequena (data URL), guardada em kv 'avatar' e sincronizada com a conta. */
+export async function saveAvatar(dataUrl) { state.avatar = dataUrl || null; await kv('avatar', state.avatar); emit(); }
+
 /** Corpo da aba Líquidos: escolha em Ajustes, ou o sexo do cadastro. */
 export const bodyStyle = () => state.settings.body ?? (state.profile?.sex === 'm' ? 'm' : 'f');
 export const dayDrinks = date => state.drinks.filter(d => d.date === date).sort((a, b) => a.ts - b.ts);
@@ -275,8 +278,8 @@ export async function declineTdee(tdee) { state.adaptive = { declinedTdee: tdee 
 
 // ---------- Exportar, importar, apagar ----------
 export function exportData() {
-  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, adaptive } = state;
-  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, adaptive };
+  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, avatar, adaptive } = state;
+  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, avatar, adaptive };
 }
 export async function importData(data) {
   if (data?.app !== 'leve' || !Array.isArray(data.entries) || !Array.isArray(data.weights)) throw new Error('Arquivo não reconhecido');
@@ -284,7 +287,7 @@ export async function importData(data) {
   await Promise.all([
     db.bulkPut('entries', data.entries), db.bulkPut('weights', data.weights), db.bulkPut('foods', data.foods ?? []),
     db.bulkPut('templates', data.templates ?? []), db.bulkPut('drinks', data.drinks ?? []),
-    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'routine', 'goalLog', 'presets', 'activities', 'envHistory', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
+    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'routine', 'goalLog', 'presets', 'activities', 'envHistory', 'avatar', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
   ]);
   await load();
   emit();

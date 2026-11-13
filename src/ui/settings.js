@@ -10,6 +10,7 @@ import { accountCard } from './account.js';
 import * as auth from '../auth.js';
 import { location as envLocation, placeName, ALERT_CATEGORIES, alertOn, isDevice } from '../env.js';
 import { locationSheet } from './environment.js';
+import { avatar, avatarSheet } from './avatar.js';
 
 export function applyTheme() {
   const t = state.settings.theme;
@@ -53,7 +54,7 @@ export function settingsScreen() {
   const valueBtn = (text, onclick, label) => h('button.value-btn', { onclick, 'aria-label': label }, text);
 
   const planCard = h('section.card.plan-card', { 'aria-label': 'Seu plano' },
-    h('h2', p.name), h('p.card-sub', goalById(plan.goal).label),
+    h('div.plan-head', h('div.plan-who', h('h2', p.name), h('p.card-sub', goalById(plan.goal).label)), avatar({ size: 64, onclick: () => avatarSheet() })),
     plan.target
       ? h('div.plan-stats',
         h('div', h('span.stat-value', int(plan.target)), h('span.stat-label', 'kcal por dia')),

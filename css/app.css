@@ -1323,3 +1323,8 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .avatar-preview { display: flex; justify-content: center; margin: 8px 0 20px; }
 .avatar-actions { display: grid; gap: 10px; }
 .avatar-actions .btn.block { margin-top: 0; }
+.screen-head-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.head-avatar { flex: none; border-radius: 50%; transition: transform var(--dur) var(--ease); }
+.head-avatar:active { transform: scale(.95); }
+.head-avatar:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 3px; }
+@media (min-width: 960px) { .head-avatar .avatar { width: 52px !important; height: 52px !important; } }

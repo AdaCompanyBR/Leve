@@ -7,6 +7,7 @@ import { drinkSheet } from './drink.js';
 import { routineCard } from './routine.js';
 import { conditionsCard } from './environment.js';
 import { activityCard } from './activity.js';
+import { avatar } from './avatar.js';
 import { ui, go } from './state.js';
 import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, waterGoalOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
@@ -202,7 +203,9 @@ export function todayScreen() {
   const title = isToday ? 'Hoje' : date === addDays(todayISO(), -1) ? 'Ontem' : fmtDate(date, { day: 'numeric', month: 'long' });
   return h('div.screen.today',
     h('header.screen-head',
-      h('div', h('p.screen-date', fmtDate(date, { weekday: 'long', day: 'numeric', month: 'long' })), h('h1', title)),
+      h('div.screen-head-main',
+        h('button.head-avatar', { type: 'button', 'aria-label': 'Abrir o perfil em Ajustes', onclick: () => go('ajustes') }, avatar({ size: 48 })),
+        h('div', h('p.screen-date', fmtDate(date, { weekday: 'long', day: 'numeric', month: 'long' })), h('h1', title))),
       h('div.day-nav',
         h('button.icon-btn', { 'aria-label': 'Dia anterior', onclick: () => go('hoje', { date: addDays(date, -1) }) }, icon('back')),
         h('button.icon-btn', { 'aria-label': 'Próximo dia', disabled: isToday, onclick: () => go('hoje', { date: addDays(date, 1) }) }, icon('next')))),

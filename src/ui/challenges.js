@@ -1,7 +1,7 @@
 // Desafios e Conquistas, dentro da aba Progresso: catálogo com filtros, recomendações a partir dos
 // registros, campanha da época, página de cada desafio (Sobre, Dicas, Progresso), início com
 // aviso de segurança e meta individual, acompanhamento automático, pausa, abandono e conquistas.
-import { h, icon, int, toast, openSheet, segmented, confirmSheet, busy } from './dom.js';
+import { h, icon, int, toast, openSheet, segmented, confirmSheet, busy, picker } from './dom.js';
 import { ui, go } from './state.js';
 import { state, foodById, getPlan, waterGoalOn, startChallenge, updateChallenge, saveCheckin, unlockAchievements } from '../store.js';
 import { todayISO, addDays, fmtDate, diffDays } from '../lib/dates.js';
@@ -99,7 +99,6 @@ export function challengesView() {
   const camp = campaignFor(today);
   const list = CHALLENGES.filter(d => (filterCat === 'todos' || d.cat === filterCat) && (!filterDays || d.days === filterDays) && !activeIds.includes(d.id));
   const done = state.myChallenges.filter(c => c.status === 'concluido' || c.status === 'abandonado').sort((a, b) => (b.endDate ?? '').localeCompare(a.endDate ?? ''));
-  const chips = (opts, val, set, label) => h('div.chip-row.ch-filters', { role: 'group', 'aria-label': label }, opts.map(o => h('button.chip', { type: 'button', 'aria-pressed': String(o.id === val), onclick: () => { set(o.id); go('progresso'); } }, o.label)));
   const cc = categoryById(camp.cat);
   return h('div.ch-view',
     h('section.ch-campaign', { style: { '--c': cc.color, '--soft': cc.soft, '--cink': cc.ink } },
@@ -111,8 +110,12 @@ export function challengesView() {
       h('div.ch-grid', recs.map(r => card(challengeById(r.id), { why: r.why })))) : null,
     h('section.ch-section',
       h('h3', 'Todos os desafios'),
-      chips([{ id: 'todos', label: 'Todos' }, ...CATEGORIES.map(c => ({ id: c.id, label: c.label }))], filterCat, v => { filterCat = v; }, 'Categoria'),
-      chips([{ id: 0, label: 'Qualquer duração' }, { id: 7, label: '7 dias' }, { id: 14, label: '14 dias' }, { id: 21, label: '21 dias' }], filterDays, v => { filterDays = v; }, 'Duração'),
+      // Filtros numa linha só: dois seletores lado a lado, que abrem a lista de opções.
+      h('div.ch-filters', { role: 'group', 'aria-label': 'Filtros' },
+        picker({ label: 'Categoria', value: filterCat, cls: 'ch-filter' + (filterCat !== 'todos' ? '.on' : ''),
+          options: [{ id: 'todos', label: 'Categorias' }, ...CATEGORIES.map(c => ({ id: c.id, label: c.label }))], onChange: v => { filterCat = v; go('progresso'); } }),
+        picker({ label: 'Duração', value: filterDays, cls: 'ch-filter' + (filterDays ? '.on' : ''),
+          options: [{ id: 0, label: 'Duração' }, { id: 7, label: '7 dias' }, { id: 14, label: '14 dias' }, { id: 21, label: '21 dias' }], onChange: v => { filterDays = Number(v); go('progresso'); } })),
       list.length ? h('div.ch-grid', list.map(d => card(d, { uc: mineFor(d.id).find(c => c.status === 'concluido') }))) : h('p.card-sub', 'Nenhum desafio com esses filtros.')),
     done.length ? h('section.ch-section', h('h3', 'Histórico'), h('ul.ch-history', done.map(uc => {
       const def = challengeById(uc.challengeId);

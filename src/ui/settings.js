@@ -160,16 +160,16 @@ export function settingsScreen() {
   const units = Object.entries(UNIT_OPTIONS).slice(0, 2).map(([k, u]) => u.options.find(o => o.id === unitPref(k))?.label).join(' · ');
   const account = !auth.configured() ? 'Neste aparelho' : auth.current() ? 'Conectada' : 'Entrar';
   const PAGES = {
-    perfil: { title: 'Perfil', icon: 'user', body: () => [planCard, profileCard] },
-    objetivo: { title: 'Objetivo e rotina', icon: 'target', value: p.goal ? goalById(p.goal).label : null, body: () => [goalCard] },
-    unidades: { title: 'Unidades', icon: 'ruler', value: units, body: () => [unitsCard] },
-    conta: { title: 'Conta', icon: 'cloud', value: account, body: () => { const c = groupRows(accountCard({ row })); c.querySelector(':scope > h3')?.remove(); return [c]; } },
-    liquidos: { title: 'Líquidos', icon: 'drop', value: `${dec1(goalNow / 1000)} L`, body: () => [liqCard] },
-    clima: { title: 'Clima e localização', icon: 'sun', value: loc ? placeName(loc).split(',')[0] : 'Não definida', body: () => [envCard] },
-    avisos: { title: 'Avisos e sugestões', icon: 'bell', body: () => [prefCard] },
-    tema: { title: 'Tema', icon: 'contrast', value: THEMES.find(t => t.id === s.theme)?.label, body: () => [themeCard()] },
-    dados: { title: 'Backup e dados', icon: 'archive', body: () => [dataCard] },
-    sobre: { title: 'Sobre o Leve', icon: 'info', body: () => [about] },
+    perfil: { title: 'Perfil', icon: 'user', tile: '#8E8E93', body: () => [planCard, profileCard] },
+    objetivo: { title: 'Objetivo e rotina', icon: 'target', tile: '#FF2D55', value: p.goal ? goalById(p.goal).label : null, body: () => [goalCard] },
+    unidades: { title: 'Unidades', icon: 'ruler', tile: '#8E8E93', value: units, body: () => [unitsCard] },
+    conta: { title: 'Conta', icon: 'cloud', tile: '#007AFF', fill: true, value: account, body: () => { const c = groupRows(accountCard({ row })); c.querySelector(':scope > h3')?.remove(); return [c]; } },
+    liquidos: { title: 'Líquidos', icon: 'drop', tile: '#32ADE6', fill: true, value: `${dec1(goalNow / 1000)} L`, body: () => [liqCard] },
+    clima: { title: 'Clima e localização', icon: 'sun', tile: '#FF9500', value: loc ? placeName(loc).split(',')[0] : 'Não definida', body: () => [envCard] },
+    avisos: { title: 'Avisos e sugestões', icon: 'bell', tile: '#FF3B30', fill: true, body: () => [prefCard] },
+    tema: { title: 'Tema', icon: 'contrast', tile: '#5856D6', value: THEMES.find(t => t.id === s.theme)?.label, body: () => [themeCard()] },
+    dados: { title: 'Backup e dados', icon: 'archive', tile: '#34C759', body: () => [dataCard] },
+    sobre: { title: 'Sobre o Leve', icon: 'info', tile: '#8E8E93', body: () => [about] },
   };
   [profileCard, goalCard, prefCard, unitsCard, liqCard, envCard, dataCard].forEach(groupRows);
   // Os cartões já têm o nome da tela no topo: o subtítulo repetido sai.
@@ -186,7 +186,7 @@ export function settingsScreen() {
   const navRow = id => {
     const pg = PAGES[id];
     return h('button.set-row.nav-row', { type: 'button', onclick: () => openPage(id) },
-      h('span.nav-ic', icon(pg.icon)), h('span.nav-title', pg.title),
+      h('span.nav-ic' + (pg.fill ? '.fill' : ''), { style: { '--tile': pg.tile } }, icon(pg.icon)), h('span.nav-title', pg.title),
       pg.value ? h('span.nav-value', pg.value) : null, h('span.nav-chev', icon('next')));
   };
   const group = (title, ids) => h('section.card.set-card.nav-group', { 'aria-label': title }, h('h3', title), h('div.set-rows', ids.map(navRow)));

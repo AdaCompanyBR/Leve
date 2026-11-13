@@ -29,28 +29,26 @@ let uid = 0;
  * `key` identifica o dia, para animar só a diferença ao registrar.
  */
 export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label = '' }) {
-  const id = 'body' + (++uid);
   const who = style === 'm' ? 'm' : 'f';
-  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'body-figure', role: 'img', 'aria-label': label, preserveAspectRatio: 'xMidYMid meet' });
-  const defs = el('defs');
-  // Máscara do corpo: branco dentro, preto fora (luminância).
-  const mask = el('mask', { id: id + '-mask', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: W, height: H, 'mask-type': 'luminance' });
-  mask.append(el('image', { href: `${ART}${who}-mask.webp`, x: 0, y: 0, width: W, height: H, preserveAspectRatio: 'none' }));
-  defs.append(mask);
-  svg.append(defs);
-
-  const inBody = el('g', { mask: `url(#${id}-mask)` });
-  // Fundo do corpo: claro, para o tecido e a pele; o líquido pinta por cima.
-  inBody.append(el('rect', { x: 0, y: 0, width: W, height: H, class: 'body-base' }));
+  // Três camadas empilhadas, todas no mesmo quadro: o corpo com o líquido (SVG recortado pela
+  // máscara via CSS, que o Safari aceita, ao contrário de <image> dentro de <mask>), e os traços.
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'body-fill', preserveAspectRatio: 'none', 'aria-hidden': 'true' });
+  svg.style.setProperty('--mask', `url("${ART}${who}-mask.webp")`);
+  svg.append(el('rect', { x: 0, y: 0, width: W, height: H, class: 'body-base' }));
   const layers = el('g', { class: 'body-liquid' });
   const wave = el('path');
   layers.append(wave);
   const surface = el('path', { class: 'body-surface' });
   const bubbles = el('g', { class: 'body-bubbles' });
-  inBody.append(layers, surface, bubbles);
-  // Traços da ilustração por cima de tudo.
-  const lines = el('image', { href: `${ART}${who}-lines.webp`, x: 0, y: 0, width: W, height: H, preserveAspectRatio: 'none', class: 'body-lines' });
-  svg.append(el('ellipse', { cx: W / 2, cy: H - 6, rx: 150, ry: 7, class: 'body-ground' }), inBody, lines);
+  svg.append(layers, surface, bubbles);
+  const lines = document.createElement('img');
+  Object.assign(lines, { src: `${ART}${who}-lines.webp`, alt: '', draggable: false, decoding: 'async' });
+  lines.className = 'body-lines';
+  const box = document.createElement('div');
+  box.className = 'body-figure';
+  box.setAttribute('role', 'img'); box.setAttribute('aria-label', label);
+  box.style.aspectRatio = `${W} / ${H}`;
+  box.append(svg, lines);
 
   let topColor = null;
   function waveAt(shown, phase) {
@@ -97,7 +95,7 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
     if (level <= .002 || level >= .999) return;
     let last = 0;
     const loop = now => {
-      if (!svg.isConnected) return;
+      if (!box.isConnected) return;
       if (now - last > 50) { last = now; waveAt(level, now / 1400); }
       requestAnimationFrame(loop);
     };
@@ -107,18 +105,18 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
   const from = shownByKey.get(key) ?? 0;
   shownByKey.set(key, level);
   makeBubbles();
-  if (reducedMotion() || Math.abs(level - from) < .001) { draw(level, 0); if (!reducedMotion()) requestAnimationFrame(idle); return svg; }
+  if (reducedMotion() || Math.abs(level - from) < .001) { draw(level, 0); if (!reducedMotion()) requestAnimationFrame(idle); return box; }
   // Sobe com uma curva suave e assenta; depois a superfície fica ondulando devagar.
   const t0 = performance.now(), dur = 1100;
   const step = now => {
-    if (!svg.isConnected && now - t0 > 50) return;
+    if (!box.isConnected && now - t0 > 50) return;
     const p = Math.min(1, (now - t0) / dur), e = 1 - (1 - p) ** 3;
     draw(from + (level - from) * e, now / 700);
     if (p < 1) requestAnimationFrame(step); else idle();
   };
   requestAnimationFrame(step);
   draw(from, 0);
-  return svg;
+  return box;
 }
 
 /** Ícone de cada bebida (mesma linguagem dos ícones do app). */

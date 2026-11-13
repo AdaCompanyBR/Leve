@@ -1,7 +1,8 @@
 // Service worker do Leve: o app abre e funciona sem internet.
 // Ao publicar mudanças, aumente VERSION: é o que renova o que fica guardado para usar sem internet.
-const VERSION = 'leve-app-v30';
+const VERSION = 'leve-app-v32';
 const SHELL = [
+  './img/body/f-lines.webp', './img/body/f-mask.webp', './img/body/m-lines.webp', './img/body/m-mask.webp',
   './', './index.html', './manifest.webmanifest', './css/app.css', './data/taco.json',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
   './src/app.js', './src/db.js', './src/store.js', './src/config.js', './src/auth.js', './src/biometric.js', './src/sync.js',

@@ -8,7 +8,7 @@ A aba Progresso tem três seções: **Desafios**, **Conquistas** e **Indicadores
 |---|---|---|
 | Regras | `src/lib/challenges.js` | Catálogo, critério de cada dia, avaliação, ajuste adaptativo, recomendações, campanhas e conquistas. Sem rede, testável (`tests/challenges.test.js`). |
 | Telas | `src/ui/challenges.js` | Lista com filtros, recomendações, campanha, página do desafio (Sobre, Dicas, Progresso), início, registro rápido, pausa, encerramento, conquistas e avisos. |
-| Ilustrações | `src/ui/challengeArt.js` | Uma cena em vetor para cada desafio e as medalhas. |
+| Ilustrações | `src/ui/challengeArt.js` | Uma cena em vetor para cada desafio, as medalhas e os ícones dos benefícios. |
 | Dados | `src/store.js` | `challenges`, `checkins` e `achievements`, guardados nos dados do app e sincronizados com a conta. |
 
 ## Dados
@@ -42,6 +42,8 @@ Os dias não precisam ser seguidos e perder um dia não zera nada. Um desafio s�
 | Rotina de sono | 14 | dormir e acordar a até 45 minutos dos horários escolhidos | registro rápido |
 | Desconecte-se | 7 | o tempo sem telas antes de dormir chega à meta | registro rápido |
 | Recuperação consciente | 7 | o registro de como o corpo está, sem atividade intensa nos dias de cansaço ou dor | registro rápido e atividades |
+
+Cada benefício é um par `[ícone, texto]`, mostrado com o ícone na cor da categoria. Os textos são cautelosos ("ajuda a", "incentiva") e nunca prometem resultado médico.
 
 "Desconecte-se" está em Bem-estar, para que essa categoria tenha um desafio. O app ainda não lê passos, sono ou pausas de outros apps, por isso esses desafios usam o registro rápido de um toque.
 

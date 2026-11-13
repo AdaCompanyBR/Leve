@@ -6,7 +6,7 @@ import { ui, go } from './state.js';
 import { state, foodById, getPlan, waterGoalOn, startChallenge, updateChallenge, saveCheckin, unlockAchievements } from '../store.js';
 import { todayISO, addDays, fmtDate, diffDays } from '../lib/dates.js';
 import { CHALLENGES, CATEGORIES, categoryById, challengeById, sources, evaluate, trend, adaptiveSuggestion, defaultTarget, startBlock, recommend, campaignFor, ACHIEVEMENTS, earned, levelOf, SAFETY, DISCOMFORT, addMin } from '../lib/challenges.js';
-import { challengeArt, medalArt } from './challengeArt.js';
+import { challengeArt, medalArt, glyph } from './challengeArt.js';
 
 const long = d => fmtDate(d, { day: 'numeric', month: 'long' });
 const restricted = () => !!state.settings.fluidRestriction;
@@ -180,7 +180,7 @@ function aboutTab(def) {
     section('O que é', h('p', def.about)),
     section('Objetivo', h('p', def.goal)),
     section('Como funciona', h('p', def.how), h('p.fine', 'Os dias não precisam ser seguidos. Perder um dia não zera nada.')),
-    section('Benefícios esperados', h('ul.chd-list', def.benefits.map(b => h('li', b))), h('p.fine', 'Benefícios gerais de hábitos saudáveis, não resultados médicos garantidos.')),
+    section('Benefícios esperados', h('ul.chd-benefits', def.benefits.map(([ic, text]) => h('li', h('span.chd-b-icon', glyph(ic, 26)), h('span', text)))), h('p.fine', 'Benefícios gerais de hábitos saudáveis, não resultados médicos garantidos.')),
     section('Como o app acompanha', h('p', def.measure)));
 }
 function tipsTab(def) {

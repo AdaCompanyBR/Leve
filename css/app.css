@@ -1458,3 +1458,6 @@ section[aria-label="Unidades"] .set-label { flex: 1; min-width: 0; }
 .chd .sheet-head .icon-btn { background: rgba(255, 255, 255, .22); color: #fff; }
 .chd .sheet-handle::before { background: #fff; opacity: .6; }
 .chd-hero { margin-top: 0; padding-top: 8px; }
+.chd-benefits { display: grid; gap: 14px; margin-top: 4px; }
+.chd-benefits li { display: flex; align-items: center; gap: 14px; line-height: 1.35; }
+.chd-b-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 14px; background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); }

@@ -29,7 +29,17 @@ const G = {
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.75v2M12 19.25v2M2.75 12h2M19.25 12h2M5.45 5.45l1.4 1.4M17.15 17.15l1.4 1.4M5.45 18.55l1.4-1.4M17.15 6.85l1.4-1.4"/>',
   heart: '<path d="M12 20s-7.25-4.4-7.25-9.75A4.1 4.1 0 0 1 12 7.9a4.1 4.1 0 0 1 7.25 2.35C19.25 15.6 12 20 12 20z"/>',
   zzz: '<path d="M6 6h5l-5 6h5M14 12h4l-4 5h4"/>',
+  calendar: '<rect x="4" y="5.5" width="16" height="15" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/><path d="m9.2 15 1.9 1.9 3.8-3.8"/>',
+  thermo: '<path d="M14.5 13.6V5a2.5 2.5 0 0 0-5 0v8.6a4.25 4.25 0 1 0 5 0z"/><path d="M12 16.5V9"/>',
+  target: '<circle cx="12" cy="12" r="8.25"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".9"/>',
+  eye: '<path d="M2.75 12S6.25 5.75 12 5.75 21.25 12 21.25 12 17.75 18.25 12 18.25 2.75 12 2.75 12z"/><circle cx="12" cy="12" r="3"/>',
+  smile: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 14.2c.9 1.3 2.1 1.9 3.5 1.9s2.6-.6 3.5-1.9M9 9.8h.01M15 9.8h.01"/>',
 };
+
+/** Ícone avulso no traço das ilustrações (benefícios), na cor do texto (currentColor). */
+export function glyph(name, size = 24) {
+  return tpl(`<svg class="ch-glyph" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${G[name] ?? G.sparkle}</svg>`);
+}
 const SCENES = {
   'agua-21': ['drop', 'glass', 'sparkle'], 'agua-pura-7': ['glass', 'drop', 'drop'], 'agua-ritmo-14': ['clock', 'drop', 'sun'],
   'prato-colorido-7': ['plate', 'leaf', 'apple'], 'frutas-7': ['apple', 'leaf', 'sparkle'], 'fibras-14': ['wheat', 'leaf', 'heart'],

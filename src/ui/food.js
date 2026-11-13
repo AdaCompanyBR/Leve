@@ -1,5 +1,5 @@
 // Sheets de alimento: adicionar/editar item, confirmar frase livre, alimento manual e código de barras.
-import { h, icon, int, dec1, parseNum, openSheet, segmented, field, toast, haptic } from './dom.js';
+import { h, icon, int, dec1, parseNum, openSheet, segmented, field, toast, haptic, picker } from './dom.js';
 import { UNIT_LIST, parsePhrase } from '../lib/parser.js';
 import { search } from '../lib/search.js';
 import { toGrams, nutrientsFor } from '../lib/portions.js';
@@ -16,7 +16,7 @@ export const sourceOf = food => (food.source === 'media' ? `Estimativa: média d
 export function openEstimate(query, onFood = food => foodSheet(food)) {
   return estimateSheet(query, { onPick: food => (food.manual ? manualFoodSheet({ n: food.n }) : onFood(food)) });
 }
-const unitOptions = (sel, value) => { UNIT_LIST.forEach(u => sel.append(h('option', { value: u, selected: u === value }, u))); return sel; };
+const unitPicker = (value, onChange) => picker({ options: UNIT_LIST.map(u => ({ id: u, label: u })), value, onChange, label: 'Unidade' });
 const fmtQty = q => String(Math.round(q * 100) / 100).replace('.', ',');
 
 function macroLine(n) {
@@ -35,7 +35,7 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
   const v = { qty: entry?.qty ?? qty ?? (byServing ? 1 : food.serving ? food.serving : 100), unit: entry?.unit ?? unit ?? (byServing ? food.servingUnit : 'g'), meal: entry?.meal ?? meal ?? ui.meal ?? mealByClock() };
   const kcalEl = h('span.sheet-kcal'), gramsEl = h('p.field-hint', { 'aria-live': 'polite' }), macrosEl = h('div'), swapEl = h('div');
   const qtyInput = h('input', { inputmode: 'decimal', value: fmtQty(v.qty), autocomplete: 'off', autofocus: true });
-  const unitSel = unitOptions(h('select', { 'aria-label': 'Unidade' }), v.unit);
+  const unitSel = unitPicker(v.unit, () => update());
   let current, swapTimer;
   // Abre a alternativa com a mesma quantidade em gramas, na mesma refeição.
   const pick = (alt, grams) => { sheet.close(); setTimeout(() => foodSheet(alt, { qty: grams, unit: 'g', meal: v.meal }), 280); };
@@ -62,7 +62,6 @@ export function foodSheet(food, { entry, qty, unit, meal } = {}) {
     toast(entry ? 'Item atualizado' : `${int(current.kcal)} kcal adicionadas`, s ? { label: 'Ver troca', run: () => swapSheet(food.n, s, (f, g) => foodSheet(f, { qty: g, unit: 'g', meal: v.meal })) } : undefined);
   };
   qtyInput.addEventListener('input', update);
-  unitSel.addEventListener('change', update);
 
   const fav = () => state.favorites.includes(food.id);
   const favBtn = h('button.chip', { 'aria-pressed': String(fav()), onclick: async () => { await toggleFavorite(food.id); favBtn.setAttribute('aria-pressed', String(fav())); favBtn.lastChild.textContent = fav() ? 'Nos favoritos' : 'Favoritar'; } },
@@ -139,16 +138,17 @@ export function phraseSheet(text) {
     }
     const kcal = h('span.phrase-kcal'), grams = h('span.phrase-grams');
     const paint = () => { compute(); kcal.textContent = `${int(it.n.kcal)} kcal`; grams.textContent = it.g.exact ? '' : `≈ ${int(it.g.grams)} g${it.g.known ? '' : ' (medida genérica, confira)'}`; };
-    const foodSel = h('select.phrase-food', { 'aria-label': `Alimento para “${it.raw}”`, onchange: e => {
-      if (e.target.selectedIndex === it.matches.length) {
-        e.target.selectedIndex = it.matches.indexOf(it.food);
-        return openEstimate(it.query, food => { it.matches = [food, ...it.matches.filter(m => m.id !== food.id)]; it.food = food; el.replaceWith(row(it)); compute(); });
-      }
-      it.food = it.matches[e.target.selectedIndex]; paint();
-    } },
-      it.matches.map(f => h('option', { selected: f === it.food }, f.n)), h('option', 'Nenhum destes: estimar calorias…'));
+    const foodSel = picker({ label: `Alimento para “${it.raw}”`, cls: 'phrase-food', value: it.matches.indexOf(it.food),
+      options: [...it.matches.map((f, i) => ({ id: i, label: f.n })), { id: 'estimar', label: 'Nenhum destes: estimar calorias…' }],
+      onChange: id => {
+        if (id === 'estimar') {
+          foodSel.value = it.matches.indexOf(it.food);
+          return openEstimate(it.query, food => { it.matches = [food, ...it.matches.filter(m => m.id !== food.id)]; it.food = food; el.replaceWith(row(it)); compute(); });
+        }
+        it.food = it.matches[id]; paint();
+      } });
     const qty = h('input', { inputmode: 'decimal', value: fmtQty(it.qty), 'aria-label': 'Quantidade', oninput: e => { it.qty = parseNum(e.target.value); paint(); } });
-    const unit = unitOptions(h('select', { 'aria-label': 'Unidade', onchange: e => { it.unit = e.target.value; paint(); } }), it.unit);
+    const unit = unitPicker(it.unit, u => { it.unit = u; paint(); });
     const el = h('div.phrase-item',
       h('div.phrase-top', h('p.phrase-raw', `“${it.raw}”`),
         h('button.icon-btn.small', { 'aria-label': `Remover “${it.raw}”`, onclick: () => { it.skip = true; el.remove(); compute(); } }, icon('close'))),

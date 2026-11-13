@@ -149,6 +149,7 @@ Conjunto próprio desenhado em `src/ui/dom.js` (`ICONS`), no espírito dos SF Sy
 - **Botões**: `.btn.primary`, `.btn.secondary`, `.btn.plain`, `.btn.destructive`, `.icon-btn`; estados de hover, foco, ativo, desativado e carregando (`aria-busy`).
 - **Interruptor**: como no iOS, verde quando ligado.
 - **Controle segmentado**: como no iOS.
+- **Seletor** (`picker` em `dom.js`, `.picker`): substitui o `<select>` nativo em todo o app, porque a lista aberta do sistema não segue o visual. É um botão com o valor e a seta dupla; no computador abre um menu de vidro arredondado preso ao botão (rola por dentro se não couber na janela), e em telas de toque abre uma janela de baixo com a lista. O item atual leva a marca azul. Não usar `<select>` em telas novas.
 - **Aviso (toast)**: cápsula de vidro com ação opcional.
 - **Perguntas do cadastro** (`onboarding.js`): progresso em traços, título e texto centralizados, opções em cartões (`.opt`: ícone, título, descrição e marca de seleção; escolher não avança), régua deslizante para peso e altura (`.ruler`, com setas do teclado e arraste do mouse; peso em kg ou lb) e botão "Continuar" em cápsula no rodapé.
 - **Popover e menu** (`openPopover` em `dom.js`, `.popover`, `.menu`): painel de vidro preso ao botão que o abriu, com entrada em escala. Fecha ao tocar fora, com Esc, ao rolar ou redimensionar, e devolve o foco. Menus navegam com as setas.

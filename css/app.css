@@ -618,8 +618,9 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .set-row + .set-row::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: var(--sep); }
 .set-label { display: flex; flex-direction: column; min-width: 0; }
 .set-hint { color: var(--ink-2); font-size: 13px; }
-.set-row select, .set-row input[type="date"] { width: auto; max-width: 58%; min-height: 34px; background-color: transparent; color: var(--ink-2); text-align: right; padding-left: 8px; }
-.set-row select:hover, .set-row input[type="date"]:hover { color: var(--ink); }
+.set-row .picker, .set-row input[type="date"] { width: auto; max-width: 58%; min-height: 34px; background-color: transparent; color: var(--ink-2); text-align: right; padding-left: 8px; }
+.set-row .picker { padding-right: 0; }
+.set-row .picker:hover, .set-row input[type="date"]:hover { color: var(--ink); }
 .set-row .segmented { flex: 0 1 280px; min-width: 0; }
 .value-btn { min-height: 34px; padding: 0 2px 0 8px; display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); max-width: 58%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color var(--dur) var(--ease); }
 .value-btn::after { content: ""; width: 8px; height: 8px; border: solid var(--ink-3); border-width: 1.6px 1.6px 0 0; transform: rotate(45deg); flex: none; margin-left: 2px; }
@@ -1060,3 +1061,20 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
   background-image: linear-gradient(90deg, var(--ink-2) 2px, transparent 2px), linear-gradient(90deg, var(--ink-3) 2px, transparent 2px);
   background-size: var(--major, 120px) 74%, 12px 46%; background-position: var(--shift, 0) 100%, 0 100%; background-repeat: repeat-x; opacity: .7; }
 .ruler-needle { position: absolute; left: 50%; bottom: 0; width: 3px; height: 100%; margin-left: -1.5px; border-radius: 2px; background: var(--accent); pointer-events: none; }
+
+/* Seletor (no lugar do <select>) */
+.picker { display: inline-flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; min-height: 44px; padding: 0 8px 0 12px; border-radius: var(--r-field); background: var(--fill); color: var(--ink); text-align: left; transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+.picker-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-chevron { width: 16px; height: 16px; flex: none; color: var(--ink-3); stroke-width: 2.1; }
+.picker[aria-expanded="true"] { background: var(--fill-2); }
+.picker:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); outline: none; }
+.picker.phrase-food { margin-top: 4px; font-weight: 600; }
+.picker-menu { min-width: 220px; max-width: min(92vw, 360px); }
+.picker-item { gap: 8px; padding-left: 10px; }
+.picker-mark { display: grid; place-items: center; width: 22px; height: 22px; flex: none; color: var(--accent-ink); visibility: hidden; }
+.picker-mark .icon { width: 15px; height: 15px; stroke-width: 2.6; }
+.picker-item[aria-selected="true"] .picker-mark { visibility: visible; }
+.picker-item[aria-selected="true"] .menu-label { font-weight: 600; }
+.picker-sheet { display: flex; flex-direction: column; margin: 4px calc(-1 * var(--gutter)) 0; }
+.picker-sheet .picker-item { min-height: 52px; padding-left: calc(var(--gutter) - 6px); padding-right: var(--gutter); }
+.picker-sheet .picker-item + .picker-item { background-image: linear-gradient(var(--sep), var(--sep)); background-size: calc(100% - 48px) 1px; background-position: right top; background-repeat: no-repeat; }

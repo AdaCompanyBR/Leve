@@ -25,6 +25,7 @@ export function svg(markup, cls = 'icon') {
 
 // Ícones próprios no espírito dos SF Symbols: caixa de 24, traço de 1,75, pontas arredondadas.
 export const ICONS = {
+  updown: '<path d="m8.5 9.5 3.5-3.5 3.5 3.5M8.5 14.5l3.5 3.5 3.5-3.5"/>',
   list: '<path d="M9 7h10.5M9 12h10.5M9 17h10.5"/><path d="M4.6 7h.01M4.6 12h.01M4.6 17h.01" stroke-width="2.6"/>',
   mic: '<rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.75 11.5a6.25 6.25 0 0 0 12.5 0M12 17.75V21"/>',
   delete: '<path d="M9 5.5h10.5a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5H9l-6-6.5z"/><path d="m12 9.5 5 5M17 9.5l-5 5"/>',
@@ -224,8 +225,13 @@ export function openPopover({ anchor, content, label, align = 'center', menu = f
   // offsetWidth/Height: o tamanho real, sem a escala da animação de entrada.
   const r = anchor.getBoundingClientRect(), pr = { width: pop.offsetWidth, height: pop.offsetHeight };
   const left = Math.max(12, Math.min(innerWidth - pr.width - 12, align === 'end' ? r.right - pr.width : r.left + r.width / 2 - pr.width / 2));
-  let top = r.top - pr.height - 10, above = true;
-  if (top < 12) { top = Math.min(innerHeight - pr.height - 12, r.bottom + 10); above = false; }
+  // Lado com mais espaço; a lista rola por dentro se não couber.
+  const roomAbove = r.top - 22, roomBelow = innerHeight - r.bottom - 22;
+  const above = pr.height <= roomAbove || roomAbove >= roomBelow;
+  const scroller = pop.querySelector('.menu-scroll');
+  if (scroller) scroller.style.maxHeight = Math.max(120, Math.min(scroller.scrollHeight, (above ? roomAbove : roomBelow) - 12)) + 'px';
+  pr.height = pop.offsetHeight;
+  const top = above ? r.top - pr.height - 10 : r.bottom + 10;
   Object.assign(pop.style, { left: left + 'px', top: Math.max(12, top) + 'px', transformOrigin: `${r.left + r.width / 2 - left}px ${above ? '100%' : '0'}` });
   anchor.setAttribute('aria-expanded', 'true');
   const items = () => [...pop.querySelectorAll('button:not(:disabled), [href]')];
@@ -240,7 +246,8 @@ export function openPopover({ anchor, content, label, align = 'center', menu = f
     setTimeout(() => pop.remove(), reducedMotion() ? 0 : 180);
     if (refocus && anchor.isConnected) anchor.focus({ preventScroll: true });
   };
-  const dismiss = e => { if (e?.type === 'scroll' && pop.contains(e.target)) return; close(false); };
+  const t0 = performance.now();
+  const dismiss = e => { if (e?.type === 'scroll' && (pop.contains(e.target) || performance.now() - t0 < 400)) return; close(false); };
   const outside = e => { if (!pop.contains(e.target) && !anchor.contains(e.target)) close(false); };
   const key = e => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return; }
@@ -262,3 +269,30 @@ export function openPopover({ anchor, content, label, align = 'center', menu = f
   return { close, el: pop };
 }
 export const closePopover = () => closeOpenPopover?.(false);
+
+// ---------- Seletor ----------
+// Substitui o <select> nativo, cuja lista aberta não segue o visual do app. No computador abre um
+// menu de vidro preso ao botão; no toque, uma janela de baixo. Mesma interface de valor e troca.
+// Devolve o botão; `el.value` lê e escreve o valor, e a troca chama `onChange(id)`.
+export function picker({ options, value, onChange, label, cls = '' }) {
+  const text = h('span.picker-text');
+  const btn = h('button.picker' + (cls ? '.' + cls : ''), { type: 'button', 'aria-label': label, 'aria-haspopup': 'listbox', 'aria-expanded': 'false' }, text, icon('updown', 'icon picker-chevron'));
+  let current = value;
+  const paint = () => { const o = options.find(x => String(x.id) === String(current)); text.textContent = o ? o.label : ''; };
+  const choose = id => { if (String(id) === String(current)) return; current = id; paint(); onChange?.(id); };
+  const items = () => options.map(o => h('button.menu-item.picker-item', { type: 'button', role: 'option', 'aria-selected': String(String(o.id) === String(current)), 'data-close': '', onclick: () => choose(o.id) },
+    h('span.picker-mark', { 'aria-hidden': 'true' }, icon('check')), h('span.menu-label', o.label), o.hint ? h('span.menu-detail', o.hint) : null));
+  btn.addEventListener('click', () => {
+    if (matchMedia('(pointer: coarse)').matches && innerWidth < 960) {
+      const sheet = openSheet({ title: label, content: h('div.picker-sheet', { role: 'listbox', 'aria-label': label }, items()) });
+      sheet.body.addEventListener('click', e => { if (e.target.closest('.picker-item')) sheet.close(); });
+      requestAnimationFrame(() => sheet.body.querySelector('[aria-selected="true"]')?.focus({ preventScroll: true }));
+    } else {
+      const pop = openPopover({ anchor: btn, content: h('div.menu.picker-menu', h('div.menu-scroll', items())), label, align: 'end', menu: true });
+      requestAnimationFrame(() => pop.el.querySelector('[aria-selected="true"]')?.focus({ preventScroll: true }));
+    }
+  });
+  Object.defineProperty(btn, 'value', { get: () => current, set: v => { current = v; paint(); } });
+  paint();
+  return btn;
+}

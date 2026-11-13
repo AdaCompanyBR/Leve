@@ -1,5 +1,5 @@
 // Perfil e Ajustes.
-import { h, int, dec1, parseNum, segmented, field, toast, confirmSheet, openSheet } from './dom.js';
+import { h, int, dec1, parseNum, segmented, field, toast, confirmSheet, openSheet, picker } from './dom.js';
 import { state, getPlan, saveProfile, saveSettings, exportData, importData, wipe, setWaterGoal, waterGoalOn, bodyStyle, latestWeight } from '../store.js';
 import { CLIMATES, suggestWaterGoal } from '../lib/hydration.js';
 import { ACTIVITY, PACES, GAIN_PACES, goalById, validateGoal, healthyRange } from '../lib/calc.js';
@@ -47,8 +47,7 @@ export function groupRows(section) {
 export function settingsScreen() {
   const p = state.profile, plan = getPlan(), s = state.settings;
   const range = healthyRange(p.heightCm);
-  const select = (options, value, onChange, label) => h('select', { 'aria-label': label, onchange: e => onChange(e.target.value) },
-    options.map(o => h('option', { value: o.id, selected: o.id === value }, o.label)));
+  const select = (options, value, onChange, label) => picker({ options, value, onChange: v => onChange(String(v)), label });
   const valueBtn = (text, onclick, label) => h('button.value-btn', { onclick, 'aria-label': label }, text);
 
   const planCard = h('section.card.plan-card', { 'aria-label': 'Seu plano' },

@@ -35,19 +35,18 @@ export function achievementsView() {
 function levelCard(evo) {
   const { level: lv, xp } = evo;
   const n = evo.unlocked.length;
-  return h('section.card.lvl-card', { 'aria-label': 'Nível' },
-    h('div.lvl-main',
-      levelEmblem(lv.level, lv.pct),
-      h('div.lvl-info',
-        h('p.lvl-kicker', `Nível ${lv.level}`),
-        h('h2.lvl-name', lv.name),
-        h('p.lvl-xp', h('b', int(xp.xp)), ` / ${XP(lv.nextAt)}`),
-        h('div.lvl-track', { role: 'progressbar', 'aria-label': `XP do nível: ${int(lv.inLevel)} de ${int(lv.span)}`, 'aria-valuemin': 0, 'aria-valuemax': lv.span, 'aria-valuenow': lv.inLevel },
-          h('span', { style: { width: `${Math.round(lv.pct * 100)}%` } })),
-        h('p.lvl-next', `Faltam ${XP(lv.nextAt - xp.xp)} para ${lv.nextName}`))),
-    h('div.lvl-foot',
-      h('span.lvl-stat', icon('star'), h('b', n), ` de ${ACHIEVEMENTS.length} conquistas`),
-      h('button.link.lvl-how', { type: 'button', onclick: () => xpSheet(evo) }, 'Como ganhar XP')));
+  return h('section.card.lvl-card', { 'aria-label': 'Nível e experiência' },
+    levelEmblem(lv.level, lv.pct),
+    h('div.lvl-info',
+      h('div.lvl-title',
+        h('div', h('p.lvl-kicker', `Nível ${lv.level}`), h('h2.lvl-name', lv.name)),
+        h('button.lvl-how', { type: 'button', 'aria-label': 'Como ganhar XP', onclick: () => xpSheet(evo) }, icon('info'))),
+      h('div.lvl-xp', h('span', h('b', int(xp.xp)), ' XP'), h('span.lvl-of', `${int(lv.nextAt)} XP`)),
+      h('div.lvl-track', { role: 'progressbar', 'aria-label': `XP do nível: ${int(lv.inLevel)} de ${int(lv.span)}`, 'aria-valuemin': 0, 'aria-valuemax': lv.span, 'aria-valuenow': lv.inLevel },
+        h('span', { style: { width: `${Math.max(2, Math.round(lv.pct * 100))}%` } })),
+      h('div.lvl-foot',
+        h('span', `Faltam ${XP(lv.nextAt - xp.xp)} para `, h('b', lv.nextName)),
+        h('span.lvl-ach', icon('star'), `${n}/${ACHIEVEMENTS.length}`))));
 }
 
 function xpSheet(evo) {
@@ -70,6 +69,7 @@ function xpSheet(evo) {
 // Ofensiva
 
 let weekOffset = 0;
+let lastTodayDone = null; // para animar o dia de hoje só quando ele acaba de ser cumprido
 const WD = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
 const STATE_LABEL = { done: 'cumprido', pending: 'hoje, ainda em aberto', rest: 'descanso', 'rest-future': 'descanso planejado', paused: 'em pausa', protected: 'coberto por proteção', missed: 'sem registro', none: 'sem registro', future: 'ainda não chegou' };
 
@@ -78,38 +78,56 @@ function streakCard(evo, today) {
   const st = evo.streak, cfg = evo.config;
   const paused = inPause(today, cfg.pauses);
   const firstWeek = weekStart(Object.keys(st.days).sort()[0] ?? today);
+  const justDone = st.todayDone && lastTodayDone === false;
+  lastTodayDone = st.todayDone;
   const paint = () => {
     const monday = addDays(weekStart(today), weekOffset * 7);
     const days = weekDays(st.days, monday, today, cfg);
-    const label = weekOffset === 0 ? 'Esta semana' : weekOffset === -1 ? 'Semana passada' : `${long(monday)} a ${long(addDays(monday, 6))}`;
+    const label = weekOffset === 0 ? 'Esta semana' : weekOffset === -1 ? 'Semana passada' : `${long(monday)} – ${long(addDays(monday, 6))}`;
     card.replaceChildren(
       h('div.stk-top',
-        streakMark({ size: 52, muted: st.current === 0 }),
-        h('div.stk-count', h('b', st.current), h('span', st.current === 1 ? 'dia de ofensiva' : 'dias de ofensiva')),
-        h('button.icon-btn.stk-adjust', { type: 'button', 'aria-label': 'Ajustar a ofensiva', onclick: () => streakSettingsSheet() }, icon('settings'))),
-      h('p.stk-msg', paused ? `Ofensiva em pausa${pauseEnd(cfg, today) ? ` até ${long(pauseEnd(cfg, today))}` : ''}. Ela fica guardada do jeito que está.` : streakMessage(st)),
+        streakMark({ size: 44, muted: st.current === 0 }),
+        h('div.stk-count',
+          h('p.stk-num-line', h('b', st.current), h('span', st.current === 1 ? 'dia seguido' : 'dias seguidos')),
+          h('p.stk-msg', paused ? `Em pausa${pauseEnd(cfg, today) ? ` até ${long(pauseEnd(cfg, today))}` : ''}. A ofensiva fica guardada como está.` : streakMessage(st))),
+        h('button.stk-adjust', { type: 'button', 'aria-label': 'Ajustar a ofensiva', onclick: () => streakSettingsSheet() }, icon('settings'))),
       h('div.stk-week',
         h('div.stk-week-head',
-          h('button.icon-btn.small', { type: 'button', 'aria-label': 'Semana anterior', disabled: monday <= firstWeek, onclick: () => { weekOffset--; paint(); } }, icon('back')),
           h('span', label),
-          h('button.icon-btn.small', { type: 'button', 'aria-label': 'Próxima semana', disabled: weekOffset >= 0, onclick: () => { weekOffset++; paint(); } }, icon('next'))),
-        h('ol.stk-days', days.map((d, i) => h('li', { 'data-state': d.state, 'data-today': d.date === today ? '1' : null, 'aria-label': `${fmtDate(d.date, { weekday: 'long', day: 'numeric' })}: ${STATE_LABEL[d.state] ?? ''}` },
+          h('div.stk-nav',
+            h('button', { type: 'button', 'aria-label': 'Semana anterior', disabled: monday <= firstWeek, onclick: () => { weekOffset--; paint(); } }, icon('back')),
+            h('button', { type: 'button', 'aria-label': 'Próxima semana', disabled: weekOffset >= 0, onclick: () => { weekOffset++; paint(); } }, icon('next')))),
+        h('ol.stk-days', days.map((d, i) => h('li', { 'data-state': d.state, 'data-today': d.date === today ? '1' : null, 'data-pop': justDone && d.date === today && weekOffset === 0 ? '1' : null,
+          'aria-label': `${fmtDate(d.date, { weekday: 'long', day: 'numeric' })}: ${STATE_LABEL[d.state] ?? ''}` },
           h('span.stk-wd', WD[i]),
           h('span.stk-dot', dayGlyph(d.state)),
           h('span.stk-num', fromISO(d.date).getDate()))))),
       h('div.stk-stats',
-        stat(st.best, 'Recorde'),
-        stat(st.totalActive, 'Dias ativos'),
-        stat(st.consistentWeeks, st.consistentWeeks === 1 ? 'Semana consistente' : 'Semanas consistentes'),
-        h('div.stk-stat', h('b.stk-shields', Array.from({ length: MAX_SHIELDS }, (_, i) => h('span' + (i < st.shields ? '.on' : ''), icon('shield-s')))), h('span', 'Proteções'))),
-      h('button.link.stk-how', { type: 'button', onclick: () => rulesSheet(evo) }, 'Como a ofensiva funciona'));
+        statTile('peak', int(st.best), st.best === 1 ? 'dia' : 'dias', 'Maior sequência', `A maior quantidade de dias seguidos que você já cumpriu: ${st.best} ${st.best === 1 ? 'dia' : 'dias'}. Dias de descanso, pausa e proteção não interrompem a sequência.`),
+        statTile('calendar', int(st.totalActive), st.totalActive === 1 ? 'dia' : 'dias', 'Dias ativos', `Todos os dias em que você cumpriu a ofensiva, seguidos ou não: ${st.totalActive}. Diferente da maior sequência, aqui um dia sem registro não zera nada.`),
+        statTile('rings', int(st.consistentWeeks), '', 'Semanas consistentes', 'Semanas (de segunda a domingo) com pelo menos 4 dias cumpridos, ou com todos os dias que contavam cumpridos, no mínimo 3. Descanso e pausa não pesam contra.'),
+        statTile('shield', String(st.shields), `de ${MAX_SHIELDS}`, 'Proteções', `A cada ${SHIELD_EVERY} dias cumpridos você ganha uma proteção (até ${MAX_SHIELDS}). Se um dia passar sem registro, ela cobre esse dia e a ofensiva continua.`)),
+      h('button.stk-how', { type: 'button', onclick: () => rulesSheet(evo) }, 'Como a ofensiva funciona', icon('next')));
   };
   paint();
   return card;
 }
-const stat = (v, label) => h('div.stk-stat', h('b', int(v)), h('span', label));
+// Símbolos pequenos dos indicadores, no traço das medalhas.
+const STAT_ICON = {
+  peak: '<path d="M2.8 19.5 9.4 9.2l3.7 5.6 2.4-3.4 5.7 8.1z"/>',
+  calendar: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.8v3.4M15.5 3.8v3.4"/>',
+  rings: '<circle cx="9.3" cy="12" r="5.3"/><circle cx="14.7" cy="12" r="5.3"/>',
+  shield: '<path d="M12 3.6 18.6 6v5.6c0 4.1-2.8 7.3-6.6 8.8-3.8-1.5-6.6-4.7-6.6-8.8V6z"/>',
+};
+const statIcon = k => { const t = document.createElement('template'); t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${STAT_ICON[k]}</svg>`; return t.content.firstChild; };
+function statTile(ic, value, unit, title, explain) {
+  return h('button.stk-stat', { type: 'button', 'aria-label': `${title}: ${value} ${unit}. Toque para saber mais`, onclick: () => openSheet({ title, content: h('p.sheet-text', explain) }) },
+    h('span.stk-stat-ic', statIcon(ic)),
+    h('span.stk-stat-val', h('b', value), unit ? h('small', unit) : null),
+    h('span.stk-stat-label', title));
+}
 function dayGlyph(st) {
-  if (st === 'done') return icon('check');
+  if (st === 'done') { const t = document.createElement('template'); t.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="stk-check" d="M6.5 12.5l3.6 3.6 7.4-7.6" pathLength="1"/></svg>'; return t.content.firstChild; }
   if (st === 'rest' || st === 'rest-future') return icon('moon');
   if (st === 'paused') return icon('pause');
   if (st === 'protected') return icon('shield-s');
@@ -195,9 +213,11 @@ function medalsSection(evo, today) {
     const n = list.filter(a => got[a.id]).length;
     return h('section.medal-group', h('div.medal-head', h('h3', title), h('span', `${n} de ${list.length}`)), h('ul.medal-grid', list.map(tile)));
   };
+  const total = Object.keys(got).filter(id => ACHIEVEMENTS.some(a => a.id === id)).length;
   return h('div.medals',
-    group('Ofensiva', ACHIEVEMENTS.filter(a => a.group === 'ofensiva')),
-    group('Desafios', ACHIEVEMENTS.filter(a => a.group === 'desafios')),
+    h('div.medals-title', h('h2', 'Medalhas'), h('span', `${total} de ${ACHIEVEMENTS.length}`)),
+    group('De ofensiva', ACHIEVEMENTS.filter(a => a.group === 'ofensiva')),
+    group('De desafios', ACHIEVEMENTS.filter(a => a.group === 'desafios')),
     h('p.fine.medals-foot', 'Conquistas vêm de dias cumpridos e de desafios concluídos, nunca só de começar. Cada uma vale +25 XP, uma vez.'));
 }
 

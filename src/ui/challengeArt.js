@@ -128,24 +128,37 @@ export function medalArt(a, { state: st = 'locked', size = 72, fresh = false } =
   </svg>`);
 }
 
-/** Símbolo da ofensiva: uma onda contínua que sobe, com um ponto quente na crista. */
-export function streakMark({ size = 56, muted = false } = {}) {
-  const id = 'sk' + (++medalSeq);
-  return tpl(`<svg class="streak-mark${muted ? ' muted' : ''}" viewBox="0 0 56 56" width="${size}" height="${size}" aria-hidden="true">
-    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${muted ? '#C9CDD4' : '#4F8EF0'}"/><stop offset="1" stop-color="${muted ? '#AEB3BC' : '#2A62CF'}"/></linearGradient></defs>
-    <rect width="56" height="56" rx="17" fill="url(#${id})"/>
-    <path d="M11 33.5c4.6 0 6.2-11.5 11.6-11.5S28.8 33.5 34 33.5c4 0 6.3-5.6 9.2-12.1" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
-    <circle cx="44.6" cy="17.2" r="3.4" fill="${muted ? '#fff' : '#FFC46B'}"/>
+/**
+ * Símbolo da ofensiva: três passos que sobem, ligados por uma linha contínua. Continuidade e avanço,
+ * em azul sobre um quadrado claro; cinza quando a ofensiva está em zero.
+ */
+export function streakMark({ size = 44, muted = false } = {}) {
+  return tpl(`<svg class="streak-mark${muted ? ' muted' : ''}" viewBox="0 0 44 44" width="${size}" height="${size}" aria-hidden="true">
+    <rect width="44" height="44" rx="13" class="sm-bg"/>
+    <path d="M11.5 29.5C15 29.5 16.5 22 22 22s7-7.5 10.5-7.5" fill="none" class="sm-line" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="11.5" cy="29.5" r="3.1" class="sm-dot sm-1"/>
+    <circle cx="22" cy="22" r="3.1" class="sm-dot sm-2"/>
+    <circle cx="32.5" cy="14.5" r="3.6" class="sm-dot sm-3"/>
   </svg>`);
 }
 
-/** Emblema do nível: o número dentro do hexágono das medalhas, com a XP do nível correndo pelo contorno. */
-export function levelEmblem(level, pct, { size = 84 } = {}) {
-  const d = hex(42, 44, 33);
-  return tpl(`<svg class="level-emblem" viewBox="0 0 84 88" width="${size}" height="${size * 88 / 84}" role="img" aria-label="Nível ${level}, ${Math.round(pct * 100)}% para o próximo">
-    <path d="${d}" fill="var(--accent-wash)" stroke="var(--track)" stroke-width="5" stroke-linejoin="round"/>
-    <path class="level-emblem-arc" d="${d}" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" pathLength="100" stroke-dasharray="${(pct * 100).toFixed(1)} 100" transform="rotate(0 42 44)"/>
-    <text x="42" y="40" text-anchor="middle" class="level-emblem-cap">NÍVEL</text>
-    <text x="42" y="62" text-anchor="middle" class="level-emblem-num">${level}</text>
+/**
+ * Emblema do nível: um cristal hexagonal facetado com o número integrado. A cor aprofunda a cada
+ * etapa (níveis 1–3, 4–6, 7–9, 10+) e marcas no vértice de baixo mostram a etapa.
+ */
+const TIERS = [['#7FB0F5', '#4C8BEB'], ['#5C97F0', '#2F6FDB'], ['#3F7FE6', '#2457C0'], ['#2F6AD3', '#1A3F95']];
+export function levelEmblem(level, pct, { size = 64 } = {}) {
+  const tier = Math.min(3, Math.floor((level - 1) / 3));
+  const [c1, c2] = TIERS[tier], id = 'lv' + (++medalSeq);
+  const outer = hex(32, 34, 27), inner = hex(32, 34, 21.5);
+  const marks = Array.from({ length: tier + 1 }, (_, i) => `<circle cx="${32 + (i - tier / 2) * 5}" cy="56.5" r="1.35" fill="#fff" opacity=".85"/>`).join('');
+  return tpl(`<svg class="level-emblem" viewBox="0 0 64 68" width="${size}" height="${size * 68 / 64}" role="img" aria-label="Nível ${level}">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient>
+      <clipPath id="${id}c"><path d="${outer}"/></clipPath></defs>
+    <path d="${outer}" fill="url(#${id})" stroke="url(#${id})" stroke-width="6" stroke-linejoin="round"/>
+    <g clip-path="url(#${id}c)" opacity=".16"><path d="M32 2 L64 22 L64 0 Z M32 2 L0 22 L0 0Z" fill="#fff"/><path d="M0 46 L32 66 L64 46 L64 68 L0 68Z" fill="#000" opacity=".5"/></g>
+    <path d="${inner}" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="1.2" stroke-linejoin="round"/>
+    <text x="32" y="41.5" text-anchor="middle" class="level-emblem-num">${level}</text>
+    ${marks}
   </svg>`);
 }

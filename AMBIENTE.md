@@ -9,7 +9,7 @@ O Leve usa o clima, o índice UV e a qualidade do ar da região da pessoa para d
 | Regras | `src/lib/environment.js` | Lê as respostas da Open-Meteo e calcula classificação do dia, alertas, melhores horários, índice UV, qualidade do ar e orientação de hidratação. Sem rede, testável (`tests/environment.test.js`). |
 | Serviço central | `src/env.js` | Localização, consulta às APIs, cache, atualização e disparo de alertas. Todas as telas leem `env.ctx`; nenhuma consulta a API por conta própria. |
 | Telas | `src/ui/environment.js` | Cartão "Hoje em sua região" (aba Hoje), detalhes do dia, escolha da localização, orientação na aba Líquidos e o aviso de alerta. |
-| Endereços | `src/config.js` (`WEATHER`) | Endereços da previsão, da qualidade do ar e da busca de cidades. |
+| Endereços | `src/config.js` (`WEATHER`) | Endereços da previsão, da qualidade do ar, da busca de cidades e do nome da cidade pelas coordenadas. |
 | Atividades | `src/lib/activity.js`, `src/ui/activity.js` | Avalia o horário de uma atividade com a previsão daquelas horas; cartão "Atividades" na aba Hoje, janela de planejar e orientações depois do treino. |
 | Alimentação | `src/lib/foodContext.js` | Sugestões pelo clima e pelas atividades do dia, mostradas na aba Registrar (`src/ui/insights.js`). |
 | Histórico | `src/lib/envHistory.js` | Resumo diário do clima e análises dos hábitos, no cartão "Clima e hábitos" da aba Progresso. |
@@ -34,7 +34,7 @@ A qualidade do ar vem do modelo CAMS (Copernicus), com resolução de cerca de 4
 - **No iPhone,** quem decide se o Safari volta a perguntar é o próprio Safari: Ajustes > Apps > Safari > Localização > Permitir. Com o Leve na Tela de Início, a permissão fica com o app.
 - **O que é guardado** em `settings.location`: o modo (aparelho ou nome) e as coordenadas arredondadas para 2 casas (cerca de 1 km). No modo por nome, também a cidade, o estado, o país e o fuso. Nada de endereço.
 - **Revogar:** "Remover localização" apaga a localização e o cache, e o app para de usar a do aparelho até a pessoa pedir de novo. A permissão em si é revogada nos ajustes do aparelho, e a tela explica isso.
-- **Nome da cidade:** a Open-Meteo não converte coordenadas em cidade. Pela localização do aparelho, a região aparece como "Sua localização".
+- **Nome da cidade:** a Open-Meteo não converte coordenadas em cidade. Para isso o app usa a versão gratuita da BigDataCloud (`api.bigdatacloud.net/data/reverse-geocode-client`), feita para chamadas direto do aparelho e sem chave. Ela recebe só as coordenadas arredondadas (cerca de 1 km), e só quando a posição muda. Se não responder, o app mostra "Localização do aparelho". O endereço fica em `src/config.js` (`WEATHER.reverse`).
 - **Sincronização:** com conta, os ajustes (incluindo a localização) sincronizam entre os aparelhos da pessoa. Cada aparelho, ao abrir, passa a usar a própria posição.
 
 ## Regras

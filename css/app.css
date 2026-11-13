@@ -1328,3 +1328,7 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .head-avatar:active { transform: scale(.95); }
 .head-avatar:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 3px; }
 @media (min-width: 960px) { .head-avatar .avatar { width: 52px !important; height: 52px !important; } }
+.env-card .env-summary { font-size: var(--fs-sub); color: var(--ink-2); line-height: 1.4; }
+.env-more { position: relative; z-index: 2; pointer-events: auto; font-weight: 600; white-space: nowrap; }
+.env-card .env-summary { pointer-events: none; }
+.env-card .env-summary .env-more { pointer-events: auto; }

@@ -152,11 +152,22 @@ async function permission() {
   try { return (await navigator.permissions?.query?.({ name: 'geolocation' }))?.state ?? 'unknown'; } catch { return 'unknown'; }
 }
 
+/** Cidade, estado e país a partir das coordenadas (só as arredondadas saem do aparelho). */
+async function placeFromCoords(lat, lon) {
+  try {
+    const d = await getJSON(`${WEATHER.reverse}?latitude=${lat}&longitude=${lon}&localityLanguage=pt`, 7000);
+    const name = d?.city || d?.locality || '';
+    return name ? { name, admin1: (d.principalSubdivision || '').replace(/^Estado d[eoa] /, ''), country: d.countryName || '' } : null;
+  } catch { return null; }
+}
+
 async function applyPosition(p) {
   const lat = round(p.coords.latitude), lon = round(p.coords.longitude);
   const prev = location();
   const moved = !isDevice(prev) || Math.abs(prev.lat - lat) >= 0.05 || Math.abs(prev.lon - lon) >= 0.05;
-  await saveSettings({ location: { mode: 'device', name: '', admin1: '', country: '', lat, lon, tz: null, at: Date.now() } });
+  // O nome só é buscado quando a posição muda ou ainda não há nome.
+  const place = moved || !prev?.name ? await placeFromCoords(lat, lon) : { name: prev.name, admin1: prev.admin1, country: prev.country };
+  await saveSettings({ location: { mode: 'device', name: place?.name ?? '', admin1: place?.admin1 ?? '', country: place?.country ?? '', lat, lon, tz: null, at: Date.now() } });
   if (moved) { cache.clear(); await refresh({ force: true }); }
 }
 
@@ -206,11 +217,11 @@ export async function clearLocation() {
   env.ctx = null; env.error = null; env.airError = null; emit();
 }
 
-/** Nome para mostrar. Pela localização do aparelho, "Sua localização". */
+/** Nome para mostrar: a cidade (do aparelho ou escolhida); sem nome, "Localização do aparelho". */
 export function placeName(loc = location(), ctx = env.ctx) {
   if (!loc) return '';
-  if (loc.name) return [loc.name, loc.admin1].filter(Boolean).join(', ');
-  return 'Sua localização';
+  if (loc.name) return [loc.name, loc.admin1 !== loc.name ? loc.admin1 : null].filter(Boolean).join(', ');
+  return 'Localização do aparelho';
 }
 
 // ---------------------------------------------------------------------------

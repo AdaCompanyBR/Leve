@@ -13,4 +13,7 @@ export const WEATHER = {
   forecast: 'https://api.open-meteo.com/v1/forecast',
   air: 'https://air-quality-api.open-meteo.com/v1/air-quality',
   geocoding: 'https://geocoding-api.open-meteo.com/v1/search',
+  // Nome da cidade a partir das coordenadas do aparelho (a Open-Meteo não faz esse caminho).
+  // Versão gratuita da BigDataCloud, feita para ser chamada direto do aparelho, sem chave.
+  reverse: 'https://api.bigdatacloud.net/data/reverse-geocode-client',
 };

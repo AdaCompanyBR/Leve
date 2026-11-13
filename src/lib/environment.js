@@ -232,6 +232,20 @@ export function summary(ctx, cls = classify(ctx)) {
   return 'Nenhuma faixa de atenção prevista para hoje. Ainda assim, ouça o seu corpo e acompanhe a previsão.';
 }
 
+/** Versão curta da frase do dia, para o cartão (a completa abre com "Ler mais"). */
+export function summaryShort(ctx, cls = classify(ctx)) {
+  if (!ctx) return null;
+  const k = new Set(cls.map(x => x.kind)), d = ctx.todayDay;
+  const peak = ctx.hours.filter(h => h.date === ctx.today && h.feels != null).sort((a, b) => b.feels - a.feels)[0];
+  const afternoon = peak && peak.hour >= 12 && peak.hour <= 17;
+  if (k.has('externo') && d?.storm) return 'Tempestade prevista hoje.';
+  if (k.has('calor')) return `Dia quente${afternoon ? ', principalmente à tarde' : ''}.`;
+  if (k.has('ar')) return 'Qualidade do ar desfavorável hoje.';
+  if (k.has('uv')) return 'Índice UV alto hoje.';
+  if (k.has('externo')) return 'O tempo pede atenção ao ar livre.';
+  return 'Nenhuma faixa de atenção hoje.';
+}
+
 /**
  * Orientação de hidratação para hoje (texto, sem número). A meta não muda. Com restrição de
  * líquidos registrada, a orientação manda seguir o médico.

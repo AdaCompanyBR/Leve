@@ -5,7 +5,7 @@ import { h, icon, toast, openSheet, busy, searchField } from './dom.js';
 import { state } from '../store.js';
 import { fmtDate } from '../lib/dates.js';
 import { env, onEnv, refresh, location, placeName, useGps, searchPlaces, setManualLocation, clearLocation, GPS_ERRORS, geo, isDevice, deviceGranted } from '../env.js';
-import { classify, summary, hydrationTip, bestHours, uvLevel, aqiLevel, uvPeak, rangeText, uvAdvice, dayOutlook, weatherLabel, weatherIcon, isStale } from '../lib/environment.js';
+import { classify, summary, summaryShort, hydrationTip, bestHours, uvLevel, aqiLevel, uvPeak, rangeText, uvAdvice, dayOutlook, weatherLabel, weatherIcon, isStale } from '../lib/environment.js';
 
 const deg = v => (v == null ? '–' : `${Math.round(v)}°`);
 const clock = ms => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -57,7 +57,7 @@ export function conditionsCard() {
     const uv = uvLevel(c.uv), aq = aqiLevel(ctx.air?.aqi);
     card.replaceChildren(
       h('button.env-open', { type: 'button', 'aria-label': 'Ver detalhes das condições de hoje', onclick: () => envSheet() }),
-      h('div.card-head', h('h3', 'Hoje em sua região'), h('span.env-place', placeName(), icon('next'))),
+      h('div.card-head', h('h3', 'Hoje em sua região'), h('span.env-place', location()?.name || placeName(), icon('next'))),
       h('div.env-now',
         h('span.env-icon', icon(weatherIcon(c.code, c.isDay))),
         h('div.env-temp', h('span.env-deg', deg(c.temp)), h('span.env-unit', 'C')),
@@ -70,12 +70,22 @@ export function conditionsCard() {
         metric('sun', 'Índice UV', uv ? `${Math.round(c.uv)} · ${uv.label}` : 'Indisponível', uv?.tone),
         metric('leaf', 'Ar', aq ? aq.label : 'Indisponível', aq?.tone)),
       h('div.env-pills', topTwo(cls).map(x => pill(x.tone, x.label))),
-      h('p.env-summary', summary(ctx, cls)),
+      summaryBlock(ctx, cls),
       h('p.env-foot', updatedText(), env.error ? ` · ${env.error}` : ''));
   });
 }
 // No cartão, no máximo dois selos: o desfavorável para atividade ao ar livre (se houver) e o principal.
 const topTwo = cls => { const ext = cls.find(x => x.kind === 'externo'); return ext ? [cls[0], ext].filter((x, i, a) => a.indexOf(x) === i) : cls.slice(0, 2); };
+// Frase curta no cartão; "Ler mais" abre a completa ali mesmo, sem abrir janela.
+let expanded = false;
+function summaryBlock(ctx, cls) {
+  const short = summaryShort(ctx, cls), long = summary(ctx, cls);
+  const p = h('p.env-summary');
+  const paint = () => p.replaceChildren(expanded ? long : short, ' ',
+    h('button.link.inline.env-more', { type: 'button', 'aria-expanded': String(expanded), onclick: () => { expanded = !expanded; paint(); } }, expanded ? 'Ler menos' : 'Ler mais'));
+  paint();
+  return p;
+}
 const metric = (ic, label, value, tone) => h('div.env-metric', { 'data-tone': tone ?? '' }, icon(ic), h('span.env-metric-label', label), h('b', value));
 
 // ---------------------------------------------------------------------------
@@ -159,7 +169,7 @@ export function locationSheet() {
   const search = searchField({ placeholder: 'Buscar cidade', label: 'Buscar cidade', onInput: q => { clearTimeout(timer); timer = setTimeout(() => run(q), 350); }, onSubmit: q => run(q) });
   const sheet = openSheet({ title: 'Localização', content: [
     h('p.sheet-text', 'O Leve usa a sua região para mostrar o clima, o índice UV e a qualidade do ar do dia e para orientar a hidratação e as atividades ao ar livre.'),
-    loc ? h('div.env-kv.place-now', kv('Agora', isDevice(loc) ? 'Localização do aparelho' : `${placeName()} (escolhida pelo nome)`)) : null,
+    loc ? h('div.env-kv.place-now', kv('Agora', isDevice(loc) ? (loc.name ? `${placeName()} (localização do aparelho)` : 'Localização do aparelho') : `${placeName()} (escolhida pelo nome)`)) : null,
     isDevice(loc) && deviceGranted() ? null : h('button.btn.tonal.block', { type: 'button', onclick: e => busy(e.currentTarget, async () => { await gpsFlow(); if (isDevice(location())) sheet.close(); }) }, icon('locate'), 'Usar a localização do aparelho'),
     isDevice(loc) && deviceGranted() ? h('p.fine', 'O Leve usa a localização do aparelho e a atualiza sozinho ao abrir o app, sem perguntar de novo.')
       : [h('p.place-or', 'Sem acesso à localização do aparelho? Escolha a cidade'), search.el, results],

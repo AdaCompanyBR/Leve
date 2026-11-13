@@ -8,6 +8,7 @@ import { routineCard } from './routine.js';
 import { conditionsCard } from './environment.js';
 import { activityCard } from './activity.js';
 import { avatar } from './avatar.js';
+import { weightNum, fromWeight, weightUnit, weightRange } from '../lib/units.js';
 import { ui, go } from './state.js';
 import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, waterGoalOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
@@ -69,15 +70,15 @@ function swipeToDelete(row, onDelete) {
 
 function weightSheet(date = todayISO()) {
   const existing = state.weights.find(w => w.date === date);
-  const input = h('input', { inputmode: 'decimal', autofocus: true, autocomplete: 'off', value: dec1(existing?.kg ?? latestWeight() ?? 70) });
+  const input = h('input', { inputmode: 'decimal', autofocus: true, autocomplete: 'off', value: weightNum(existing?.kg ?? latestWeight() ?? 70) });
   const err = h('p.ob-err', { role: 'alert' });
   const form = h('form', { onsubmit: async e => {
     e.preventDefault();
-    const kg = parseNum(input.value);
-    if (!(kg >= 30 && kg <= 300)) { err.textContent = 'Informe um peso entre 30 e 300 kg.'; return; }
+    const kg = fromWeight(parseNum(input.value));
+    if (!(kg >= 30 && kg <= 300)) { const [lo, hi] = weightRange(); err.textContent = `Informe um peso entre ${lo} e ${hi} ${weightUnit()}.`; return; }
     await setWeight(date, Math.round(kg * 10) / 10); haptic(12); sheet.close(); toast('Peso registrado');
   } },
-    field(`Peso em ${date === todayISO() ? 'hoje' : fmtDate(date)} (kg)`, input, 'O que conta é a tendência, não o dia.'), err);
+    field(`Peso em ${date === todayISO() ? 'hoje' : fmtDate(date)} (${weightUnit()})`, input, 'O que conta é a tendência, não o dia.'), err);
   const sheet = openSheet({ title: 'Peso', content: form, action: { label: 'Salvar', run: () => form.requestSubmit() } });
 }
 export { weightSheet };

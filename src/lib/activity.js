@@ -14,6 +14,7 @@
 //   a partir de 151, desfavorável.
 // - Tempestade: desfavorável. Chuva forte (7,6 mm/h) e rajadas de 62 km/h: atenção
 //   (desfavorável para ciclismo com rajada forte). Chance de chuva de 60% ou mais: cuidado.
+import { temp, speed } from './units.js';
 import { STORM_CODES, HEAVY_RAIN_MM_H, STRONG_GUST_KMH, bestHours, rangeText } from './environment.js';
 
 export const ACTIVITY_TYPES = [
@@ -63,7 +64,7 @@ export function assessActivity(ctx, act, { restricted = false } = {}) {
   if (!outdoor) {
     const hot = f.feels != null && f.feels >= 32;
     return { level: 'indoor', label: LEVEL_LABEL.indoor, reasons: [], forecast: f,
-      text: hot ? `Lá fora a sensação térmica deve chegar a ${fmt(f.feels)} °C. Em local fechado, prefira um ambiente ventilado ou com ar-condicionado.` : 'Atividade em local fechado: o clima de fora pesa menos. Prefira um ambiente ventilado.',
+      text: hot ? `Lá fora a sensação térmica deve chegar a ${temp(f.feels)}. Em local fechado, prefira um ambiente ventilado ou com ar-condicionado.` : 'Atividade em local fechado: o clima de fora pesa menos. Prefira um ambiente ventilado.',
       tips: [water, 'Pare se sentir tontura, náusea ou cansaço fora do normal'] };
   }
   let level = 'ok';
@@ -71,15 +72,15 @@ export function assessActivity(ctx, act, { restricted = false } = {}) {
   const intensity = act.intensity ?? type.intensity;
   if (f.feels != null) {
     const hit = HEAT_BY_INTENSITY[intensity]?.find(([min]) => f.feels >= min);
-    if (hit) { level = worse(level, hit[1]); reasons.push(`sensação térmica de até ${fmt(f.feels)} °C`); }
-    if ((act.minutes ?? 0) >= 60 && f.feels >= 27) { level = worse(level, 'warn'); if (!hit) reasons.push(`sensação térmica de até ${fmt(f.feels)} °C por ${act.minutes} minutos`); }
+    if (hit) { level = worse(level, hit[1]); reasons.push(`sensação térmica de até ${temp(f.feels)}`); }
+    if ((act.minutes ?? 0) >= 60 && f.feels >= 27) { level = worse(level, 'warn'); if (!hit) reasons.push(`sensação térmica de até ${temp(f.feels)} por ${act.minutes} minutos`); }
   }
   if (f.uv != null && f.uv >= 5.5) { level = worse(level, f.uv >= 7.5 ? 'warn' : 'caution'); reasons.push(`índice UV de até ${fmt(f.uv)}`); }
   if (f.aqi != null && f.aqi >= 101) { level = worse(level, f.aqi >= 151 ? 'danger' : intensity === 'leve' ? 'caution' : 'warn'); reasons.push(`qualidade do ar ${f.aqi >= 151 ? 'ruim' : 'ruim para grupos sensíveis'} (AQI ${fmt(f.aqi)})`); }
   if (f.storm) { level = worse(level, 'danger'); reasons.push('tempestade prevista'); }
   else if (f.rain != null && f.rain >= HEAVY_RAIN_MM_H) { level = worse(level, 'warn'); reasons.push('chuva forte'); }
   else if (f.rainProb != null && f.rainProb >= 60) { level = worse(level, 'caution'); reasons.push(`${fmt(f.rainProb)}% de chance de chuva`); }
-  if (f.gust != null && f.gust >= STRONG_GUST_KMH) { level = worse(level, act.type === 'ciclismo' ? 'danger' : 'warn'); reasons.push(`rajadas de vento de até ${fmt(f.gust)} km/h`); }
+  if (f.gust != null && f.gust >= STRONG_GUST_KMH) { level = worse(level, act.type === 'ciclismo' ? 'danger' : 'warn'); reasons.push(`rajadas de vento de até ${speed(f.gust)}`); }
 
   // Outros horários do mesmo dia que não pegam as faixas de atenção.
   const b = bestHours(ctx, act.date);

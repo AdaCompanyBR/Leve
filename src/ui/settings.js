@@ -11,6 +11,7 @@ import * as auth from '../auth.js';
 import { location as envLocation, placeName, ALERT_CATEGORIES, alertOn, isDevice } from '../env.js';
 import { locationSheet } from './environment.js';
 import { avatar, avatarSheet } from './avatar.js';
+import { UNIT_OPTIONS, DEFAULT_UNITS, unitPref, weight, weightNum, fromWeight, weightUnit, weightDelta, height, heightUnit, parseFtIn } from '../lib/units.js';
 
 export function applyTheme() {
   const t = state.settings.theme;
@@ -64,32 +65,41 @@ export function settingsScreen() {
     plan.locks.includes('imc-alto') ? h('p.fine', 'Trava ativa: com IMC acima de 27, a meta fica no seu gasto, sem superávit. Considere “Definir o corpo”.') : null,
     plan.locks.includes('superavit15') ? h('p.fine', 'Trava ativa: superávit limitado a 15% do gasto.') : null,
     plan.locks.includes('imc-baixo') ? h('p.fine', 'Trava ativa: com IMC abaixo de 18,5, o Leve não corta calorias.') : null,
-    plan.locks.includes('piso') ? h('p.fine', `Trava ativa: a meta não fica abaixo de ${int(plan.floor)} kcal.${plan.mode === 'deficit' ? ` Ritmo real de cerca de ${dec1(plan.kgWeek)} kg por semana.` : ''}`) : null,
-    plan.locks.includes('deficit25') ? h('p.fine', `Trava ativa: déficit limitado a 25% do gasto. Ritmo real de cerca de ${dec1(plan.kgWeek)} kg por semana.`) : null,
+    plan.locks.includes('piso') ? h('p.fine', `Trava ativa: a meta não fica abaixo de ${int(plan.floor)} kcal.${plan.mode === 'deficit' ? ` Ritmo real de cerca de ${weightDelta(plan.kgWeek)} por semana.` : ''}`) : null,
+    plan.locks.includes('deficit25') ? h('p.fine', `Trava ativa: déficit limitado a 25% do gasto. Ritmo real de cerca de ${weightDelta(plan.kgWeek)} por semana.`) : null,
     plan.macros ? h('p.fine', `Macros sugeridos: ${plan.macros.protein} g de proteína, ${plan.macros.carbs} g de carboidrato e ${plan.macros.fat} g de gordura.`) : null);
 
   const profileCard = h('section.card.set-card', { 'aria-label': 'Dados' }, h('h3', 'Dados'),
     row('Nome', valueBtn(p.name, () => editSheet({ title: 'Nome', label: 'Como podemos chamar você?', value: p.name, inputmode: 'text', validate: v => (v.trim() ? null : 'Digite um nome.'), onSave: v => saveProfile({ name: v.trim() }) }), 'Editar nome')),
     row('Sexo biológico', select([{ id: 'f', label: 'Feminino' }, { id: 'm', label: 'Masculino' }], p.sex, v => saveProfile({ sex: v }), 'Sexo biológico')),
     row('Nascimento', h('input', { type: 'date', value: p.birthDate, max: todayISO(), min: '1920-01-01', 'aria-label': 'Data de nascimento', onchange: e => e.target.value && e.target.value < todayISO() && saveProfile({ birthDate: e.target.value }) })),
-    row('Altura', valueBtn(`${p.heightCm} cm`, () => editSheet({ title: 'Altura', label: 'Altura em centímetros', value: p.heightCm, inputmode: 'numeric',
-      validate: v => (parseNum(v) >= 120 && parseNum(v) <= 230 ? null : 'Informe uma altura entre 120 e 230 cm.'),
-      onSave: v => { const cm = Math.round(parseNum(v)); const g = validateGoal(p.goalKg, cm).ok ? p.goalKg : healthyRange(cm).ideal; return saveProfile({ heightCm: cm, goalKg: g }); } }), 'Editar altura')),
+    row('Altura', valueBtn(height(p.heightCm), () => {
+      const ft = heightUnit() === 'ftin', toCm = v => (ft ? parseFtIn(v) : Math.round(parseNum(v)));
+      editSheet({ title: 'Altura', label: ft ? 'Altura em pés e polegadas (ex.: 5\'7)' : 'Altura em centímetros', value: ft ? height(p.heightCm).replace(/′ /, "'").replace('″', '') : p.heightCm, inputmode: ft ? 'text' : 'numeric',
+        validate: v => (toCm(v) >= 120 && toCm(v) <= 230 ? null : ft ? 'Informe uma altura entre 3\'11 e 7\'7.' : 'Informe uma altura entre 120 e 230 cm.'),
+        onSave: v => { const cm = toCm(v); const g = validateGoal(p.goalKg, cm).ok ? p.goalKg : healthyRange(cm).ideal; return saveProfile({ heightCm: cm, goalKg: g }); } });
+    }, 'Editar altura')),
     row('Atividade', select(ACTIVITY, p.activity, v => saveProfile({ activity: v }), 'Nível de atividade')));
 
   const goalCard = h('section.card.set-card', { 'aria-label': 'Objetivo e rotina' }, h('h3', 'Objetivo e rotina'),
     row('Objetivo', valueBtn(goalById(p.goal).label, () => goalWizard(), 'Mudar objetivo'), p.goal ? null : 'Escolha para montar a sua rotina'),
     p.goal === 'ganhar' ? row('Ritmo', select(GAIN_PACES.map(x => ({ id: x.id, label: `${x.label} (${x.hint.toLowerCase()})` })), p.gainPace ?? 'suave', v => saveProfile({ gainPace: v }), 'Ritmo de ganho')) : null,
-    plan.goal !== 'perder' || plan.mode === 'menor' ? null : row('Peso-alvo', valueBtn(`${dec1(plan.goalKg)} kg`, () => editSheet({ title: 'Peso-alvo', label: 'Peso-alvo em quilos', value: dec1(plan.goalKg),
-      hint: `A faixa saudável para ${p.heightCm} cm vai de ${dec1(range.min)} a ${dec1(range.max)} kg. O sugerido é ${dec1(range.ideal)} kg.`,
-      validate: v => { const r = validateGoal(parseNum(v), p.heightCm); return r.ok ? null : r.reason; },
-      onSave: v => saveProfile({ goalKg: Math.round(parseNum(v) * 10) / 10 }) }), 'Editar peso-alvo'),
-      `Faixa saudável: ${dec1(range.min)} a ${dec1(range.max)} kg`),
+    plan.goal !== 'perder' || plan.mode === 'menor' ? null : row('Peso-alvo', valueBtn(weight(plan.goalKg), () => editSheet({ title: 'Peso-alvo', label: `Peso-alvo em ${weightUnit() === 'lb' ? 'libras' : 'quilos'}`, value: weightNum(plan.goalKg),
+      hint: `A faixa saudável para ${height(p.heightCm)} vai de ${weight(range.min)} a ${weight(range.max)}. O sugerido é ${weight(range.ideal)}.`,
+      validate: v => { const r = validateGoal(fromWeight(parseNum(v)), p.heightCm); return r.ok ? null : r.reason; },
+      onSave: v => saveProfile({ goalKg: Math.round(fromWeight(parseNum(v)) * 10) / 10 }) }), 'Editar peso-alvo'),
+      `Faixa saudável: ${weight(range.min)} a ${weight(range.max)}`),
     plan.goal === 'perder' && plan.mode !== 'menor' ? row('Ritmo', select(PACES.map(x => ({ id: x.id, label: `${x.label} (${x.hint})` })), p.pace, v => saveProfile({ pace: v }), 'Ritmo')) : null,
     row('Refeições por dia', select(MEAL_COUNTS.map(n => ({ id: String(n), label: `${n} refeições` })), String(p.meals ?? 4), v => saveProfile({ meals: Number(v) }), 'Refeições por dia')),
     row('Acordo às', select(WAKE_TIMES.map(t => ({ id: t, label: t.replace(':00', 'h') })), p.wake ?? '07:00', v => saveProfile({ wake: v }), 'Hora de acordar')),
     row('Rotina do dia', valueBtn('Ver', () => routineSheet(), 'Ver a rotina do dia')),
     plan.adapted ? row('Gasto medido', h('button.btn.tonal.compact', { onclick: async () => { await saveProfile({ tdeeOverride: null }); toast('De volta à fórmula'); } }, 'Voltar à fórmula'), `${int(plan.tdee)} kcal por dia, calculado dos seus registros`) : null);
+
+  // Unidades: só a exibição e a digitação mudam; os dados ficam em °C, kg, cm, km/h e mm.
+  const setUnit = (k, v) => saveSettings({ units: { ...DEFAULT_UNITS, ...(s.units ?? {}), [k]: v } });
+  const unitsCard = h('section.card.set-card', { 'aria-label': 'Unidades' }, h('h3', 'Unidades'),
+    ...Object.entries(UNIT_OPTIONS).map(([k, u]) => row(u.label, segmented(u.options, unitPref(k), v => setUnit(k, v), u.label))),
+    h('p.card-sub', 'Valem para o app inteiro. Os seus registros não mudam: só a forma de mostrar e de digitar.'));
 
   const prefCard = h('section.card.set-card', { 'aria-label': 'Preferências' }, h('h3', 'Preferências'),
     row('Tema', segmented([{ id: 'auto', label: 'Automático' }, { id: 'light', label: 'Claro' }, { id: 'dark', label: 'Escuro' }], s.theme, async v => { await saveSettings({ theme: v }); applyTheme(); }, 'Tema')),
@@ -144,8 +154,8 @@ export function settingsScreen() {
     h('p.fine', 'Alimentos: tabela TACO (NEPA/UNICAMP, 2011) e Open Food Facts (ODbL).'),
     h('p.fine', h('a.link.inline', { href: '../' }, 'Sobre o Leve')));
 
-  [profileCard, goalCard, prefCard, liqCard, envCard, dataCard].filter(Boolean).forEach(groupRows);
+  [profileCard, goalCard, prefCard, unitsCard, liqCard, envCard, dataCard].filter(Boolean).forEach(groupRows);
   return h('div.screen.settings',
     h('header.screen-head', h('div', h('h1', 'Ajustes'))),
-    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', groupRows(accountCard({ row })), prefCard, liqCard, envCard, dataCard, about)));
+    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', groupRows(accountCard({ row })), prefCard, unitsCard, liqCard, envCard, dataCard, about)));
 }

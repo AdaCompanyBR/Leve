@@ -4,6 +4,7 @@
 import { classify, alerts, hydrationTip } from './environment.js';
 import { dayTotal } from './hydration.js';
 import { addDays } from './dates.js';
+import { temp } from './units.js';
 
 const r1 = v => (v == null ? null : Math.round(v * 10) / 10);
 
@@ -45,7 +46,7 @@ export function insights({ history = {}, drinks = [], legacy = {}, goalFor, acti
   const hot = logged.filter(d => (history[d]?.feelsMax ?? -99) >= HOT);
   if (hot.length >= 3) {
     const met = hot.filter(d => intake(d) >= (history[d]?.goal ?? goalFor(d))).length;
-    out.push({ id: 'calor-meta', text: `Você atingiu a meta de líquidos em ${pct(met, hot.length)}% dos dias quentes dos últimos ${days} dias.`, base: `${met} de ${hot.length} dias com sensação térmica de ${HOT} °C ou mais` });
+    out.push({ id: 'calor-meta', text: `Você atingiu a meta de líquidos em ${pct(met, hot.length)}% dos dias quentes dos últimos ${days} dias.`, base: `${met} de ${hot.length} dias com sensação térmica de ${temp(HOT)} ou mais` });
   }
   // Consumo em dias quentes e amenos.
   const mild = logged.filter(d => history[d]?.feelsMax != null && history[d].feelsMax < HOT);

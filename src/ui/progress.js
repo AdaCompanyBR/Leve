@@ -6,6 +6,7 @@ import { etaDate, MAX_DEFICIT_RATIO } from '../lib/calc.js';
 import { MIN_DAYS } from '../lib/adaptive.js';
 import { todayISO, addDays, diffDays, fmtDate, fromISO } from '../lib/dates.js';
 import { climateHabitsCard } from './insights.js';
+import { weight, weightNum, weightDelta, weightUnit } from '../lib/units.js';
 
 const longDate = iso => fmtDate(iso, { day: 'numeric', month: 'long', year: 'numeric' });
 let whatIf = 0;
@@ -28,13 +29,13 @@ function chart(points, plan, eta) {
   const short = iso => fmtDate(iso, { day: 'numeric', month: 'short' }).replace('.', '');
   const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.date).toFixed(1)} ${y(p.trend).toFixed(1)}`).join('');
   const showToday = x(today) - x(start) > 60 && x(end) - x(today) > 60;
-  const label = `Gráfico de peso. Tendência atual ${dec1(last.trend)} kg${hasGoal ? `, meta ${dec1(plan.goalKg)} kg` : ''}${eta ? `, chegada prevista em ${longDate(eta)}` : ''}.`;
+  const label = `Gráfico de peso. Tendência atual ${weight(last.trend)}${hasGoal ? `, meta ${weight(plan.goalKg)}` : ''}${eta ? `, chegada prevista em ${longDate(eta)}` : ''}.`;
   const t = document.createElement('template');
   t.innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">
     <title>${label}</title>
-    ${ticks.map(t => `<line class="grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(t)}" y2="${y(t)}"/><text class="axis" x="${pad.l - 8}" y="${y(t) + 4}" text-anchor="end">${dec1(t)}</text>`).join('')}
+    ${ticks.map(t => `<line class="grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(t)}" y2="${y(t)}"/><text class="axis" x="${pad.l - 8}" y="${y(t) + 4}" text-anchor="end">${weightNum(t)}</text>`).join('')}
     ${hasGoal ? `<line class="goal" x1="${pad.l}" x2="${W - pad.r}" y1="${y(plan.goalKg)}" y2="${y(plan.goalKg)}"/>
-    <text class="goal-label" x="${pad.l + 4}" y="${y(plan.goalKg) - 7}">Meta ${dec1(plan.goalKg)} kg</text>` : ''}
+    <text class="goal-label" x="${pad.l + 4}" y="${y(plan.goalKg) - 7}">Meta ${weight(plan.goalKg)}</text>` : ''}
     ${eta && last.trend > plan.goalKg ? `<line class="projection" x1="${x(last.date)}" y1="${y(last.trend)}" x2="${x(end === eta ? eta : end)}" y2="${end === eta ? y(plan.goalKg) : y(last.trend - ((last.trend - plan.goalKg) * diffDays(last.date, end)) / Math.max(1, diffDays(last.date, eta)))}"/>` : ''}
     ${points.map(p => `<circle class="dot" cx="${x(p.date).toFixed(1)}" cy="${y(p.kg).toFixed(1)}" r="3"/>`).join('')}
     <path class="trend" d="${path}"/>
@@ -61,10 +62,10 @@ export function progressScreen() {
   const change = last && first ? last.trend - first.trend : 0;
   const weightCard = h('section.card.weight-card', { 'aria-label': 'Peso' },
     h('div.weight-head',
-      h('div', h('span.stat-label', 'Peso tendência'), h('div.weight-now', h('span.weight-num', dec1(trend)), h('span.weight-unit', 'kg'))),
+      h('div', h('span.stat-label', 'Peso tendência'), h('div.weight-now', h('span.weight-num', weightNum(trend)), h('span.weight-unit', weightUnit()))),
       h('button.btn.tonal', { onclick: () => weightSheet() }, icon('scale'), 'Registrar peso')),
     pts.length > 1
-      ? h('p.card-sub', `${change <= 0 ? 'Menos' : 'Mais'} ${dec1(Math.abs(change))} kg desde ${fmtDate(first.date)}.${deficitMode && plan.goal === 'perder' ? ` Faltam ${dec1(Math.max(0, trend - plan.goalKg))} kg para a meta.` : ''}`)
+      ? h('p.card-sub', `${change <= 0 ? 'Menos' : 'Mais'} ${weightDelta(Math.abs(change))} desde ${fmtDate(first.date)}.${deficitMode && plan.goal === 'perder' ? ` Faltam ${weightDelta(Math.max(0, trend - plan.goalKg))} para a meta.` : ''}`)
       : h('p.card-sub', 'Com mais pesagens, a linha de tendência aparece e esconde a oscilação diária de água.'),
     chartEl,
     h('div.legend', h('span.lg.lg-trend', 'Tendência'), h('span.lg.lg-dot', 'Pesagens'), eta ? h('span.lg.lg-proj', 'Projeção') : null));
@@ -133,7 +134,7 @@ export function progressScreen() {
       const lost = -e.deltaKg;
       body = [
         h('p.adaptive-lead', `Seu gasto real parece ser de ${int(e.tdee)} kcal por dia, e não ${int(plan.tdee)}.`),
-        h('p.card-sub', `Em ${e.days} dias você comeu em média ${int(e.avgIntake)} kcal por dia e o peso tendência ${lost >= 0 ? 'caiu' : 'subiu'} ${dec1(Math.abs(lost))} kg. A conta: (calorias ingeridas ${lost >= 0 ? '+' : '−'} ${dec1(Math.abs(lost))} kg × 7.700) ÷ ${e.days} dias.`),
+        h('p.card-sub', `Em ${e.days} dias você comeu em média ${int(e.avgIntake)} kcal por dia e o peso tendência ${lost >= 0 ? 'caiu' : 'subiu'} ${weightDelta(Math.abs(lost))}. A conta: (calorias ingeridas ${lost >= 0 ? '+' : '−'} ${dec1(Math.abs(lost))} kg × 7.700) ÷ ${e.days} dias.`),
         h('p.card-sub', 'Aceitando, a meta diária é recalculada com esse gasto, com as mesmas travas de segurança.'),
         h('div.sheet-actions',
           h('button.btn.ghost', { onclick: () => declineTdee(e.tdee) }, 'Manter como está'),
@@ -155,8 +156,8 @@ export function progressScreen() {
   const historyCard = history.length ? h('section.card', { 'aria-label': 'Pesagens' }, h('h3', 'Pesagens'),
     h('ul.history', history.map(p => h('li',
       h('span.history-date', fmtDate(p.date, { day: 'numeric', month: 'short', weekday: 'short' })),
-      h('span.history-kg', `${dec1(p.kg)} kg`),
-      h('button.icon-btn.small', { 'aria-label': `Apagar a pesagem de ${fmtDate(p.date)}`, onclick: () => confirmSheet({ title: 'Apagar pesagem?', message: `${dec1(p.kg)} kg em ${fmtDate(p.date)}.`, confirmLabel: 'Apagar', onConfirm: () => removeWeight(p.date) }) }, icon('trash')))))) : null;
+      h('span.history-kg', weight(p.kg)),
+      h('button.icon-btn.small', { 'aria-label': `Apagar a pesagem de ${fmtDate(p.date)}`, onclick: () => confirmSheet({ title: 'Apagar pesagem?', message: `${weight(p.kg)} em ${fmtDate(p.date)}.`, confirmLabel: 'Apagar', onConfirm: () => removeWeight(p.date) }) }, icon('trash')))))) : null;
 
   return h('div.screen.progress',
     h('header.screen-head', h('div', h('p.screen-date', fromISO(today).getFullYear()), h('h1', 'Progresso'))),

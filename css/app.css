@@ -1332,3 +1332,5 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .env-more { position: relative; z-index: 2; pointer-events: auto; font-weight: 600; white-space: nowrap; }
 .env-card .env-summary { pointer-events: none; }
 .env-card .env-summary .env-more { pointer-events: auto; }
+section[aria-label="Unidades"] .set-row .segmented { flex: 0 0 min(56%, 220px); }
+section[aria-label="Unidades"] .set-label { flex: 1; min-width: 0; }

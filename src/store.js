@@ -7,6 +7,7 @@ import { estimateTdee, shouldPropose } from './lib/adaptive.js';
 import { addDays, todayISO } from './lib/dates.js';
 import { makeIndex } from './lib/search.js';
 import { dayTotal, goalOn, withGoal, DEFAULT_PRESETS } from './lib/hydration.js';
+import { setUnitPrefs } from './lib/units.js';
 import { buildRecipeFoods } from './lib/recipes.js';
 import { registerServings } from './lib/portions.js';
 import { buildRoutine, dayStatus } from './lib/routine.js';
@@ -49,6 +50,7 @@ export async function load() {
     ready: true, profile: map.profile ?? null, settings: { ...DEFAULT_SETTINGS, ...map.settings }, entries, weights, foods, templates,
     favorites: map.favorites ?? [], water: map.water ?? {}, drinks, routine: map.routine ?? {}, goalLog: map.goalLog ?? [], presets: map.presets ?? null, activities: map.activities ?? [], envHistory: map.envHistory ?? {}, avatar: map.avatar ?? null, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
   });
+  setUnitPrefs(state.settings.units);
   state.recipes = buildRecipeFoods(taco);
   registerServings([...state.recipes, ...state.foods]);
   reindex();
@@ -111,7 +113,7 @@ export async function saveProfile(patch) {
   if (first && state.profile.weightKg) await setWeight(todayISO(), state.profile.weightKg, true);
   emit();
 }
-export async function saveSettings(patch) { state.settings = { ...state.settings, ...patch }; await kv('settings', state.settings); emit(); }
+export async function saveSettings(patch) { state.settings = { ...state.settings, ...patch }; setUnitPrefs(state.settings.units); await kv('settings', state.settings); emit(); }
 export async function addEntries(items) {
   const now = Date.now();
   const rows = items.map((it, i) => ({ ...it, id: uid(), ts: now + i }));

@@ -7,6 +7,7 @@ import { env, onEnv, location } from '../env.js';
 import { foodTips } from '../lib/foodContext.js';
 import { insights } from '../lib/envHistory.js';
 import { uvLevel } from '../lib/environment.js';
+import { deg } from '../lib/units.js';
 
 /** Bloco "Para hoje" na aba Registrar. `onPick(query)` abre a busca do alimento. */
 export function foodTipsBlock(onPick) {
@@ -44,7 +45,7 @@ export function climateHabitsCard() {
         const r = hist[d], ml = liquidsOn(d).total, goal = r.goal ?? waterGoalOn(d), uv = uvLevel(r.uvMax);
         return h('li',
           h('span.habits-day', d === today ? 'Hoje' : fmtDate(d, { weekday: 'short', day: 'numeric' }).replace('.', '')),
-          h('span', r.max != null ? `${Math.round(r.max)}°` : '–'),
+          h('span', deg(r.max)),
           h('span', uv ? `UV ${Math.round(r.uvMax)}` : ''),
           h('span.habits-pct' + (ml >= goal ? '.met' : ''), `${Math.round((ml / goal) * 100)}% da meta`));
       }))) : null,

@@ -6,6 +6,7 @@ import { todayISO, addDays, fmtDate } from '../lib/dates.js';
 import { env, onEnv, location } from '../env.js';
 import { ACTIVITY_TYPES, INTENSITIES, DURATIONS, typeById, assessActivity, afterAdvice, nextActivity } from '../lib/activity.js';
 import { envSheet, locationSheet } from './environment.js';
+import { deg } from '../lib/units.js';
 
 const pad = n => String(n).padStart(2, '0');
 const nowHHMM = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
@@ -75,7 +76,7 @@ export function activitySheet({ activity, date } = {}) {
     assessEl.dataset.tone = TONE[a.level];
     assessEl.replaceChildren(
       h('div.act-assess-head', h('span.env-pill', { 'data-tone': TONE[a.level] }, a.label), f ? h('span.act-fc', [
-        f.feels != null ? `sensação ${Math.round(f.feels)}°` : null, f.uv != null ? `UV ${Math.round(f.uv)}` : null,
+        f.feels != null ? `sensação ${deg(f.feels)}` : null, f.uv != null ? `UV ${Math.round(f.uv)}` : null,
         f.aqi != null ? `ar ${Math.round(f.aqi)}` : null, f.rainProb != null ? `chuva ${Math.round(f.rainProb)}%` : null].filter(Boolean).join(' · ')) : null),
       h('p', a.text),
       h('ul.act-tips', a.tips.map(t => h('li', t))),

@@ -4,7 +4,8 @@ import { ACTIVITY, PACES, GAIN_PACES, GOALS, plan, ageOn } from '../lib/calc.js'
 import { MEAL_COUNTS, WAKE_TIMES, buildRoutine } from '../lib/routine.js';
 import { routinePreview } from './routine.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
-import { saveProfile, setWaterGoal } from '../store.js';
+import { state, saveProfile, saveSettings, setWaterGoal } from '../store.js';
+import { DEFAULT_UNITS, unitPref, weight, weightDelta, height } from '../lib/units.js';
 import { CLIMATES, suggestWaterGoal } from '../lib/hydration.js';
 import { configured } from '../auth.js';
 import { goToLogin } from './account.js';
@@ -58,10 +59,10 @@ export function onboarding(root) {
   // Régua deslizante: arraste (ou use as setas) e o valor aparece em destaque. `units` permite
   // trocar a unidade de exibição (kg ou lb); o valor guardado fica sempre na unidade base.
   const GAP = 12;
-  const ruler = (key, { min, max, step, start, units }) => () => {
-    let u = units[0];
+  const ruler = (key, { min, max, step, start, units, pref }) => () => {
+    let u = units.find(x => x.id === unitPref(pref)) ?? units[0];
     if (!(data[key] >= min && data[key] <= max)) data[key] = start;
-    const fmt = v => (u.dec ? dec1(v) : int(v));
+    const fmt = v => (u.fmt ? u.fmt(v) : u.dec ? dec1(v) : int(v));
     const value = h('span.ruler-num'), unitEl = h('span.ruler-unit');
     const track = h('div.ruler-track');
     const scroller = h('div.ruler-scroll', { tabindex: -1 }, track);
@@ -71,7 +72,7 @@ export function onboarding(root) {
     const shown = () => Math.min(hi(), Math.max(lo(), Math.round(data[key] * u.k / u.step)));
     let n = 0, lock = false;
     function label() {
-      value.textContent = fmt(n * u.step); unitEl.textContent = u.label;
+      value.textContent = fmt(n * u.step); unitEl.textContent = u.fmt ? '' : u.label;
       box.setAttribute('aria-valuemin', lo() * u.step); box.setAttribute('aria-valuemax', hi() * u.step);
       box.setAttribute('aria-valuenow', n * u.step); box.setAttribute('aria-valuetext', `${fmt(n * u.step)} ${u.label}`);
     }
@@ -101,6 +102,7 @@ export function onboarding(root) {
     const toggle = units.length > 1 ? h('div.unit-pills', { role: 'radiogroup', 'aria-label': 'Unidade' }, units.map(x =>
       h('button.unit-pill', { type: 'button', role: 'radio', 'aria-checked': String(x === u), onclick: e => {
         u = x; toggle.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b === e.currentTarget))); build();
+        saveSettings({ units: { ...DEFAULT_UNITS, ...(state.settings.units ?? {}), [pref]: x.id } });
       } }, x.label))) : null;
     const el = h('div.ruler-wrap', toggle, h('p.ruler-value', { 'aria-hidden': 'true' }, value, unitEl), box);
     el.validate = () => (data[key] >= min && data[key] <= max ? null : 'Ajuste a régua para continuar.');
@@ -126,9 +128,9 @@ export function onboarding(root) {
       el.validate = () => (data.birthDate && data.birthDate < todayISO() && data.birthDate >= '1920-01-01' ? null : 'Escolha uma data de nascimento válida.');
       return el;
     } },
-    { q: 'Qual é a sua altura?', sub: 'A altura entra no cálculo do gasto de energia.', body: ruler('heightCm', { min: 120, max: 230, start: 170, units: [{ label: 'cm', k: 1, step: 1, major: 10 }] }) },
+    { q: 'Qual é a sua altura?', sub: 'A altura entra no cálculo do gasto de energia.', body: ruler('heightCm', { min: 120, max: 230, start: 170, pref: 'height', units: [{ id: 'cm', label: 'cm', k: 1, step: 1, major: 10 }, { id: 'ftin', label: 'pés e pol.', k: 1 / 2.54, step: 1, major: 12, fmt: v => `${Math.floor(v / 12)}′ ${Math.round(v % 12)}″` }] }) },
     { q: 'Qual é o seu peso?', sub: 'O peso pesa bastante na meta de calorias e na de líquidos. Se puder, pese-se pela manhã.',
-      body: ruler('weightKg', { min: 30, max: 300, start: 70, units: [{ label: 'kg', k: 1, step: 0.5, major: 10, dec: true }, { label: 'lb', k: 2.20462, step: 1, major: 10 }] }) },
+      body: ruler('weightKg', { min: 30, max: 300, start: 70, pref: 'weight', units: [{ id: 'kg', label: 'kg', k: 1, step: 0.5, major: 10, dec: true }, { id: 'lb', label: 'lb', k: 2.20462, step: 1, major: 10 }] }) },
     { q: 'Nível de atividade', sub: 'Quanto mais você se mexe, mais energia e mais líquidos o corpo pede.', body: choice('activity', ACTIVITY) },
     { q: 'Clima', sub: 'No calor o corpo perde mais água. Isso ajusta a sua meta de líquidos.', body: choice('climate', CLIMATES) },
     { q: 'Em que ritmo você quer ir?', sub: 'Ritmos suaves são mais fáceis de manter.', body: choice('pace', PACES, 'progress'), when: () => data.goal === 'perder' },
@@ -200,8 +202,8 @@ export function onboarding(root) {
     } else {
       headline = `${name}, este é o seu plano para ${goalWord}.`;
     }
-    if (p.locks.includes('piso')) foot = `Ajustamos a meta para não ficar abaixo de ${int(p.floor)} kcal por dia, o mínimo seguro.${p.mode === 'deficit' ? ` O ritmo real será de cerca de ${dec1(p.kgWeek)} kg por semana.` : ''}`;
-    else if (p.locks.includes('deficit25')) foot = `Limitamos o déficit a 25% do seu gasto. O ritmo real será de cerca de ${dec1(p.kgWeek)} kg por semana.`;
+    if (p.locks.includes('piso')) foot = `Ajustamos a meta para não ficar abaixo de ${int(p.floor)} kcal por dia, o mínimo seguro.${p.mode === 'deficit' ? ` O ritmo real será de cerca de ${weightDelta(p.kgWeek)} por semana.` : ''}`;
+    else if (p.locks.includes('deficit25')) foot = `Limitamos o déficit a 25% do seu gasto. O ritmo real será de cerca de ${weightDelta(p.kgWeek)} por semana.`;
     else if (p.locks.includes('imc-alto')) foot = 'Com IMC acima de 27, somar calorias tende a virar mais gordura do que músculo. Por isso a meta fica no seu gasto, com proteína alta e treino de força. Vale considerar “Definir o corpo”.';
     else if (p.locks.includes('superavit15')) foot = 'Limitamos o superávit a 15% do seu gasto.';
     if (p.bmi < 18.5 && p.goal !== 'ganhar') foot = 'Seu IMC está abaixo de 18,5. O Leve não corta calorias nesse caso; vale conversar com um médico ou nutricionista.';
@@ -209,11 +211,11 @@ export function onboarding(root) {
     const water = suggestWaterGoal({ weightKg: data.weightKg, activity: data.activity, climate: data.climate });
     const routine = buildRoutine({ profile: data, plan: p, waterGoal: water });
     const liq = stat('Líquidos por dia', `${dec1(water / 1000)} L`, 'Pelo seu peso, rotina e clima.');
-    const gasto = stat('Gasto diário estimado', `${int(p.tdee)} kcal`, `${ageOn(data.birthDate, today)} anos, ${data.heightCm} cm`);
+    const gasto = stat('Gasto diário estimado', `${int(p.tdee)} kcal`, `${ageOn(data.birthDate, today)} anos, ${height(data.heightCm)}`);
     const prot = p.macros ? stat('Proteína por dia', `${int(p.macros.protein)} g`) : null;
     const grid = p.mode === 'menor' ? null : p.goal === 'perder'
-      ? [liq, stat('IMC atual', dec1(p.bmi)), stat('Faixa saudável', `${dec1(p.range.min)} a ${dec1(p.range.max)} kg`),
-        stat('Peso sugerido', `${dec1(p.goalKg)} kg`, 'Meio da faixa saudável. Você pode ajustar depois.'),
+      ? [liq, stat('IMC atual', dec1(p.bmi)), stat('Faixa saudável', `${weight(p.range.min)} a ${weight(p.range.max)}`),
+        stat('Peso sugerido', weight(p.goalKg), 'Meio da faixa saudável. Você pode ajustar depois.'),
         p.mode === 'deficit' && p.eta ? stat('Chegada prevista', fmtDate(p.eta, { day: 'numeric', month: 'long', year: 'numeric' })) : null, gasto]
       : p.goal === 'ganhar' ? [stat('Acima do gasto', `+${int(p.surplus)} kcal`), prot, liq, gasto]
         : p.goal === 'definir' && p.mode === 'recomposicao' ? [stat('Abaixo do gasto', `−${int(p.deficit)} kcal`), prot, liq, gasto]

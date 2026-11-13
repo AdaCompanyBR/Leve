@@ -19,6 +19,7 @@
 // - Tempestade: códigos de tempo 95, 96 e 99 da OMM (Organização Meteorológica Mundial).
 // - Mudança brusca: máxima de hoje 8 °C ou mais diferente da de ontem (regra do app, não oficial).
 // Nenhuma regra classifica um dia como "seguro". Sem alerta não quer dizer sem risco.
+import { temp, tempDelta, speed, rain } from './units.js';
 
 // ---------------------------------------------------------------------------
 // Faixas
@@ -201,7 +202,7 @@ export function classify(ctx) {
   const d = ctx.todayDay, c = ctx.current, out = [];
   const feelsMax = Math.max(...[d?.feelsMax, c.feels].filter(v => v != null));
   const heat = Number.isFinite(feelsMax) ? heatLevel(feelsMax) : null;
-  if (heat) out.push({ id: 'calor-' + heat.id, kind: 'calor', label: heat.label, tone: heat.tone, why: `Sensação térmica de até ${fmt(feelsMax)} °C`, rule: 'Faixas do índice de calor do NWS/NOAA' });
+  if (heat) out.push({ id: 'calor-' + heat.id, kind: 'calor', label: heat.label, tone: heat.tone, why: `Sensação térmica de até ${temp(feelsMax)}`, rule: 'Faixas do índice de calor do NWS/NOAA' });
   const uvMax = Math.max(...[d?.uvMax, c.uv].filter(v => v != null));
   const uv = Number.isFinite(uvMax) ? uvLevel(uvMax) : null;
   if (uv && uvMax >= 5.5) out.push({ id: 'uv-' + uv.id, kind: 'uv', label: 'Atenção à exposição solar', tone: uv.tone, why: `Índice UV de até ${fmt(uvMax)} (${uv.label.toLowerCase()})`, rule: 'Categorias da OMS para o índice UV' });
@@ -210,7 +211,7 @@ export function classify(ctx) {
   if (aq && aqiMax >= 101) out.push({ id: 'ar-' + aq.id, kind: 'ar', label: 'Qualidade do ar desfavorável', tone: aq.tone, why: `Índice de qualidade do ar de até ${fmt(aqiMax)} (${aq.label.toLowerCase()})`, rule: 'Faixas do AQI da EPA' });
   const outdoorBad = (heat && HEAT.indexOf(heat) <= 1) || d?.storm || (d?.gustMax ?? 0) >= STRONG_GUST_KMH || (aqiMax >= 151) || (d?.maxRainHour ?? 0) >= HEAVY_RAIN_MM_H;
   if (outdoorBad) {
-    const why = [heat && HEAT.indexOf(heat) <= 1 ? 'calor perigoso' : null, d?.storm ? 'tempestade prevista' : null, (d?.gustMax ?? 0) >= STRONG_GUST_KMH ? `rajadas de até ${fmt(d.gustMax)} km/h` : null,
+    const why = [heat && HEAT.indexOf(heat) <= 1 ? 'calor perigoso' : null, d?.storm ? 'tempestade prevista' : null, (d?.gustMax ?? 0) >= STRONG_GUST_KMH ? `rajadas de até ${speed(d.gustMax)}` : null,
       aqiMax >= 151 ? 'ar ruim' : null, (d?.maxRainHour ?? 0) >= HEAVY_RAIN_MM_H ? 'chuva forte' : null].filter(Boolean).join(', ');
     out.push({ id: 'externo', kind: 'externo', label: 'Desfavorável para atividades ao ar livre', tone: 'danger', why: why.charAt(0).toUpperCase() + why.slice(1), rule: 'Regras do app a partir das faixas acima' });
   }
@@ -261,7 +262,7 @@ export function hydrationTip(ctx, { restricted = false } = {}) {
   if (restricted) return { tone: 'caution', text: `Hoje está ${heat ? 'quente' : 'seco'}. Siga a orientação do seu médico sobre a quantidade de líquidos.` };
   const peak = ctx.hours.filter(h => h.date === ctx.today && h.feels != null).sort((a, b) => b.feels - a.feels)[0];
   if (heat && peak && peak.hour >= 12 && peak.hour <= 17 && Number(ctx.now.slice(11, 13)) < peak.hour)
-    return { tone: heat.tone, text: `Durante a tarde a sensação térmica pode chegar a ${fmt(peak.feels)} °C. Distribua os líquidos ao longo do dia.` };
+    return { tone: heat.tone, text: `Durante a tarde a sensação térmica pode chegar a ${temp(peak.feels)}. Distribua os líquidos ao longo do dia.` };
   if (heat) return { tone: heat.tone, text: 'Hoje está mais quente. Lembre-se de manter uma boa ingestão de líquidos, distribuída ao longo do dia.' };
   return { tone: 'caution', text: `O ar está seco hoje (umidade de até ${fmt(minHum)}%). Beba líquidos ao longo do dia e prefira ambientes ventilados.` };
 }
@@ -278,7 +279,7 @@ export function alerts(ctx) {
   if (heat && HEAT.indexOf(heat) <= 2) {
     const peak = ctx.hours.filter(h => h.date === day && h.feels != null).sort((a, b) => b.feels - a.feels)[0];
     out.push({ id: `${day}-calor-${heat.id}`, category: 'calor', tone: heat.tone, title: heat.label,
-      text: `A sensação térmica deve chegar a ${fmt(feelsMax)} °C${peak ? ` por volta das ${peak.hour}h` : ''}. Considere evitar exercícios intensos ao ar livre nesse período e mantenha a hidratação distribuída ao longo do dia.` });
+      text: `A sensação térmica deve chegar a ${temp(feelsMax)}${peak ? ` por volta das ${peak.hour}h` : ''}. Considere evitar exercícios intensos ao ar livre nesse período e mantenha a hidratação distribuída ao longo do dia.` });
     // Calor prolongado: hoje e os dois próximos dias na mesma faixa ou acima.
     const next = ctx.week.slice(1, 3);
     if (next.length === 2 && next.every(x => x.feelsMax != null && x.feelsMax >= HEAT[2].min))
@@ -295,11 +296,11 @@ export function alerts(ctx) {
   if (aq && aqiMax >= 101) out.push({ id: `${day}-ar-${aq.id}`, category: 'ar', tone: aq.tone, title: 'Qualidade do ar desfavorável',
     text: `O índice de qualidade do ar deve chegar a ${fmt(aqiMax)} (${aq.label.toLowerCase()}). Considere reduzir atividades físicas intensas ao ar livre.` });
   if (d.storm) out.push({ id: `${day}-tempestade`, category: 'tempo', tone: 'danger', title: 'Tempestade prevista', text: 'Há previsão de tempestade hoje. Acompanhe os alertas oficiais da Defesa Civil e do INMET.' });
-  else if (d.maxRainHour >= HEAVY_RAIN_MM_H) out.push({ id: `${day}-chuva-forte`, category: 'tempo', tone: 'warn', title: 'Chuva forte', text: `A previsão mostra chuva forte em algum momento de hoje (até ${fmt(d.maxRainHour)} mm em uma hora).` });
-  if ((d.gustMax ?? 0) >= STRONG_GUST_KMH) out.push({ id: `${day}-vento`, category: 'tempo', tone: 'warn', title: 'Vento forte', text: `As rajadas de vento podem chegar a ${fmt(d.gustMax)} km/h.` });
+  else if (d.maxRainHour >= HEAVY_RAIN_MM_H) out.push({ id: `${day}-chuva-forte`, category: 'tempo', tone: 'warn', title: 'Chuva forte', text: `A previsão mostra chuva forte em algum momento de hoje (até ${rain(d.maxRainHour)} em uma hora).` });
+  if ((d.gustMax ?? 0) >= STRONG_GUST_KMH) out.push({ id: `${day}-vento`, category: 'tempo', tone: 'warn', title: 'Vento forte', text: `As rajadas de vento podem chegar a ${speed(d.gustMax)}.` });
   if (ctx.yesterday?.max != null && d.max != null && Math.abs(d.max - ctx.yesterday.max) >= SUDDEN_CHANGE_C)
     out.push({ id: `${day}-mudanca`, category: 'tempo', tone: 'caution', title: d.max > ctx.yesterday.max ? 'Esquenta bastante hoje' : 'Esfria bastante hoje',
-      text: `A máxima de hoje (${fmt(d.max)} °C) é ${fmt(Math.abs(d.max - ctx.yesterday.max))} °C ${d.max > ctx.yesterday.max ? 'maior' : 'menor'} que a de ontem.` });
+      text: `A máxima de hoje (${temp(d.max)}) é ${tempDelta(Math.abs(d.max - ctx.yesterday.max))} ${d.max > ctx.yesterday.max ? 'maior' : 'menor'} que a de ontem.` });
   return out;
 }
 

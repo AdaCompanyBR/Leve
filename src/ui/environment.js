@@ -7,7 +7,7 @@ import { fmtDate } from '../lib/dates.js';
 import { env, onEnv, refresh, location, placeName, useGps, searchPlaces, setManualLocation, clearLocation, GPS_ERRORS, geo, isDevice, deviceGranted } from '../env.js';
 import { classify, summary, summaryShort, hydrationTip, bestHours, uvLevel, aqiLevel, uvPeak, rangeText, uvAdvice, dayOutlook, weatherLabel, weatherIcon, isStale } from '../lib/environment.js';
 
-const deg = v => (v == null ? '–' : `${Math.round(v)}°`);
+import { deg, temp, tempLetter } from '../lib/units.js';
 const clock = ms => new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 const pill = (tone, text) => h('span.env-pill', { 'data-tone': tone }, text);
 const SOURCE = 'Previsão Open-Meteo';
@@ -60,7 +60,7 @@ export function conditionsCard() {
       h('div.card-head', h('h3', 'Hoje em sua região'), h('span.env-place', location()?.name || placeName(), icon('next'))),
       h('div.env-now',
         h('span.env-icon', icon(weatherIcon(c.code, c.isDay))),
-        h('div.env-temp', h('span.env-deg', deg(c.temp)), h('span.env-unit', 'C')),
+        h('div.env-temp', h('span.env-deg', deg(c.temp)), h('span.env-unit', tempLetter())),
         h('div.env-desc',
           h('p.env-cond', weatherLabel(c.code) ?? 'Condição indisponível'),
           h('p.env-feels', c.feels != null ? `Sensação de ${deg(c.feels)}` : 'Sensação indisponível'),
@@ -109,7 +109,7 @@ export function envSheet() {
         h('span.env-hour-h', `${x.hour}h`), icon(weatherIcon(x.code, x.isDay ?? true)), h('b', deg(x.temp)),
         h('span.env-hour-sub', x.rainProb != null && x.rainProb >= 30 ? `${Math.round(x.rainProb)}%` : x.uv != null && x.uv >= 3 ? `UV ${Math.round(x.uv)}` : ' '))))),
       section('Melhores horários para atividade ao ar livre', h('div.env-bests', best(today, 'Hoje'), tomorrow ? best(tomorrow, 'Amanhã') : null),
-        h('p.fine', 'Horas de luz sem tempestade, chuva forte ou vento forte, com sensação térmica abaixo de 32 °C (calor intenso), índice UV abaixo de 6 e ar abaixo de "ruim para grupos sensíveis". É uma referência da previsão: ajuste à sua intensidade e duração, e pare se passar mal.')),
+        h('p.fine', `Horas de luz sem tempestade, chuva forte ou vento forte, com sensação térmica abaixo de ${temp(32)} (calor intenso), índice UV abaixo de 6 e ar abaixo de "ruim para grupos sensíveis". É uma referência da previsão: ajuste à sua intensidade e duração, e pare se passar mal.`)),
       section('Índice UV', h('div.env-kv',
         kv('Agora', uvNow ? `${Math.round(c.uv)} · ${uvNow.label}` : 'Indisponível', uvNow?.tone),
         kv('Máximo de hoje', uvMax ? `${Math.round(d.uvMax)} · ${uvMax.label}` : 'Indisponível', uvMax?.tone),

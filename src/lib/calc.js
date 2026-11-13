@@ -16,6 +16,8 @@ export const ACTIVITY = [
   { id: 'extremo', factor: 1.9, label: 'Extremamente ativo', hint: 'Trabalho físico pesado ou dois treinos por dia' },
 ];
 
+import { weightDelta } from './units.js';
+
 /** Objetivos. O de "perder" é o comportamento original do app (perfis antigos não têm `goal`). */
 export const GOALS = [
   { id: 'perder', label: 'Perder peso', hint: 'Déficit seguro, no ritmo que você escolher' },
@@ -39,9 +41,9 @@ export const RECOMP_RATIO = 0.10;        // definir: déficit de 10% do gasto
 export const PROTEIN_PER_KG = { perder: 1.6, ganhar: 1.8, definir: 2.0, manter: 1.2, saude: 1.2 };
 
 export const PACES = [
-  { id: 'suave', kgWeek: 0.25, label: 'Suave', hint: '0,25 kg por semana' },
-  { id: 'moderado', kgWeek: 0.5, label: 'Moderado', hint: '0,5 kg por semana' },
-  { id: 'intenso', kgWeek: 0.75, label: 'Intenso', hint: '0,75 kg por semana' },
+  { id: 'suave', kgWeek: 0.25, label: 'Suave', get hint() { return `${weightDelta(0.25)} por semana`; } },
+  { id: 'moderado', kgWeek: 0.5, label: 'Moderado', get hint() { return `${weightDelta(0.5)} por semana`; } },
+  { id: 'intenso', kgWeek: 0.75, label: 'Intenso', get hint() { return `${weightDelta(0.75)} por semana`; } },
 ];
 
 const round1 = n => Math.round(n * 10) / 10;

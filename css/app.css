@@ -1461,3 +1461,28 @@ section[aria-label="Unidades"] .set-label { flex: 1; min-width: 0; }
 .chd-benefits { display: grid; gap: 14px; margin-top: 4px; }
 .chd-benefits li { display: flex; align-items: center; gap: 14px; line-height: 1.35; }
 .chd-b-icon { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 14px; background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); }
+
+/* ---------- Ajustes: lista com ícones que abre telas derivadas ---------- */
+.settings-list, .settings-page { display: grid; gap: 24px; max-width: 680px; }
+.settings-page > .card { margin: 0; }
+.profile-row { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; text-align: left; color: var(--ink); border-radius: var(--r-group); transition: background var(--dur) var(--ease); }
+.profile-row .avatar { pointer-events: none; }
+.profile-who { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.profile-name { font: 600 20px/1.2 var(--font-display); letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-sub { font-size: 14px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-row { width: 100%; justify-content: flex-start; gap: 14px; min-height: 52px; text-align: left; color: var(--ink); transition: background var(--dur) var(--ease); }
+.nav-group .set-row + .set-row::before { left: 62px; }
+.nav-ic { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 9px; background: var(--accent-wash); color: var(--accent-ink); }
+.nav-ic svg { width: 19px; height: 19px; }
+.nav-title { flex: 1; min-width: 0; font-size: 16px; }
+.nav-value { color: var(--ink-2); font-size: 15px; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-chev { display: grid; color: var(--ink-3); flex: none; margin-right: -4px; }
+.nav-chev svg { width: 17px; height: 17px; }
+@media (hover: hover) { .nav-row:hover, .profile-row:hover, .choice-row:hover { background-color: var(--hover); } }
+.nav-row:active, .profile-row:active, .choice-row:active { background-color: var(--hover); }
+.sub-back { display: inline-flex; align-items: center; gap: 2px; margin: -6px 0 6px -8px; min-height: 40px; padding: 0 8px 0 0; color: var(--accent-ink); font-size: 17px; }
+.sub-back svg { width: 24px; height: 24px; }
+.settings-sub .screen-head h1 { font-size: 30px; }
+.choice-row { width: 100%; justify-content: space-between; min-height: 48px; text-align: left; color: var(--ink); font-size: 16px; }
+.choice-check { display: grid; color: var(--accent-ink); }
+.choice-check svg { width: 20px; height: 20px; }

@@ -53,7 +53,7 @@ function buildShell() {
   for (const t of TABS) {
     if (t.group !== group) { group = t.group; items.push(h('span.nav-group-label', { 'aria-hidden': 'true' }, group)); }
     items.push(h('button.nav-item' + (t.side ? '.only-side' : ''), { type: 'button', 'data-tab': t.id, title: t.label,
-      onclick: () => go(t.id, (t.id === 'hoje' || t.id === 'liquidos') && ui.tab === t.id ? { date: todayISO() } : {}) }, icon(t.icon), h('span', t.label)));
+      onclick: () => go(t.id, (t.id === 'hoje' || t.id === 'liquidos') && ui.tab === t.id ? { date: todayISO() } : t.id === 'ajustes' ? { settingsPage: null } : {}) }, icon(t.icon), h('span', t.label)));
   }
   const collapsed = document.documentElement.classList.contains('side-collapsed');
   const nav = h('nav.nav', { 'aria-label': 'Principal' },
@@ -101,7 +101,8 @@ function render() {
   paintAccount(shell.nav.querySelector('.nav-foot'));
   const tab = TABS.find(t => t.id === ui.tab) ?? TABS[0];
   shell.nav.querySelectorAll('.nav-item').forEach(b => { const on = b.dataset.tab === tab.id; b.classList.toggle('active', on); on ? b.setAttribute('aria-current', 'page') : b.removeAttribute('aria-current'); });
-  const changed = lastTab !== tab.id;
+  const key = tab.id + (tab.id === 'ajustes' && ui.settingsPage ? '/' + ui.settingsPage : '');
+  const changed = lastTab !== key;
   const scroll = changed ? 0 : shell.main.scrollTop || document.scrollingElement.scrollTop;
   // Mantém o foco em campos da tela ao redesenhar (ex.: busca)
   const active = document.activeElement;
@@ -118,7 +119,7 @@ function render() {
   if (refocus) { const el = shell.main.querySelector(refocus.sel); el?.focus(); try { el?.setSelectionRange(refocus.pos, refocus.pos); } catch { /* tipo sem seleção */ } }
   document.title = `${tab.label} | Leve`;
   paintTopbar();
-  lastTab = tab.id;
+  lastTab = key;
 }
 
 function errorState(title, text) {

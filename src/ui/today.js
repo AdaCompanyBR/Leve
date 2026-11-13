@@ -205,7 +205,7 @@ export function todayScreen() {
   return h('div.screen.today',
     h('header.screen-head',
       h('div.screen-head-main',
-        h('button.head-avatar', { type: 'button', 'aria-label': 'Abrir o perfil em Ajustes', onclick: () => go('ajustes') }, avatar({ size: 48 })),
+        h('button.head-avatar', { type: 'button', 'aria-label': 'Abrir o perfil em Ajustes', onclick: () => go('ajustes', { settingsPage: 'perfil' }) }, avatar({ size: 48 })),
         h('div', h('p.screen-date', fmtDate(date, { weekday: 'long', day: 'numeric', month: 'long' })), h('h1', title))),
       h('div.day-nav',
         h('button.icon-btn', { 'aria-label': 'Dia anterior', onclick: () => go('hoje', { date: addDays(date, -1) }) }, icon('back')),

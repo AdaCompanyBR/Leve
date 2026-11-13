@@ -82,6 +82,13 @@ export const ICONS = {
   lock: '<rect x="5.5" y="10.5" width="13" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
   fork: '<path d="M7 3.5v6a2 2 0 0 0 4 0v-6M9 9.5V20.5M16.5 3.5c-1.7 1-2.5 3-2.5 5.5v3h2.5v8.5"/>',
   clock: '<circle cx="12" cy="12" r="8.25"/><path d="M12 7.5V12l3 2"/>',
+  target: '<circle cx="12" cy="12" r="8.25"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".9"/>',
+  ruler: '<rect x="2.75" y="8" width="18.5" height="8" rx="1.8"/><path d="M6.5 8v3M10 8v4.25M13.5 8v3M17 8v4.25"/>',
+  bell: '<path d="M6.25 16.25V11a5.75 5.75 0 0 1 11.5 0v5.25l1.5 2H4.75z"/><path d="M10 20.25a2.1 2.1 0 0 0 4 0"/>',
+  info: '<circle cx="12" cy="12" r="8.25"/><path d="M12 11v5.25M12 7.9h.01"/>',
+  archive: '<rect x="3.75" y="4.5" width="16.5" height="4.5" rx="1.4"/><path d="M5.5 9v9a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9M10 12.75h4"/>',
+  contrast: '<circle cx="12" cy="12" r="8.25"/><path d="M12 3.75a8.25 8.25 0 0 1 0 16.5z" fill="currentColor" stroke="none"/>',
+  user: '<circle cx="12" cy="8" r="3.75"/><path d="M4.75 20c.9-3.6 3.7-5.6 7.25-5.6s6.35 2 7.25 5.6"/>',
 };
 export const icon = (name, cls) => svg(ICONS[name], cls);
 

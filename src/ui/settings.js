@@ -1,5 +1,6 @@
 // Perfil e Ajustes.
-import { h, int, dec1, parseNum, segmented, field, toast, confirmSheet, openSheet, picker } from './dom.js';
+import { h, icon, int, dec1, parseNum, segmented, field, toast, confirmSheet, openSheet, picker } from './dom.js';
+import { ui, go } from './state.js';
 import { state, getPlan, saveProfile, saveSettings, exportData, importData, wipe, setWaterGoal, waterGoalOn, bodyStyle, latestWeight } from '../store.js';
 import { CLIMATES, suggestWaterGoal } from '../lib/hydration.js';
 import { ACTIVITY, PACES, GAIN_PACES, goalById, validateGoal, healthyRange } from '../lib/calc.js';
@@ -101,8 +102,7 @@ export function settingsScreen() {
     ...Object.entries(UNIT_OPTIONS).map(([k, u]) => row(u.label, segmented(u.options, unitPref(k), v => setUnit(k, v), u.label))),
     h('p.card-sub', 'Valem para o app inteiro. Os seus registros não mudam: só a forma de mostrar e de digitar.'));
 
-  const prefCard = h('section.card.set-card', { 'aria-label': 'Preferências' }, h('h3', 'Preferências'),
-    row('Tema', segmented([{ id: 'auto', label: 'Automático' }, { id: 'light', label: 'Claro' }, { id: 'dark', label: 'Escuro' }], s.theme, async v => { await saveSettings({ theme: v }); applyTheme(); }, 'Tema')),
+  const prefCard = h('section.card.set-card', { 'aria-label': 'Avisos e sugestões' },
     row('Lembrete de peso', h('button.switch', { role: 'switch', 'aria-checked': String(s.weightReminder), 'aria-label': 'Lembrete de peso', onclick: () => saveSettings({ weightReminder: !s.weightReminder }) }, h('span')),
       null),
     row('Avisos dos desafios', h('button.switch', { role: 'switch', 'aria-checked': String(s.challengeNotify !== false), 'aria-label': 'Avisos dos desafios', onclick: () => saveSettings({ challengeNotify: s.challengeNotify === false }) }, h('span')),
@@ -156,8 +156,74 @@ export function settingsScreen() {
     h('p.fine', 'Alimentos: tabela TACO (NEPA/UNICAMP, 2011) e Open Food Facts (ODbL).'),
     h('p.fine', h('a.link.inline', { href: '../' }, 'Sobre o Leve')));
 
-  [profileCard, goalCard, prefCard, unitsCard, liqCard, envCard, dataCard].filter(Boolean).forEach(groupRows);
+  // Cada opção da lista abre a sua própria tela (como nos Ajustes do iPhone).
+  const units = Object.entries(UNIT_OPTIONS).slice(0, 2).map(([k, u]) => u.options.find(o => o.id === unitPref(k))?.label).join(' · ');
+  const account = !auth.configured() ? 'Neste aparelho' : auth.current() ? 'Conectada' : 'Entrar';
+  const PAGES = {
+    perfil: { title: 'Perfil', icon: 'user', body: () => [planCard, profileCard] },
+    objetivo: { title: 'Objetivo e rotina', icon: 'target', value: p.goal ? goalById(p.goal).label : null, body: () => [goalCard] },
+    unidades: { title: 'Unidades', icon: 'ruler', value: units, body: () => [unitsCard] },
+    conta: { title: 'Conta', icon: 'cloud', value: account, body: () => { const c = groupRows(accountCard({ row })); c.querySelector(':scope > h3')?.remove(); return [c]; } },
+    liquidos: { title: 'Líquidos', icon: 'drop', value: `${dec1(goalNow / 1000)} L`, body: () => [liqCard] },
+    clima: { title: 'Clima e localização', icon: 'sun', value: loc ? placeName(loc).split(',')[0] : 'Não definida', body: () => [envCard] },
+    avisos: { title: 'Avisos e sugestões', icon: 'bell', body: () => [prefCard] },
+    tema: { title: 'Tema', icon: 'contrast', value: THEMES.find(t => t.id === s.theme)?.label, body: () => [themeCard()] },
+    dados: { title: 'Backup e dados', icon: 'archive', body: () => [dataCard] },
+    sobre: { title: 'Sobre o Leve', icon: 'info', body: () => [about] },
+  };
+  [profileCard, goalCard, prefCard, unitsCard, liqCard, envCard, dataCard].forEach(groupRows);
+  // Os cartões já têm o nome da tela no topo: o subtítulo repetido sai.
+  for (const c of [profileCard, goalCard, unitsCard, liqCard, envCard, dataCard]) c.querySelector(':scope > h3')?.remove();
+
+  const page = PAGES[ui.settingsPage];
+  if (page) {
+    return h('div.screen.settings.settings-sub',
+      h('button.sub-back', { type: 'button', onclick: () => closePage() }, icon('back'), h('span', 'Ajustes')),
+      h('header.screen-head', h('div', h('h1', page.title))),
+      h('div.settings-page', page.body()));
+  }
+
+  const navRow = id => {
+    const pg = PAGES[id];
+    return h('button.set-row.nav-row', { type: 'button', onclick: () => openPage(id) },
+      h('span.nav-ic', icon(pg.icon)), h('span.nav-title', pg.title),
+      pg.value ? h('span.nav-value', pg.value) : null, h('span.nav-chev', icon('next')));
+  };
+  const group = (title, ids) => h('section.card.set-card.nav-group', { 'aria-label': title }, h('h3', title), h('div.set-rows', ids.map(navRow)));
+  const profileRow = h('button.card.profile-row', { type: 'button', onclick: () => openPage('perfil') },
+    avatar({ size: 60 }),
+    h('span.profile-who', h('span.profile-name', p.name), h('span.profile-sub', plan.target ? `${goalById(plan.goal).label} · ${int(plan.target)} kcal por dia` : goalById(plan.goal).label)),
+    h('span.nav-chev', icon('next')));
+
   return h('div.screen.settings',
     h('header.screen-head', h('div', h('h1', 'Ajustes'))),
-    h('div.settings-grid', h('div.col', planCard, profileCard, goalCard), h('div.col', groupRows(accountCard({ row })), prefCard, unitsCard, liqCard, envCard, dataCard, about)));
+    h('div.settings-list',
+      profileRow,
+      group('Geral', ['objetivo', 'unidades', 'conta']),
+      group('Acompanhamento', ['liquidos', 'clima', 'avisos']),
+      group('Aparência', ['tema']),
+      group('Dados', ['dados', 'sobre'])));
 }
+
+const THEMES = [{ id: 'auto', label: 'Automático' }, { id: 'light', label: 'Claro' }, { id: 'dark', label: 'Escuro' }];
+function themeCard() {
+  const cur = state.settings.theme;
+  return h('section.card.set-card', { 'aria-label': 'Tema' },
+    h('div.set-rows', THEMES.map(t => h('button.set-row.choice-row', { type: 'button', role: 'radio', 'aria-checked': String(t.id === cur),
+      onclick: async () => { await saveSettings({ theme: t.id }); applyTheme(); } }, h('span', t.label), t.id === cur ? h('span.choice-check', icon('check')) : null))),
+    h('p.card-sub', 'Automático segue o modo claro ou escuro do aparelho.'));
+}
+
+// Navegação entre a lista e as telas derivadas. O "voltar" do navegador e do Android também volta para a lista.
+let pushed = false;
+function openPage(id) {
+  try { history.pushState({ leveSettings: id }, ''); pushed = true; } catch { pushed = false; }
+  go('ajustes', { settingsPage: id });
+}
+function closePage() {
+  if (pushed) { pushed = false; history.back(); } else go('ajustes', { settingsPage: null });
+}
+addEventListener('popstate', () => {
+  pushed = false;
+  if (ui.tab === 'ajustes' && ui.settingsPage) go('ajustes', { settingsPage: null });
+});

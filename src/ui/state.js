@@ -1,7 +1,7 @@
 // Estado da navegação (não é salvo).
 import { todayISO } from '../lib/dates.js';
 
-export const ui = { tab: 'hoje', date: todayISO(), meal: null, logList: 'recentes', query: '', drinkType: null };
+export const ui = { tab: 'hoje', date: todayISO(), meal: null, logList: 'recentes', query: '', drinkType: null, settingsPage: null };
 
 export const MEAL_SHORT = [
   { id: 'cafe', label: 'Café' }, { id: 'almoco', label: 'Almoço' }, { id: 'jantar', label: 'Jantar' }, { id: 'lanches', label: 'Lanches' },

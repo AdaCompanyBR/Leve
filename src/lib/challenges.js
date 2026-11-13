@@ -368,25 +368,43 @@ export function campaignFor(today) {
 // ---------------------------------------------------------------------------
 // Conquistas: só por critério cumprido, nunca por começar.
 
+// Conquistas: as de desafios e as de ofensiva. `progress` mostra o andamento (valor e meta) das que
+// estão em andamento; `tier` marca as especiais (bronze, prata, ouro), poucas de propósito.
+const ofDays = n => s => ({ value: Math.min(s.streak?.best ?? 0, n), target: n });
+const binary = ok => ({ value: ok ? 1 : 0, target: 1 });
 export const ACHIEVEMENTS = [
-  { id: 'primeiros-passos', title: 'Primeiros passos', text: 'Concluiu o primeiro desafio.', medal: 'star', test: s => s.concluded.length >= 1 },
-  { id: 'persistencia', title: 'Persistência', text: 'Cumpriu 7 dias de um mesmo desafio.', medal: 'flame', test: s => s.maxDays >= 7 },
-  { id: 'disciplina', title: 'Disciplina', text: 'Concluiu um desafio de 14 dias.', medal: 'shield', test: s => s.concluded.some(c => c.def.days === 14) },
-  { id: 'consistencia', title: 'Consistência', text: 'Concluiu um desafio de 21 dias.', medal: 'trophy', test: s => s.concluded.some(c => c.def.days === 21) },
-  { id: 'hidratacao', title: 'Hidratação em dia', text: 'Concluiu um desafio de hidratação.', medal: 'drop', cat: 'hidratacao', test: s => s.concluded.some(c => c.def.cat === 'hidratacao') },
-  { id: 'alimentacao', title: 'Alimentação consciente', text: 'Concluiu um desafio de alimentação.', medal: 'leaf', cat: 'alimentacao', test: s => s.concluded.some(c => c.def.cat === 'alimentacao') },
-  { id: 'corpo-ativo', title: 'Corpo ativo', text: 'Concluiu um desafio de atividade física.', medal: 'run', cat: 'atividade', test: s => s.concluded.some(c => c.def.cat === 'atividade') },
-  { id: 'bom-descanso', title: 'Bom descanso', text: 'Concluiu um desafio de sono ou recuperação.', medal: 'moon', cat: 'sono', test: s => s.concluded.some(c => c.def.cat === 'sono') },
-  { id: 'equilibrio', title: 'Equilíbrio', text: 'Concluiu um desafio de bem-estar.', medal: 'sun', cat: 'bemestar', test: s => s.concluded.some(c => c.def.cat === 'bemestar') },
-  { id: 'colecionador', title: 'Colecionador', text: 'Concluiu 5 desafios.', medal: 'medal', test: s => s.concluded.length >= 5 },
+  { id: 'primeiro-dia', group: 'ofensiva', title: 'Primeiro dia', text: 'Completou o primeiro dia da ofensiva.', medal: 'sprout', test: s => (s.streak?.best ?? 0) >= 1, progress: ofDays(1) },
+  { id: 'uma-semana', group: 'ofensiva', title: 'Uma semana', text: 'Manteve 7 dias seguidos de ofensiva.', medal: 'streak', stars: 1, test: s => (s.streak?.best ?? 0) >= 7, progress: ofDays(7) },
+  { id: 'duas-semanas', group: 'ofensiva', title: 'Duas semanas', text: 'Manteve 14 dias seguidos de ofensiva.', medal: 'streak', stars: 2, test: s => (s.streak?.best ?? 0) >= 14, progress: ofDays(14) },
+  { id: 'um-mes', group: 'ofensiva', title: 'Consistência mensal', text: 'Manteve 30 dias seguidos de ofensiva.', medal: 'streak', stars: 3, tier: 'ouro', test: s => (s.streak?.best ?? 0) >= 30, progress: ofDays(30) },
+  { id: 'semanas', group: 'ofensiva', title: 'Semanas em ritmo', text: 'Teve 4 semanas consistentes.', medal: 'calendar', test: s => (s.streak?.consistentWeeks ?? 0) >= 4, progress: s => ({ value: Math.min(s.streak?.consistentWeeks ?? 0, 4), target: 4 }) },
+  { id: 'superacao', group: 'ofensiva', title: 'Superação', text: 'Retomou a rotina e fez 7 dias seguidos depois de uma interrupção.', medal: 'rise', tier: 'bronze', test: s => !!s.streak?.comebackOn, progress: s => binary(!!s.streak?.comebackOn) },
+  { id: 'recordista', group: 'ofensiva', title: 'Recordista', text: 'Superou o seu recorde pessoal de ofensiva.', medal: 'peak', tier: 'prata', test: s => !!s.streak?.recordBeatenOn, progress: s => binary(!!s.streak?.recordBeatenOn) },
+  { id: 'cem-dias', group: 'ofensiva', title: '100 dias ativos', text: 'Somou 100 dias cumpridos, seguidos ou não.', medal: 'hundred', tier: 'ouro', test: s => (s.streak?.totalActive ?? 0) >= 100, progress: s => ({ value: Math.min(s.streak?.totalActive ?? 0, 100), target: 100 }) },
+  { id: 'primeiros-passos', group: 'desafios', title: 'Primeiros passos', text: 'Concluiu o primeiro desafio.', medal: 'flag', test: s => s.concluded.length >= 1, progress: s => ({ value: Math.min(s.concluded.length, 1), target: 1 }) },
+  { id: 'persistencia', group: 'desafios', title: 'Persistência', text: 'Cumpriu 7 dias de um mesmo desafio.', medal: 'path', test: s => s.maxDays >= 7, progress: s => ({ value: Math.min(s.maxDays, 7), target: 7 }) },
+  { id: 'disciplina', group: 'desafios', title: 'Disciplina', text: 'Concluiu um desafio de 14 dias.', medal: 'target', test: s => s.concluded.some(c => c.def.days === 14), progress: s => binary(s.concluded.some(c => c.def.days === 14)) },
+  { id: 'consistencia', group: 'desafios', title: 'Consistência', text: 'Concluiu um desafio de 21 dias.', medal: 'rings', test: s => s.concluded.some(c => c.def.days === 21), progress: s => binary(s.concluded.some(c => c.def.days === 21)) },
+  { id: 'hidratacao', group: 'desafios', title: 'Hidratação em dia', text: 'Concluiu um desafio de hidratação.', medal: 'drop', cat: 'hidratacao', test: s => s.concluded.some(c => c.def.cat === 'hidratacao'), progress: s => binary(s.concluded.some(c => c.def.cat === 'hidratacao')) },
+  { id: 'alimentacao', group: 'desafios', title: 'Alimentação consciente', text: 'Concluiu um desafio de alimentação.', medal: 'leaf', cat: 'alimentacao', test: s => s.concluded.some(c => c.def.cat === 'alimentacao'), progress: s => binary(s.concluded.some(c => c.def.cat === 'alimentacao')) },
+  { id: 'corpo-ativo', group: 'desafios', title: 'Corpo ativo', text: 'Concluiu um desafio de atividade física.', medal: 'motion', cat: 'atividade', test: s => s.concluded.some(c => c.def.cat === 'atividade'), progress: s => binary(s.concluded.some(c => c.def.cat === 'atividade')) },
+  { id: 'bom-descanso', group: 'desafios', title: 'Bom descanso', text: 'Concluiu um desafio de sono ou recuperação.', medal: 'moon', cat: 'sono', test: s => s.concluded.some(c => c.def.cat === 'sono'), progress: s => binary(s.concluded.some(c => c.def.cat === 'sono')) },
+  { id: 'equilibrio', group: 'desafios', title: 'Equilíbrio', text: 'Concluiu um desafio de bem-estar.', medal: 'balance', cat: 'bemestar', test: s => s.concluded.some(c => c.def.cat === 'bemestar'), progress: s => binary(s.concluded.some(c => c.def.cat === 'bemestar')) },
+  { id: 'colecionador', group: 'desafios', title: 'Colecionador', text: 'Concluiu 5 desafios.', medal: 'collection', tier: 'prata', test: s => s.concluded.length >= 5, progress: s => ({ value: Math.min(s.concluded.length, 5), target: 5 }) },
 ];
 
-/** Conquistas que deveriam estar desbloqueadas agora (ids). */
-export function earned({ mine, evals }) {
+function stats({ mine, evals, streak }) {
   const concluded = mine.filter(uc => uc.status === 'concluido').map(uc => ({ uc, def: challengeById(uc.challengeId) })).filter(x => x.def);
   const maxDays = Math.max(0, ...mine.map(uc => evals[uc.id]?.completed ?? uc.final?.completed ?? 0));
-  const s = { concluded, maxDays };
+  return { concluded, maxDays, streak };
+}
+/** Conquistas que deveriam estar desbloqueadas agora (ids). `streak`: resumo de computeStreak. */
+export function earned({ mine, evals = {}, streak = null }) {
+  const s = stats({ mine, evals, streak });
   return ACHIEVEMENTS.filter(a => a.test(s)).map(a => a.id);
 }
-/** Nível: um a cada 2 conquistas. */
-export const levelOf = n => ({ level: 1 + Math.floor(n / 2), next: 2 - (n % 2) });
+/** Andamento de cada conquista ({ id: { value, target } }). */
+export function achievementProgress({ mine, evals = {}, streak = null }) {
+  const s = stats({ mine, evals, streak });
+  return Object.fromEntries(ACHIEVEMENTS.map(a => [a.id, a.progress(s)]));
+}

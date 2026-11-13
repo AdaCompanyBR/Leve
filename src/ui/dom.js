@@ -95,6 +95,8 @@ export const ICONS = {
   // Símbolos do resumo de calorias (família própria: mesmo aro, traço fino e pontas arredondadas).
   'kcal-in': '<circle cx="12" cy="12" r="8.75"/><path d="M7.4 12.1h9.2a4.6 4.6 0 0 1-9.2 0z"/><path d="M12 12.1c0-2.3 1.25-3.95 3.3-4.35-.1 2.3-1.4 3.95-3.3 4.35z"/>',
   'kcal-out': '<path d="M16.38 4.42A8.75 8.75 0 1 1 10.48 3.38"/><path d="m12.85 7.1-3.1 5.15h3.05L11.15 16.9l3.1-5.15H11.2z"/>',
+  'shield-s': '<path d="M12 3.6 18.6 6v5.6c0 4.1-2.8 7.3-6.6 8.8-3.8-1.5-6.6-4.7-6.6-8.8V6z"/>',
+  pause: '<path d="M9.5 7v10M14.5 7v10"/>',
 };
 export const icon = (name, cls) => svg(ICONS[name], cls);
 

@@ -65,15 +65,87 @@ export function challengeArt(def, { size = 120, days = true } = {}) {
   </svg>`);
 }
 
-/** Medalha de uma conquista: colorida quando conquistada, cinza e com cadeado quando não. */
-const MEDAL = { star: 'sparkle', flame: 'sun', shield: 'heart', trophy: 'sparkle', drop: 'drop', leaf: 'leaf', run: 'run', moon: 'moon', sun: 'sun', medal: 'sparkle' };
-export function medalArt(a, { unlocked, color = '#E9B10C', size = 72 }) {
-  const glyph = MEDAL[a.medal] ?? 'sparkle';
-  const fill = unlocked ? color : '#B9BEC6';
-  return tpl(`<svg class="medal" viewBox="0 0 72 72" width="${size}" height="${size}" aria-hidden="true" style="color:#fff">
-    <path d="M22 4h10l4 16-8 4zM50 4H40l-4 16 8 4z" fill="${fill}" opacity=".55"/>
-    <circle cx="36" cy="42" r="26" fill="${fill}"/>
-    <circle cx="36" cy="42" r="20" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="2"/>
-    ${unlocked ? g(glyph, 24, 30, 1) : '<g fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><rect x="28" y="40" width="16" height="12" rx="2.5"/><path d="M31 40v-4a5 5 0 0 1 10 0v4"/></g>'}
+// ---------------------------------------------------------------------------
+// Medalhas: uma família própria. Escudo hexagonal de cantos suaves, aro fino, face esmaltada em azul e
+// um símbolo de traço desenhado para cada conquista. O aro muda só nas especiais (bronze, prata, ouro).
+// Estados: bloqueada (cinza, com cadeado discreto), em andamento (face clara, símbolo em azul) e
+// desbloqueada (face azul, brilho suave; `fresh` passa um reflexo uma vez).
+
+const M = {
+  sprout: '<path d="M12 20.5v-7.5"/><path d="M12 13c0-3.6-2.5-5.8-6.2-5.8 0 3.5 2.5 5.8 6.2 5.8z"/><path d="M12 11.2c0-3 2.1-5 5.3-5 0 3-2.1 5-5.3 5z"/><path d="M8.5 20.5h7"/>',
+  streak: '<path d="M3.6 15.2c2.1 0 2.9-5.2 5.3-5.2s3 5.2 5.4 5.2c1.9 0 3-2.6 4.4-5.6"/><circle cx="19.6" cy="7.1" r="1.25" fill="currentColor" stroke="none"/>',
+  calendar: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.8v3.4M15.5 3.8v3.4"/><path d="m9.3 14.6 1.8 1.8 3.6-3.6"/>',
+  rise: '<path d="M3.8 16.5 8.4 12l3.1 3 7.7-7.7"/><path d="M14.6 7.3h4.6v4.6"/>',
+  peak: '<path d="M2.8 19.5 9.4 9.2l3.7 5.6 2.4-3.4 5.7 8.1z"/><path d="M15.5 11.4V4.6l3.4 1.4-3.4 1.4"/>',
+  hundred: '<circle cx="12" cy="12" r="7.8"/><circle cx="12" cy="12" r="4.4" stroke-dasharray="1.6 1.9"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/>',
+  flag: '<path d="M6.5 20.8V4"/><path d="M6.5 4.6h10.2l-2.1 3.6 2.1 3.6H6.5"/>',
+  path: '<path d="M8 20.5c0-4.2 8.6-3.4 8.6-8.1S8.6 8.1 8.6 4"/><circle cx="8" cy="20.5" r=".9" fill="currentColor" stroke="none"/><circle cx="8.6" cy="3.6" r=".9" fill="currentColor" stroke="none"/>',
+  target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.4"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/>',
+  rings: '<circle cx="9.3" cy="12" r="5.3"/><circle cx="14.7" cy="12" r="5.3"/>',
+  drop: '<path d="M12 3.4c3.2 3.8 5.9 7 5.9 10.4a5.9 5.9 0 0 1-11.8 0c0-3.4 2.7-6.6 5.9-10.4z"/><path d="M9.4 14.4a2.7 2.7 0 0 0 2.6 2.6"/>',
+  leaf: '<path d="M5.2 18.8c0-8.3 5.4-13.6 14.6-13.6 0 9.2-5.4 14.6-13.6 14.6"/><path d="M5.2 18.8c2.9-3.9 5.9-6.4 9.3-8.3"/>',
+  motion: '<circle cx="14.6" cy="4.6" r="1.7"/><path d="m7.2 20.2 3.4-4.6 3.2 1.7 1.2 3.4M10.6 15.6l1.7-5.4-3.7.7-1.7 2.7M12.3 10.2l2.4 2.2 3.7.7"/>',
+  moon: '<path d="M19.3 14.6A7.6 7.6 0 0 1 9.4 4.7a7.6 7.6 0 1 0 9.9 9.9z"/>',
+  balance: '<path d="M12 4.2v15.6M7.6 19.8h8.8M5.2 8.2h13.6"/><path d="m5.2 8.2-2.4 5h4.8zM18.8 8.2l-2.4 5h4.8z"/>',
+  collection: '<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="m16.5 13.6.9 1.9 2 .3-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.3z"/>',
+};
+export const MEDAL_SYMBOLS = Object.keys(M);
+
+// Hexágono de pé com cantos arredondados (o arredondado vem de um traço grosso na mesma cor).
+const hex = (cx, cy, r) => {
+  const pts = [-90, -30, 30, 90, 150, 210].map(a => [cx + r * Math.cos(a * Math.PI / 180), cy + r * Math.sin(a * Math.PI / 180)]);
+  return 'M' + pts.map(p => p.map(n => n.toFixed(2)).join(' ')).join('L') + 'Z';
+};
+const RIM = {
+  azul: ['#BFD6F6', '#5C8FDB'], ouro: ['#F1DCA4', '#B98C3A'], prata: ['#EEF0F3', '#9AA3AE'], bronze: ['#EBC2A2', '#A8693F'],
+  cinza: ['#E3E5EA', '#C4C8D0'],
+};
+let medalSeq = 0;
+/** Medalha. state: 'locked' | 'progress' | 'unlocked'. */
+export function medalArt(a, { state: st = 'locked', size = 72, fresh = false } = {}) {
+  const id = 'm' + (++medalSeq);
+  const on = st === 'unlocked';
+  const rim = RIM[on ? (a.tier ?? 'azul') : 'cinza'];
+  const face = on ? ['#3D82E8', '#1F56B8'] : st === 'progress' ? ['#F1F6FE', '#E3ECFA'] : ['#F2F3F6', '#E6E8EC'];
+  const ink = on ? '#F4F8FF' : st === 'progress' ? '#3478E5' : '#AEB3BC';
+  const stars = a.stars ? Array.from({ length: a.stars }, (_, i) => {
+    const x = 40 + (i - (a.stars - 1) / 2) * 9;
+    return `<path transform="translate(${x} 22.5)" d="M0 -3.1 .95 -.95 3.1 0 .95 .95 0 3.1 -.95 .95 -3.1 0 -.95 -.95Z" fill="${ink}"/>`;
+  }).join('') : '';
+  const symY = a.stars ? 48 : 44;
+  return tpl(`<svg class="medal medal-${st}${fresh ? ' fresh' : ''}" viewBox="0 0 80 88" width="${size}" height="${size * 1.1}" aria-hidden="true">
+    <defs>
+      <linearGradient id="${id}r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${rim[0]}"/><stop offset="1" stop-color="${rim[1]}"/></linearGradient>
+      <linearGradient id="${id}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${face[0]}"/><stop offset="1" stop-color="${face[1]}"/></linearGradient>
+      <clipPath id="${id}c"><path d="${hex(40, 44, 29.5)}"/></clipPath>
+    </defs>
+    <path d="${hex(40, 44, 35)}" fill="url(#${id}r)" stroke="url(#${id}r)" stroke-width="7" stroke-linejoin="round"/>
+    <path d="${hex(40, 44, 29.5)}" fill="url(#${id}f)" stroke="url(#${id}f)" stroke-width="5" stroke-linejoin="round"/>
+    ${on ? `<g clip-path="url(#${id}c)"><path d="M0 0H80V40C60 30 30 34 0 46Z" fill="#fff" opacity=".1"/><rect class="medal-sheen" x="-40" y="0" width="22" height="88" fill="#fff" opacity="0" transform="skewX(-18)"/></g>` : ''}
+    ${stars}
+    <g transform="translate(${40 - 12 * 1.38} ${symY - 12 * 1.38}) scale(1.38)" fill="none" stroke="${ink}" stroke-width="${(2.3 / 1.38).toFixed(2)}" stroke-linecap="round" stroke-linejoin="round" color="${ink}">${M[a.medal] ?? M.sprout}</g>
+    ${st === 'locked' ? `<g transform="translate(58 66)"><circle r="8.5" fill="#fff" stroke="#E1E4E9"/><g fill="none" stroke="#9BA1AB" stroke-width="1.6" stroke-linecap="round"><rect x="-3.6" y="-1.4" width="7.2" height="5.6" rx="1.4"/><path d="M-2.2 -1.4v-1.6a2.2 2.2 0 0 1 4.4 0v1.6"/></g></g>` : ''}
+  </svg>`);
+}
+
+/** Símbolo da ofensiva: uma onda contínua que sobe, com um ponto quente na crista. */
+export function streakMark({ size = 56, muted = false } = {}) {
+  const id = 'sk' + (++medalSeq);
+  return tpl(`<svg class="streak-mark${muted ? ' muted' : ''}" viewBox="0 0 56 56" width="${size}" height="${size}" aria-hidden="true">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${muted ? '#C9CDD4' : '#4F8EF0'}"/><stop offset="1" stop-color="${muted ? '#AEB3BC' : '#2A62CF'}"/></linearGradient></defs>
+    <rect width="56" height="56" rx="17" fill="url(#${id})"/>
+    <path d="M11 33.5c4.6 0 6.2-11.5 11.6-11.5S28.8 33.5 34 33.5c4 0 6.3-5.6 9.2-12.1" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="44.6" cy="17.2" r="3.4" fill="${muted ? '#fff' : '#FFC46B'}"/>
+  </svg>`);
+}
+
+/** Emblema do nível: o número dentro do hexágono das medalhas, com a XP do nível correndo pelo contorno. */
+export function levelEmblem(level, pct, { size = 84 } = {}) {
+  const d = hex(42, 44, 33);
+  return tpl(`<svg class="level-emblem" viewBox="0 0 84 88" width="${size}" height="${size * 88 / 84}" role="img" aria-label="Nível ${level}, ${Math.round(pct * 100)}% para o próximo">
+    <path d="${d}" fill="var(--accent-wash)" stroke="var(--track)" stroke-width="5" stroke-linejoin="round"/>
+    <path class="level-emblem-arc" d="${d}" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" pathLength="100" stroke-dasharray="${(pct * 100).toFixed(1)} 100" transform="rotate(0 42 44)"/>
+    <text x="42" y="40" text-anchor="middle" class="level-emblem-cap">NÍVEL</text>
+    <text x="42" y="62" text-anchor="middle" class="level-emblem-num">${level}</text>
   </svg>`);
 }

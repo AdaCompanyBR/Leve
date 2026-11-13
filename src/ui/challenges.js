@@ -3,10 +3,11 @@
 // aviso de segurança e meta individual, acompanhamento automático, pausa, abandono e conquistas.
 import { h, icon, int, toast, openSheet, segmented, confirmSheet, busy, picker } from './dom.js';
 import { ui, go } from './state.js';
-import { state, foodById, getPlan, waterGoalOn, startChallenge, updateChallenge, saveCheckin, unlockAchievements } from '../store.js';
-import { todayISO, addDays, fmtDate, diffDays } from '../lib/dates.js';
-import { CHALLENGES, CATEGORIES, categoryById, challengeById, sources, evaluate, trend, adaptiveSuggestion, defaultTarget, startBlock, recommend, campaignFor, ACHIEVEMENTS, earned, levelOf, SAFETY, DISCOMFORT, addMin } from '../lib/challenges.js';
-import { challengeArt, medalArt, glyph } from './challengeArt.js';
+import { state, foodById, getPlan, waterGoalOn, startChallenge, updateChallenge, saveCheckin, unlockAchievements, saveEvolution } from '../store.js';
+import { evolution } from '../evolution.js';
+import { todayISO, addDays, fmtDate, diffDays, weekStart } from '../lib/dates.js';
+import { CHALLENGES, CATEGORIES, categoryById, challengeById, sources, evaluate, trend, adaptiveSuggestion, defaultTarget, startBlock, recommend, campaignFor, ACHIEVEMENTS, earned, SAFETY, DISCOMFORT, addMin } from '../lib/challenges.js';
+import { challengeArt, glyph } from './challengeArt.js';
 
 const long = d => fmtDate(d, { day: 'numeric', month: 'long' });
 const restricted = () => !!state.settings.fluidRestriction;
@@ -67,9 +68,35 @@ export async function syncChallenges({ notify = true } = {}) {
       }
     }
     seen.set(memo);
-    const fresh = await unlockAchievements(earned({ mine: state.myChallenges, evals }), today);
-    for (const id of fresh) say(`Nova conquista: ${ACHIEVEMENTS.find(a => a.id === id)?.title}!`);
+    // Ofensiva, conquistas, XP e nível: nesta ordem, para que cada evento valha uma vez só.
+    let evo = evolution(today, evals);
+    const fresh = await unlockAchievements(earned({ mine: state.myChallenges, evals, streak: evo.streak }), today);
+    // Na primeira apuração (histórico antigo), as conquistas entram sem uma fila de avisos.
+    const firstRun = state.evolution?.level == null;
+    for (const id of fresh) { if (!firstRun) say(`Nova conquista: ${ACHIEVEMENTS.find(a => a.id === id)?.title}!`); justUnlocked.add(id); }
+    if (fresh.length) evo = evolution(today, evals); // a XP das conquistas novas entra agora
+    await settleEvolution(evo, today, say);
   } finally { running = false; }
+}
+// Guarda o recorde, o nível e a XP e dá os avisos positivos da ofensiva, cada um uma vez.
+const justUnlocked = new Set();
+export const wasJustUnlocked = id => justUnlocked.has(id);
+async function settleEvolution(evo, today, say) {
+  const prev = state.evolution ?? {}, st = evo.streak, patch = {};
+  if (st.best !== prev.best) patch.best = st.best;
+  if (evo.xp.xp !== prev.xp) patch.xp = evo.xp.xp;
+  if (evo.level.level !== prev.level) patch.level = evo.level.level;
+  const first = prev.level == null; // primeira vez: só guarda, sem avisos de coisas antigas
+  if (!first && evo.level.level > prev.level) say(`Você chegou ao nível ${evo.level.level}: ${evo.level.name}!`);
+  if (!first && st.todayDone && prev.dayToast !== today) {
+    patch.dayToast = today;
+    const nearRecord = st.current < st.best && st.best - st.current <= 2 && st.best >= 5;
+    say(st.current === 1 ? 'Primeiro dia da sua ofensiva. Bom começo!' : nearRecord ? `Seu recorde pessoal (${st.best} dias) está cada vez mais próximo.` : `Você completou mais um dia da sua rotina! ${st.current} dias de ofensiva.`);
+  } else if (first && st.todayDone) patch.dayToast = today;
+  const wk = weekStart(today);
+  if (!first && st.consistentWeeks > (prev.weeks ?? 0) && prev.weekToast !== wk) { patch.weekToast = wk; say('Você manteve a sua consistência nesta semana.'); }
+  if (st.consistentWeeks !== prev.weeks) patch.weeks = st.consistentWeeks;
+  if (Object.keys(patch).length) await saveEvolution(patch);
 }
 const summary = ev => ({ completed: ev.completed, needed: ev.needed, pct: ev.pct, sum: ev.sum, totalTarget: ev.totalTarget, days: ev.days.map(d => ({ date: d.date, done: d.done, value: d.value })) });
 
@@ -129,19 +156,6 @@ export function challengesView() {
 // ---------------------------------------------------------------------------
 // Aba Progresso: Conquistas
 
-export function achievementsView() {
-  const got = state.achievements ?? {}, n = Object.keys(got).length, lv = levelOf(n);
-  return h('div.ch-view',
-    h('section.ach-head',
-      h('div.ach-level', h('span', 'Nível'), h('b', lv.level)),
-      h('div', h('b', `${n} de ${ACHIEVEMENTS.length} conquistas`), h('p.card-sub', n < ACHIEVEMENTS.length ? `Mais ${lv.next} para o próximo nível. Conquistas vêm de desafios concluídos, nunca só de começar.` : 'Você desbloqueou todas.')),
-      h('div.ach-bar', h('span', { style: { width: `${(n / ACHIEVEMENTS.length) * 100}%` } }))),
-    h('div.ach-grid', ACHIEVEMENTS.map(a => {
-      const date = got[a.id], color = a.cat ? categoryById(a.cat).color : '#E9B10C';
-      return h('div.ach' + (date ? '.on' : ''), medalArt(a, { unlocked: !!date, color }), h('b', a.title), h('p', a.text),
-        h('span.ach-date', date ? `Desde ${long(date)}` : 'Bloqueada'));
-    })));
-}
 
 // ---------------------------------------------------------------------------
 // Página do desafio

@@ -98,13 +98,12 @@ export function addFoodSheet(mealId) {
   const meal = MEALS.find(m => m.id === mealId);
   let sheet;
   const panel = searchPanel({ onTemplate: () => sheet.close() });
-  sheet = openSheet({ title: `Adicionar em ${meal?.label ?? 'refeição'}`, wide: true, onClose: () => { ui.query = ''; }, content: [
+  sheet = openSheet({ title: `Adicionar em ${meal?.label ?? 'refeição'}`, wide: true, onClose: () => { ui.query = ''; }, content: h('div.add-food',
     h('div.log-form', panel.field),
     h('div.log-actions',
       h('button.btn.secondary.grow', { onclick: () => barcodeSheet() }, icon('barcode'), 'Código de barras'),
       h('button.btn.secondary.grow', { onclick: () => manualFoodSheet() }, icon('pencil'), 'Manual')),
-    panel.results,
-  ] });
+    panel.results) });
   return sheet;
 }
 

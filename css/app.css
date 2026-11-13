@@ -1682,3 +1682,17 @@ section[aria-label="Unidades"] .set-label { flex: 1; min-width: 0; }
 .sum-ring-center.over .sum-ring-label { color: var(--orange-ink); }
 .sum-goal { margin-top: 10px; text-align: center; color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
 @media (max-width: 359px) { .sum-ring { width: 132px; } .sum-ring-num { font-size: 28px; } .sum-side .sum-value { font-size: 19px; } }
+
+/* Janela "Adicionar em <refeição>": blocos com o mesmo respiro entre si */
+.add-food { display: grid; gap: 20px; padding-top: 4px; }
+.add-food .log-form { margin: 0; max-width: none; }
+.add-food .log-results { gap: 20px; }
+.add-food .food-tips { margin: 0; gap: 12px; }
+.add-food .food-tip { padding: 18px; }
+.add-food .food-tip .chip-row { gap: 10px; margin-top: 14px; }
+.add-food .food-tip .fine { margin-top: 14px; }
+.add-food .food-tips > .fine { margin: 0 4px; }
+.add-food .recent-head { margin: 0 4px 0 4px; }
+.add-food .segmented { margin: 0; }
+.add-food .food-tip-title { gap: 10px; }
+.add-food .food-tip-text { margin-top: 8px; }

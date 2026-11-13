@@ -1,13 +1,16 @@
-// Corpo da aba Líquidos: a ilustração de uma pessoa (feminina ou masculina, em person.js) que
-// enche de baixo para cima com uma camada de cor por bebida. O líquido fica recortado pelo
-// contorno do corpo e das roupas e se mistura ao desenho (multiplicação), então roupas,
-// dobras e traços continuam visíveis mesmo com o corpo cheio. O cabelo fica por cima.
-// O preenchimento mostra os líquidos registrados em relação à meta; não é uma medida do corpo.
+// Corpo da aba Líquidos: uma ilustração de pessoa (feminina ou masculina) que enche de baixo para
+// cima com uma camada de cor por bebida. A arte vem de duas imagens por figura, em img/body/:
+// os traços (fundo transparente) e a máscara do corpo. O app pinta um fundo claro dentro da
+// máscara, o líquido por cima (também dentro da máscara) e os traços por último, então roupas e
+// dobras continuam visíveis com o corpo cheio. O preenchimento mostra os líquidos registrados em
+// relação à meta; não é uma medida do corpo.
 import { drinkById } from '../lib/hydration.js';
 import { reducedMotion } from './dom.js';
-import { PEOPLE, W, H, TOP, BOTTOM } from './person.js';
 
 const NS = 'http://www.w3.org/2000/svg';
+// Quadro das imagens (img/body/*.webp) e a faixa que o líquido percorre, dos pés ao topo da cabeça.
+export const W = 640, H = 1340, TOP = 14, BOTTOM = 1336;
+const ART = new URL('../../img/body/', import.meta.url).href;
 
 function el(tag, attrs = {}) {
   const e = document.createElementNS(NS, tag);
@@ -27,63 +30,46 @@ let uid = 0;
  */
 export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label = '' }) {
   const id = 'body' + (++uid);
-  const person = PEOPLE[style] ?? PEOPLE.f;
+  const who = style === 'm' ? 'm' : 'f';
   const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, class: 'body-figure', role: 'img', 'aria-label': label, preserveAspectRatio: 'xMidYMid meet' });
   const defs = el('defs');
-  const clip = el('clipPath', { id: id + '-clip' });
-  for (const p of person.base) if (p.fill) clip.append(el('path', { d: p.d }));
-  // Luz de cima e da esquerda: roupas um pouco mais escuras à direita.
-  const light = el('linearGradient', { id: id + '-light', x1: 0, x2: 1, y1: 0, y2: 0 });
-  light.append(el('stop', { offset: '.35', 'stop-color': 'var(--person-shade)', 'stop-opacity': 0 }), el('stop', { offset: '1', 'stop-color': 'var(--person-shade)', 'stop-opacity': '.16' }));
-  const hairG = el('linearGradient', { id: id + '-hair', x1: 0, x2: 0, y1: 0, y2: 1 });
-  hairG.append(el('stop', { offset: '0', 'stop-color': 'var(--person-hair-hi)' }), el('stop', { offset: '1', 'stop-color': 'var(--person-hair)' }));
-  defs.append(clip, light, hairG);
+  // Máscara do corpo: branco dentro, preto fora (luminância).
+  const mask = el('mask', { id: id + '-mask', maskUnits: 'userSpaceOnUse', x: 0, y: 0, width: W, height: H, 'mask-type': 'luminance' });
+  mask.append(el('image', { href: `${ART}${who}-mask.webp`, x: 0, y: 0, width: W, height: H, preserveAspectRatio: 'none' }));
+  defs.append(mask);
   svg.append(defs);
 
-  const paint = (parts, g) => {
-    for (const p of parts) {
-      const a = { d: p.d, class: 'pp-' + p.kind };
-      if (p.kind === 'hair') a.fill = `url(#${id}-hair)`;
-      g.append(el('path', a));
-    }
-    return g;
-  };
-  const figure = paint(person.base.filter(p => p.kind !== 'line'), el('g', { class: 'person' }));
-  figure.append(el('rect', { x: 0, y: 0, width: W, height: H, fill: `url(#${id}-light)`, 'clip-path': `url(#${id}-clip)` }));
-
-  // Líquido: camadas, superfície e bolhas, tudo dentro do contorno.
-  const liquid = el('g', { 'clip-path': `url(#${id}-clip)` });
-  const mix = el('g', { class: 'body-liquid' });
-  const layers = el('g');
+  const inBody = el('g', { mask: `url(#${id}-mask)` });
+  // Fundo do corpo: claro, para o tecido e a pele; o líquido pinta por cima.
+  inBody.append(el('rect', { x: 0, y: 0, width: W, height: H, class: 'body-base' }));
+  const layers = el('g', { class: 'body-liquid' });
   const wave = el('path');
-  mix.append(layers, wave);
+  layers.append(wave);
   const surface = el('path', { class: 'body-surface' });
   const bubbles = el('g', { class: 'body-bubbles' });
-  liquid.append(mix, surface, bubbles);
-  // Por cima do líquido: um véu claro nas roupas (para separá-las da pele) e os traços de detalhe.
-  const veil = el('g', { class: 'person-veil' });
-  for (const p of person.base) if (p.kind === 'cloth' || p.kind === 'shoe') veil.append(el('path', { d: p.d }));
-  const ink = paint(person.base.filter(p => p.kind === 'line'), el('g', { class: 'person' }));
-  svg.append(figure, liquid, veil, ink, paint(person.top, el('g', { class: 'person-top' })));
+  inBody.append(layers, surface, bubbles);
+  // Traços da ilustração por cima de tudo.
+  const lines = el('image', { href: `${ART}${who}-lines.webp`, x: 0, y: 0, width: W, height: H, preserveAspectRatio: 'none', class: 'body-lines' });
+  svg.append(el('ellipse', { cx: W / 2, cy: H - 6, rx: 150, ry: 7, class: 'body-ground' }), inBody, lines);
 
   let topColor = null;
   function waveAt(shown, phase) {
     if (!topColor || shown <= .002) { wave.setAttribute('d', ''); surface.setAttribute('d', ''); return; }
-    const y = yOf(shown), amp = shown >= .999 ? 0 : 2.4;
+    const y = yOf(shown), amp = shown >= .999 ? 0 : 7;
     let top = '';
-    for (let x = 0; x <= W; x += 12) top += ` L${x} ${(y + Math.sin(x / 26 + phase) * amp).toFixed(2)}`;
-    wave.setAttribute('d', `M0 ${y + 8}${top} L${W} ${y + 8} Z`);
+    for (let x = 0; x <= W; x += 32) top += ` L${x} ${(y + Math.sin(x / 80 + phase) * amp).toFixed(2)}`;
+    wave.setAttribute('d', `M0 ${y + 24}${top} L${W} ${y + 24} Z`);
     wave.setAttribute('fill', topColor);
     surface.setAttribute('d', amp ? 'M' + top.slice(2) : '');
   }
   function draw(shown, phase) {
-    layers.replaceChildren();
+    layers.replaceChildren(wave);
     topColor = null;
     for (const b of bands) {
       if (b.from >= shown) break;
       const to = Math.min(b.to, shown);
       topColor = drinkById(b.type).color;
-      layers.append(el('rect', { x: 0, y: yOf(to), width: W, height: yOf(b.from) - yOf(to) + .6, fill: topColor, class: 'body-band' }));
+      layers.insertBefore(el('rect', { x: 0, y: yOf(to), width: W, height: yOf(b.from) - yOf(to) + .6, fill: topColor, class: 'body-band' }), wave);
     }
     waveAt(shown, phase);
   }
@@ -95,10 +81,10 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
       if (!drinkById(b.type).fizz) continue;
       const y1 = yOf(Math.min(b.to, level)), y0 = yOf(b.from), span = y0 - y1;
       if (span < 10) continue;
-      const n = Math.min(12, Math.max(3, Math.round(span / 20)));
+      const n = Math.min(12, Math.max(3, Math.round(span / 60)));
       for (let i = 0; i < n; i++) {
-        const c = el('circle', { cx: 94 + ((i * 37) % 54), cy: y0 - 4, r: 1.3 + (i % 3) * .55, class: 'body-bubble' });
-        c.style.setProperty('--rise', `${-(span - 8)}px`);
+        const c = el('circle', { cx: 250 + ((i * 97) % 150), cy: y0 - 12, r: 4 + (i % 3) * 1.6, class: 'body-bubble' });
+        c.style.setProperty('--rise', `${-(span - 24)}px`);
         c.style.animationDelay = `${(i * .6) % 3.6}s`;
         c.style.animationDuration = `${3 + (i % 3)}s`;
         bubbles.append(c);

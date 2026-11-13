@@ -25,6 +25,11 @@ export function svg(markup, cls = 'icon') {
 
 // Ícones próprios no espírito dos SF Symbols: caixa de 24, traço de 1,75, pontas arredondadas.
 export const ICONS = {
+  'walk': '<circle cx="13" cy="4.25" r="1.75"/><path d="m10.75 21 1.5-6.25 2.5 2.25V21M12.25 14.75 13 9l-3.25 1.5-1.25 3M13 9l1.75 3.25 2.75 1"/>',
+  'run': '<circle cx="14.5" cy="4.25" r="1.75"/><path d="m6.75 20.5 3.5-4.75 3.25 1.75 1.25 3.5M10.25 15.75 12 10.25l-3.75.75-1.75 2.75M12 10.25l2.5 2.25 3.75.75"/>',
+  'bike': '<circle cx="6" cy="16.5" r="3.75"/><circle cx="18" cy="16.5" r="3.75"/><path d="m6 16.5 3.5-7.25h5.25L18 16.5M9.5 9.25 12 16.5l2.75-7.25M8.5 6.25h2.75M14 6.25h2"/>',
+  'dumbbell': '<path d="M6.5 7.5v9M17.5 7.5v9M3.75 9.75v4.5M20.25 9.75v4.5M6.5 12h11"/>',
+  'spark': '<path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.5l-1.9-5.7L4.5 10.9 10.1 9z"/>',
   'sun': '<circle cx="12" cy="12" r="4"/><path d="M12 2.75v2M12 19.25v2M2.75 12h2M19.25 12h2M5.45 5.45l1.4 1.4M17.15 17.15l1.4 1.4M5.45 18.55l1.4-1.4M17.15 6.85l1.4-1.4"/>',
   'sun-cloud': '<path d="M9.5 3.25v1.25M4.25 8.5H3M5.8 4.8l.9.9M13.2 4.8l-.9.9"/><path d="M6.4 11a3.5 3.5 0 0 1 6.15-3.2"/><path d="M8.5 19.5h8.25a3.5 3.5 0 0 0 .4-6.98 4.75 4.75 0 0 0-9.1 1.13A2.95 2.95 0 0 0 8.5 19.5z"/>',
   'cloud': '<path d="M7.25 18.5h10a4 4 0 0 0 .45-7.98 5.5 5.5 0 0 0-10.6 1.38 3.3 3.3 0 0 0 .15 6.6z"/>',
@@ -223,6 +228,8 @@ export function segmented(options, value, onChange, label) {
     next.focus(); next.click();
   });
   paint(value);
+  // Troca a seleção por código (sem chamar onChange).
+  root.setValue = paint;
   return root;
 }
 

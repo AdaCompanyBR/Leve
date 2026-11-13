@@ -1255,3 +1255,57 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 }
 .env-week li { grid-template-columns: 64px 22px 84px 42px minmax(0, 1fr); }
 @media (max-width: 480px) { .env-week li { grid-template-columns: 64px 22px 80px minmax(0, 1fr); } .env-week-uv { display: none; } }
+
+/* Atividades (aba Hoje) */
+.act-card .card-head .btn .icon { width: 16px; height: 16px; }
+.act-list { margin: 8px -16px -8px; }
+.act-row { display: flex; align-items: center; gap: 8px; padding-right: 12px; }
+.act-row + .act-row { background-image: linear-gradient(var(--sep), var(--sep)); background-size: calc(100% - 64px) 1px; background-position: right top; background-repeat: no-repeat; }
+.act-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 4px 8px 16px; text-align: left; }
+.act-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: none; border-radius: 50%; background: var(--accent-wash); color: var(--accent-ink); }
+.act-icon .icon { width: 20px; height: 20px; }
+.act-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.act-text b { font-weight: 600; }
+.act-text span { color: var(--ink-2); font-size: 13px; text-transform: none; }
+.act-text span::first-letter { text-transform: uppercase; }
+.act-main .env-pill { flex: none; }
+.act-done { flex: none; }
+.act-form { display: grid; gap: 4px; }
+.act-types .chip .icon { width: 17px; height: 17px; }
+.act-days { margin-top: 0; }
+.act-time { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+.act-time .chip-row { margin-top: 0; }
+.act-two { display: grid; grid-template-columns: 1fr; gap: 0 16px; }
+@media (min-width: 600px) { .act-two { grid-template-columns: 1fr 1fr; } }
+.act-assess { padding: 14px; border-radius: var(--r-group); background: color-mix(in srgb, var(--tone, var(--ink-3)) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--tone, var(--ink-3)) 25%, transparent); }
+.act-assess-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+.act-fc { color: var(--ink-2); font-size: 13px; font-variant-numeric: tabular-nums; }
+.act-assess > p { line-height: 1.45; }
+.act-tips { margin: 8px 0 6px; padding-left: 18px; list-style: disc; display: grid; gap: 4px; font-size: var(--fs-sub); color: var(--ink-2); }
+.act-after { display: grid; gap: 10px; margin-top: 14px; }
+.act-after li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.4; }
+.act-after .icon { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--green-ink); stroke-width: 2.4; }
+
+/* Sugestões de alimentação (aba Registrar) */
+.food-tips { display: grid; gap: 10px; margin-bottom: 16px; }
+.food-tip { padding: 14px 16px; border-radius: var(--r-group); background: var(--surface); }
+.food-tip-title { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.food-tip-title .icon { width: 18px; height: 18px; color: var(--accent-ink); }
+.food-tip-text { margin-top: 4px; color: var(--ink-2); font-size: var(--fs-sub); line-height: 1.4; }
+.food-tip .chip-row { margin-top: 10px; }
+.food-tip .fine { margin-top: 8px; }
+.food-tips > .fine { margin: -2px 4px 0; }
+
+/* Clima e hábitos (aba Progresso) */
+.habits-list { display: grid; gap: 10px; margin-top: 10px; }
+.habits-list li { padding: 12px 14px; border-radius: var(--r-btn); background: var(--fill); }
+.habits-list .fine { margin-top: 4px; }
+.habits-days { margin-top: 14px; }
+.habits-days-title { font-size: 13px; color: var(--ink-2); margin-bottom: 4px; }
+.habits-days li { display: grid; grid-template-columns: 1fr 44px 52px auto; gap: 8px; align-items: center; min-height: 38px; border-top: .5px solid var(--sep); font-size: var(--fs-sub); font-variant-numeric: tabular-nums; }
+.habits-day { text-transform: capitalize; }
+.habits-pct { text-align: right; color: var(--ink-2); }
+.habits-pct.met { color: var(--green-ink); font-weight: 600; }
+.habits-card > .fine { margin-top: 12px; }
+.habits-days li { grid-template-columns: minmax(0, 1fr) 40px 52px 108px; }
+.habits-days li > span:nth-child(2), .habits-days li > span:nth-child(3) { text-align: right; }

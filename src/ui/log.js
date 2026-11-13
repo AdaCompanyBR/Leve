@@ -6,6 +6,7 @@ import { state, recents, foodById, addEntries, removeTemplate, totals } from '..
 import { search } from '../lib/search.js';
 import { parsePhrase } from '../lib/parser.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
+import { foodTipsBlock } from './insights.js';
 
 // Buscas recentes (só neste aparelho), como no histórico da busca do iOS.
 const RECENT_KEY = 'leve-recent-searches';
@@ -58,7 +59,8 @@ export function logScreen() {
     const recentBlock = recent.length ? [
       h('div.recent-head', h('span', 'Buscas recentes'), h('button.link', { type: 'button', onclick: () => { clearRecent(); paint(); } }, 'Limpar')),
       h('div.recent-searches', recent.map(q => h('button.chip', { type: 'button', onclick: () => { input.value = q; input.dispatchEvent(new Event('input')); input.focus(); } }, q)))] : [];
-    return [...recentBlock, tabs, body];
+    const tips = foodTipsBlock(q => { input.value = q; input.dispatchEvent(new Event('input')); input.focus(); });
+    return [...(tips ? [tips] : []), ...recentBlock, tabs, body];
   }
 
   function paint() {

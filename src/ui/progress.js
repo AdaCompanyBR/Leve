@@ -5,6 +5,7 @@ import { state, getPlan, series, budgetFor, adaptiveStatus, acceptTdee, declineT
 import { etaDate, MAX_DEFICIT_RATIO } from '../lib/calc.js';
 import { MIN_DAYS } from '../lib/adaptive.js';
 import { todayISO, addDays, diffDays, fmtDate, fromISO } from '../lib/dates.js';
+import { climateHabitsCard } from './insights.js';
 
 const longDate = iso => fmtDate(iso, { day: 'numeric', month: 'long', year: 'numeric' });
 let whatIf = 0;
@@ -161,5 +162,5 @@ export function progressScreen() {
     h('header.screen-head', h('div', h('p.screen-date', fromISO(today).getFullYear()), h('h1', 'Progresso'))),
     h('div.progress-grid',
       h('div.col.col-wide', weightCard, weekCard),
-      h('div.col', etaCard, adaptiveCard, historyCard)));
+      h('div.col', etaCard, adaptiveCard, climateHabitsCard(), historyCard)));
 }

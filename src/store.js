@@ -22,7 +22,7 @@ const DEFAULT_SETTINGS = { theme: 'auto', weightReminder: true, waterGoal: 2000,
 
 export const state = {
   ready: false, profile: null, settings: { ...DEFAULT_SETTINGS }, entries: [], weights: [], foods: [], templates: [],
-  favorites: [], water: {}, drinks: [], routine: {}, goalLog: [], presets: null, adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
+  favorites: [], water: {}, drinks: [], routine: {}, goalLog: [], presets: null, activities: [], envHistory: {}, adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
 };
 
 const listeners = new Set();
@@ -47,7 +47,7 @@ export async function load() {
   }
   Object.assign(state, {
     ready: true, profile: map.profile ?? null, settings: { ...DEFAULT_SETTINGS, ...map.settings }, entries, weights, foods, templates,
-    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, routine: map.routine ?? {}, goalLog: map.goalLog ?? [], presets: map.presets ?? null, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
+    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, routine: map.routine ?? {}, goalLog: map.goalLog ?? [], presets: map.presets ?? null, activities: map.activities ?? [], envHistory: map.envHistory ?? {}, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
   });
   state.recipes = buildRecipeFoods(taco);
   registerServings([...state.recipes, ...state.foods]);
@@ -168,6 +168,27 @@ export async function savePreset(preset) {
 }
 export async function removePreset(id) { state.presets = drinkPresets().filter(p => p.id !== id); await kv('presets', state.presets); emit(); }
 export async function restorePresets(list) { state.presets = list; await kv('presets', list); emit(); }
+// Atividades físicas (planejadas ou feitas): uma lista em kv 'activities', sincronizada com a conta.
+export const activitiesOn = date => state.activities.filter(a => a.date === date).sort((a, b) => a.start.localeCompare(b.start));
+export async function saveActivity(a) {
+  const row = { ...a, id: a.id ?? 'a-' + uid(), updatedAt: Date.now() };
+  state.activities = [...state.activities.filter(x => x.id !== row.id), row];
+  await kv('activities', state.activities); emit();
+  return row;
+}
+export async function removeActivity(id) { state.activities = state.activities.filter(x => x.id !== id); await kv('activities', state.activities); emit(); }
+export async function restoreActivity(a) { state.activities = [...state.activities.filter(x => x.id !== a.id), a]; await kv('activities', state.activities); emit(); }
+
+// Histórico do clima: um resumo por dia (o último do dia vale), guardado por até 400 dias.
+export async function recordEnvDay(rec) {
+  const prev = state.envHistory[rec.date];
+  if (prev && JSON.stringify(prev) === JSON.stringify(rec)) return;
+  const all = { ...state.envHistory, [rec.date]: rec };
+  const keep = Object.keys(all).sort().slice(-400);
+  state.envHistory = Object.fromEntries(keep.map(k => [k, all[k]]));
+  await kv('envHistory', state.envHistory);   // sem emit: não precisa redesenhar a tela
+}
+
 /** Corpo da aba Líquidos: escolha em Ajustes, ou o sexo do cadastro. */
 export const bodyStyle = () => state.settings.body ?? (state.profile?.sex === 'm' ? 'm' : 'f');
 export const dayDrinks = date => state.drinks.filter(d => d.date === date).sort((a, b) => a.ts - b.ts);
@@ -216,6 +237,8 @@ export function routineStatus(date, routine = getRoutine()) {
     entries: dayEntries(date), water: liquidsOn(date).total, waterGoal: waterGoalOn(date),
     protein: totals(dayEntries(date)).p, proteinGoal: p?.macros?.protein ?? null,
     weighed: state.weights.some(w => w.date === date), checks: state.routine[date] ?? {},
+    activeMin: activitiesOn(date).filter(a => a.status === 'feita').reduce((n, a) => n + (a.minutes || 0), 0),
+    strength: activitiesOn(date).some(a => a.status === 'feita' && a.type === 'musculacao'),
   });
 }
 export async function toggleRoutineCheck(date, id) {
@@ -252,8 +275,8 @@ export async function declineTdee(tdee) { state.adaptive = { declinedTdee: tdee 
 
 // ---------- Exportar, importar, apagar ----------
 export function exportData() {
-  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, adaptive } = state;
-  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, adaptive };
+  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, adaptive } = state;
+  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, adaptive };
 }
 export async function importData(data) {
   if (data?.app !== 'leve' || !Array.isArray(data.entries) || !Array.isArray(data.weights)) throw new Error('Arquivo não reconhecido');
@@ -261,7 +284,7 @@ export async function importData(data) {
   await Promise.all([
     db.bulkPut('entries', data.entries), db.bulkPut('weights', data.weights), db.bulkPut('foods', data.foods ?? []),
     db.bulkPut('templates', data.templates ?? []), db.bulkPut('drinks', data.drinks ?? []),
-    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'routine', 'goalLog', 'presets', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
+    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'routine', 'goalLog', 'presets', 'activities', 'envHistory', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
   ]);
   await load();
   emit();

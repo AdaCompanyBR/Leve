@@ -119,6 +119,9 @@ export function dayStatus(routine, day) {
     else if (x.auto === 'proteina') done = day.protein >= (day.proteinGoal ?? Infinity);
     else if (x.auto === 'peso') done = !!day.weighed;
     else if (x.auto === 'refeicoes') done = schedule.every(s => s.done);
+    // Movimento e força: marcados à mão, ou sozinhos pelas atividades feitas no dia.
+    else if (x.id === 'movimento') done = !!day.checks?.[x.id] || (day.activeMin ?? 0) >= 30;
+    else if (x.id === 'forca') done = !!day.checks?.[x.id] || !!day.strength;
     else done = !!day.checks?.[x.id];
     return { ...x, done };
   });

@@ -6,7 +6,8 @@
 // endereço. O GPS só é pedido quando a pessoa toca em "Usar minha localização"; depois, só é
 // relido sem perguntar se o navegador já tiver a permissão. "Remover localização" apaga tudo.
 import { WEATHER } from './config.js';
-import { state, saveSettings } from './store.js';
+import { state, saveSettings, recordEnvDay, waterGoalOn } from './store.js';
+import { dayRecord } from './lib/envHistory.js';
 import { buildContext, alerts, FORECAST_PARAMS, AIR_PARAMS, query } from './lib/environment.js';
 
 const CACHE = 'leve-env';
@@ -77,8 +78,16 @@ export function refresh({ force = false } = {}) {
     cache.set(c);
     rebuild(c);
   })().catch(() => { env.error = 'A previsão do tempo não respondeu agora.'; })
-    .finally(() => { env.loading = false; inflight = null; emit(); dispatchAlerts(); });
+    .finally(() => { env.loading = false; inflight = null; emit(); dispatchAlerts(); record(); });
   return inflight;
+}
+
+// Histórico: um resumo por dia do que o app usou, para as análises da aba Progresso.
+function record() {
+  const ctx = env.ctx;
+  if (!ctx || !env.fetchedAt || Date.now() - env.fetchedAt > 3 * 3600e3) return;
+  const rec = dayRecord(ctx, { place: placeName(), goal: waterGoalOn(ctx.today), restricted: !!state.settings.fluidRestriction });
+  if (rec) recordEnvDay(rec).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------

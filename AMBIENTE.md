@@ -1,4 +1,4 @@
-# Inteligência ambiental (Fase 1)
+# Inteligência ambiental
 
 O Leve usa o clima, o índice UV e a qualidade do ar da região da pessoa para dar contexto às orientações do dia. Este documento descreve o que foi feito, de onde vêm os dados e quais regras são usadas.
 
@@ -10,6 +10,9 @@ O Leve usa o clima, o índice UV e a qualidade do ar da região da pessoa para d
 | Serviço central | `src/env.js` | Localização, consulta às APIs, cache, atualização e disparo de alertas. Todas as telas leem `env.ctx`; nenhuma consulta a API por conta própria. |
 | Telas | `src/ui/environment.js` | Cartão "Hoje em sua região" (aba Hoje), detalhes do dia, escolha da localização, orientação na aba Líquidos e o aviso de alerta. |
 | Endereços | `src/config.js` (`WEATHER`) | Endereços da previsão, da qualidade do ar e da busca de cidades. |
+| Atividades | `src/lib/activity.js`, `src/ui/activity.js` | Avalia o horário de uma atividade com a previsão daquelas horas; cartão "Atividades" na aba Hoje, janela de planejar e orientações depois do treino. |
+| Alimentação | `src/lib/foodContext.js` | Sugestões pelo clima e pelas atividades do dia, mostradas na aba Registrar (`src/ui/insights.js`). |
+| Histórico | `src/lib/envHistory.js` | Resumo diário do clima e análises dos hábitos, no cartão "Clima e hábitos" da aba Progresso. |
 
 Fluxo: ao abrir o app, ao voltar para ele e a cada 15 minutos com ele aberto, `env.js` confere o cache. A previsão é renovada depois de 30 minutos e a qualidade do ar depois de 60. Os pedidos simultâneos viram um só. Sem internet ou com a API fora, a tela mostra a última previsão salva, com a hora e o aviso "desatualizada" depois de 3 horas.
 
@@ -60,6 +63,16 @@ No app, uma vez por dia por alerta e no máximo dois por vez. Há quatro categor
 
 `tests/environment.test.js` (14 testes) cobre as faixas oficiais, o fuso horário, dia ameno, calor intenso e perigoso, calor prolongado, UV alto, ar ruim e ar ausente, tempestade, chuva e vento fortes, mudança brusca, melhores horários, dados faltando, semana e dados desatualizados.
 
+`tests/activity.test.js` (13 testes) cobre:
+- a corrida às 14h no calor, com horário melhor no mesmo dia e no dia seguinte;
+- a intensidade mudando o nível;
+- UV sozinho, duração longa, tempestade, vento para ciclismo e chance de chuva;
+- "sem alerta" sem dizer "seguro", local fechado e sem previsão;
+- restrição de líquidos antes e depois da atividade;
+- próxima atividade;
+- alimentação no calor, no frio e com atividade;
+- histórico do dia, análises e a rotina marcada pelas atividades.
+
 O teste de ponta a ponta (com a Open-Meteo simulada) cobre:
 - sem localização;
 - cidade escolhida pelo nome;
@@ -70,9 +83,57 @@ O teste de ponta a ponta (com a Open-Meteo simulada) cobre:
 - API fora do ar, com cache e sem cache;
 - qualidade do ar indisponível.
 
-## Fase 2 (ainda não feita)
+## Atividade física e clima
 
-- Registro e planejamento de atividades físicas, com o clima do horário escolhido e orientações antes e depois.
-- Alimentação contextual: sugestões em dias quentes ou frios, sem mudar metas.
-- Histórico diário das condições e análises ("meta batida em X% dos dias quentes").
+Cada atividade guarda: tipo, dia, horário de início, duração, intensidade (leve, moderada ou intensa), local (ao ar livre ou fechado), situação (planejada ou feita), uma nota opcional e o nível do clima no momento do registro. Fica em `activities`, nos dados do app, e sincroniza com a conta.
+
+A avaliação usa as horas da previsão que a atividade ocupa, do início até o fim:
+
+| Fator | Leve | Moderada | Intensa |
+|---|---|---|---|
+| Sensação térmica | atenção a partir de 32 °C; desfavorável a partir de 39 °C | cuidado a partir de 27 °C; atenção a partir de 32 °C; desfavorável a partir de 39 °C | atenção a partir de 27 °C; desfavorável a partir de 32 °C |
+| Duração de 60 min ou mais com 27 °C ou mais | pelo menos atenção | pelo menos atenção | pelo menos atenção |
+| Índice UV (ao ar livre) | cuidado a partir de 6; atenção a partir de 8 | igual | igual |
+| Qualidade do ar (AQI) | cuidado a partir de 101 | atenção a partir de 101 | atenção a partir de 101 |
+| Ar ruim (AQI 151+) ou tempestade | desfavorável | desfavorável | desfavorável |
+| Chuva forte ou rajadas de 62 km/h | atenção (desfavorável para ciclismo com rajada forte) | igual | igual |
+| Chance de chuva de 60% ou mais | cuidado | cuidado | cuidado |
+
+O calor parte das faixas do NWS/NOAA, deslocadas pela intensidade, seguindo a orientação do ACSM (Colégio Americano de Medicina do Esporte) de reduzir a intensidade ou mudar o horário quanto mais quente e intenso o exercício.
+
+- **Orientação:** nas atividades desfavoráveis ou em atenção, a orientação sugere os melhores horários do mesmo dia. Se não houver, sugere os do dia seguinte ou uma atividade em local fechado.
+- **Nunca bloqueia:** a pessoa salva como quiser.
+- **Sem alerta não é "seguro":** o texto diz que não quer dizer ausência de risco.
+- **Local fechado:** o clima de fora pesa menos, e o app sugere ambiente ventilado.
+- **Sem localização, ou fora da previsão:** "Sem previsão".
+
+Depois da atividade, as orientações cobrem hidratação (ou seguir o médico, com restrição de líquidos), descanso num lugar fresco se foi no calor, recuperação e registrar a refeição. Não calcula suor nem eletrólitos. Atividades feitas de 30 minutos ou mais marcam o hábito "Mexer o corpo por 30 minutos" da rotina; musculação feita marca "Treino de força".
+
+## Alimentação no contexto do dia
+
+Na aba Registrar, com a busca vazia, aparecem até duas sugestões. Cada alimento só abre a busca; as metas de calorias e macros não mudam, e nenhum alimento é classificado como obrigatório ou proibido.
+
+- **Dia quente** (sensação de 27 °C ou mais): frutas e verduras com muita água (de 85% a 96% de água, USDA FoodData Central) e refeições mais leves dentro do plano.
+- **Dia frio** (sensação máxima de até 16 °C ou mínima de até 10 °C; regra do app): preparações quentes, se a pessoa quiser.
+- **Dia de atividade** (moderada ou intensa, de 30 minutos ou mais): carboidrato e proteína depois do exercício, dentro das metas.
+
+O app ainda não tem cadastro de preferências ou restrições alimentares; quando tiver, as sugestões devem filtrar por elas. Dá para desligar as sugestões em Ajustes.
+
+## Histórico e análises
+
+A cada atualização da previsão, o app guarda um resumo do dia em `envHistory`: local, máxima, mínima, sensação, umidade mínima, UV, AQI, chuva, classificação, alertas, orientação de hidratação, meta de líquidos e meta estimada. A meta estimada é sempre vazia, porque o clima não muda a meta. São até 400 dias, sincronizados com a conta.
+
+As análises usam os últimos 30 dias completos e só aparecem com dados suficientes:
+- meta de líquidos nos dias quentes (3 dias quentes ou mais);
+- consumo médio em dias quentes e amenos (3 de cada e 100 ml ou mais de diferença);
+- consumo médio em dias com e sem atividade (3 de cada e 100 ml ou mais de diferença);
+- horário preferido de caminhadas, corridas e pedaladas (3 ou mais, com 60% no mesmo período);
+- atividades feitas em horários com atenção pelo clima.
+
+Cada frase mostra a base ("4 de 6 dias"). O cartão lembra que são associações nos registros, não causas nem conclusões médicas.
+
+## O que fica para depois
+
 - Notificações com o app fechado, que exigem um servidor que consulte o clima e envie as mensagens.
+- Cadastro de preferências e restrições alimentares, para filtrar as sugestões.
+- Servidor intermediário com a chave da versão comercial da Open-Meteo, quando o uso for comercial.

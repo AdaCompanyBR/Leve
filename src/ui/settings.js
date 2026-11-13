@@ -115,7 +115,9 @@ export function settingsScreen() {
   const envCard = h('section.card.set-card', { 'aria-label': 'Clima e localização' }, h('h3', 'Clima e localização'),
     row('Localização', valueBtn(loc ? placeName(loc) : 'Não definida', () => locationSheet(), 'Alterar localização'), loc ? (loc.mode === 'gps' ? 'Pelo GPS do aparelho' : 'Escolhida pelo nome') : 'Para o clima, o índice UV e a qualidade do ar do dia'),
     ...ALERT_CATEGORIES.map(c => row(`Avisos de ${c.label.toLowerCase()}`, h('button.switch', { role: 'switch', 'aria-checked': String(alertOn(c.id)), 'aria-label': `Avisos de ${c.label.toLowerCase()}`,
-      onclick: () => saveSettings({ envAlerts: { ...(s.envAlerts ?? {}), [c.id]: !alertOn(c.id) } }) }, h('span')), c.hint)));
+      onclick: () => saveSettings({ envAlerts: { ...(s.envAlerts ?? {}), [c.id]: !alertOn(c.id) } }) }, h('span')), c.hint)),
+    row('Sugestões de alimentação pelo clima', h('button.switch', { role: 'switch', 'aria-checked': String(s.foodTips !== false), 'aria-label': 'Sugestões de alimentação pelo clima', onclick: () => saveSettings({ foodTips: s.foodTips === false }) }, h('span')),
+      'Na aba Registrar, em dias quentes, frios ou com atividade. As metas não mudam.'));
 
   const file = h('input', { type: 'file', accept: 'application/json,.json', hidden: true, onchange: async e => {
     const f = e.target.files[0]; if (!f) return;

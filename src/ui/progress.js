@@ -6,6 +6,9 @@ import { etaDate, MAX_DEFICIT_RATIO } from '../lib/calc.js';
 import { MIN_DAYS } from '../lib/adaptive.js';
 import { todayISO, addDays, diffDays, fmtDate, fromISO } from '../lib/dates.js';
 import { climateHabitsCard } from './insights.js';
+import { challengesView, achievementsView } from './challenges.js';
+import { segmented } from './dom.js';
+import { ui, go } from './state.js';
 import { weight, weightNum, weightDelta, weightUnit } from '../lib/units.js';
 
 const longDate = iso => fmtDate(iso, { day: 'numeric', month: 'long', year: 'numeric' });
@@ -47,7 +50,7 @@ function chart(points, plan, eta) {
   return t.content.firstChild;
 }
 
-export function progressScreen() {
+function indicators() {
   const plan = getPlan();
   const pts = series();
   const today = todayISO();
@@ -159,9 +162,18 @@ export function progressScreen() {
       h('span.history-kg', weight(p.kg)),
       h('button.icon-btn.small', { 'aria-label': `Apagar a pesagem de ${fmtDate(p.date)}`, onclick: () => confirmSheet({ title: 'Apagar pesagem?', message: `${weight(p.kg)} em ${fmtDate(p.date)}.`, confirmLabel: 'Apagar', onConfirm: () => removeWeight(p.date) }) }, icon('trash')))))) : null;
 
-  return h('div.screen.progress',
-    h('header.screen-head', h('div', h('p.screen-date', fromISO(today).getFullYear()), h('h1', 'Progresso'))),
-    h('div.progress-grid',
+  return h('div.progress-grid',
       h('div.col.col-wide', weightCard, weekCard),
-      h('div.col', etaCard, adaptiveCard, climateHabitsCard(), historyCard)));
+      h('div.col', etaCard, adaptiveCard, climateHabitsCard(), historyCard));
+}
+
+/** Aba Progresso: Desafios, Conquistas e os indicadores (peso, saldo, gasto). */
+export function progressScreen() {
+  const view = ui.progressView ?? 'desafios';
+  const tabs = segmented([{ id: 'desafios', label: 'Desafios' }, { id: 'conquistas', label: 'Conquistas' }, { id: 'indicadores', label: 'Indicadores' }], view,
+    v => go('progresso', { progressView: v }), 'Seções do Progresso');
+  return h('div.screen.progress',
+    h('header.screen-head', h('div', h('p.screen-date', fromISO(todayISO()).getFullYear()), h('h1', 'Progresso'))),
+    h('div.progress-tabs', tabs),
+    view === 'desafios' ? challengesView() : view === 'conquistas' ? achievementsView() : indicators());
 }

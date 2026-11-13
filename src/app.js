@@ -18,6 +18,7 @@ import { toast } from './ui/dom.js';
 import { captureInvite, checkInvite } from './ui/friends.js';
 import { initPullToRefresh } from './ui/pull.js';
 import { startUpdateChecks } from './update.js';
+import { syncChallenges } from './ui/challenges.js';
 import { startEnv, setEnvNotifier } from './env.js';
 import { showAlert } from './ui/environment.js';
 
@@ -192,6 +193,10 @@ function open() {
   render();
   share.start();
   startEnv();
+  // Desafios: avaliados a partir dos registros, ao abrir e sempre que algo muda.
+  let chTimer = null;
+  subscribe(() => { clearTimeout(chTimer); chTimer = setTimeout(() => syncChallenges(), 800); });
+  setTimeout(() => syncChallenges(), 1200);
   setTimeout(() => state.profile && checkInvite(), 600);
   // Pede ao navegador para não apagar os dados sob pressão de espaço.
   navigator.storage?.persist?.().catch(() => {});

@@ -23,7 +23,7 @@ const DEFAULT_SETTINGS = { theme: 'auto', weightReminder: true, waterGoal: 2000,
 
 export const state = {
   ready: false, profile: null, settings: { ...DEFAULT_SETTINGS }, entries: [], weights: [], foods: [], templates: [],
-  favorites: [], water: {}, drinks: [], routine: {}, goalLog: [], presets: null, activities: [], envHistory: {}, avatar: null, adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
+  favorites: [], water: {}, drinks: [], routine: {}, goalLog: [], presets: null, activities: [], envHistory: {}, avatar: null, myChallenges: [], checkins: {}, achievements: {}, adaptive: { declinedTdee: null }, taco: [], recipes: [], index: [],
 };
 
 const listeners = new Set();
@@ -48,7 +48,7 @@ export async function load() {
   }
   Object.assign(state, {
     ready: true, profile: map.profile ?? null, settings: { ...DEFAULT_SETTINGS, ...map.settings }, entries, weights, foods, templates,
-    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, routine: map.routine ?? {}, goalLog: map.goalLog ?? [], presets: map.presets ?? null, activities: map.activities ?? [], envHistory: map.envHistory ?? {}, avatar: map.avatar ?? null, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
+    favorites: map.favorites ?? [], water: map.water ?? {}, drinks, routine: map.routine ?? {}, goalLog: map.goalLog ?? [], presets: map.presets ?? null, activities: map.activities ?? [], envHistory: map.envHistory ?? {}, avatar: map.avatar ?? null, myChallenges: map.challenges ?? [], checkins: map.checkins ?? {}, achievements: map.achievements ?? {}, adaptive: map.adaptive ?? { declinedTdee: null }, taco,
   });
   setUnitPrefs(state.settings.units);
   state.recipes = buildRecipeFoods(taco);
@@ -191,6 +191,32 @@ export async function recordEnvDay(rec) {
   await kv('envHistory', state.envHistory);   // sem emit: não precisa redesenhar a tela
 }
 
+// Desafios da pessoa (kv 'challenges'), registros rápidos do que o app não mede (kv 'checkins',
+// por data) e conquistas desbloqueadas (kv 'achievements', id -> data). O progresso não é
+// guardado: é recalculado dos registros originais; ao concluir ou encerrar, guarda-se um resumo.
+const saveChallenges = async () => { await kv('challenges', state.myChallenges); emit(); };
+export async function startChallenge({ challengeId, target, startDate, expectedEnd }) {
+  const uc = { id: 'uc-' + uid(), challengeId, target, startDate, expectedEnd, status: 'ativo', pauses: [], createdAt: Date.now() };
+  state.myChallenges = [...state.myChallenges, uc];
+  await saveChallenges();
+  return uc;
+}
+export async function updateChallenge(id, patch) {
+  state.myChallenges = state.myChallenges.map(c => (c.id === id ? { ...c, ...patch, updatedAt: Date.now() } : c));
+  await saveChallenges();
+}
+export async function saveCheckin(date, patch) {
+  state.checkins = { ...state.checkins, [date]: { ...(state.checkins[date] ?? {}), ...patch } };
+  await kv('checkins', state.checkins); emit();
+}
+export async function unlockAchievements(ids, date) {
+  const add = ids.filter(id => !state.achievements[id]);
+  if (!add.length) return [];
+  state.achievements = { ...state.achievements, ...Object.fromEntries(add.map(id => [id, date])) };
+  await kv('achievements', state.achievements); emit();
+  return add;
+}
+
 /** Foto de perfil: imagem pequena (data URL), guardada em kv 'avatar' e sincronizada com a conta. */
 export async function saveAvatar(dataUrl) { state.avatar = dataUrl || null; await kv('avatar', state.avatar); emit(); }
 
@@ -280,8 +306,8 @@ export async function declineTdee(tdee) { state.adaptive = { declinedTdee: tdee 
 
 // ---------- Exportar, importar, apagar ----------
 export function exportData() {
-  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, avatar, adaptive } = state;
-  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, avatar, adaptive };
+  const { profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, avatar, myChallenges, checkins, achievements, adaptive } = state;
+  return { app: 'leve', version: 1, exportedAt: new Date().toISOString(), profile, settings, entries, weights, foods, templates, favorites, water, drinks, routine, goalLog, presets, activities, envHistory, avatar, challenges: myChallenges, checkins, achievements, adaptive };
 }
 export async function importData(data) {
   if (data?.app !== 'leve' || !Array.isArray(data.entries) || !Array.isArray(data.weights)) throw new Error('Arquivo não reconhecido');
@@ -289,7 +315,7 @@ export async function importData(data) {
   await Promise.all([
     db.bulkPut('entries', data.entries), db.bulkPut('weights', data.weights), db.bulkPut('foods', data.foods ?? []),
     db.bulkPut('templates', data.templates ?? []), db.bulkPut('drinks', data.drinks ?? []),
-    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'routine', 'goalLog', 'presets', 'activities', 'envHistory', 'avatar', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
+    db.bulkPut('kv', ['profile', 'settings', 'favorites', 'water', 'routine', 'goalLog', 'presets', 'activities', 'envHistory', 'avatar', 'challenges', 'checkins', 'achievements', 'adaptive'].filter(k => data[k] != null).map(key => ({ key, value: data[key] }))),
   ]);
   await load();
   emit();

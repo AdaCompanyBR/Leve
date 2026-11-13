@@ -105,6 +105,8 @@ export function settingsScreen() {
     row('Tema', segmented([{ id: 'auto', label: 'Automático' }, { id: 'light', label: 'Claro' }, { id: 'dark', label: 'Escuro' }], s.theme, async v => { await saveSettings({ theme: v }); applyTheme(); }, 'Tema')),
     row('Lembrete de peso', h('button.switch', { role: 'switch', 'aria-checked': String(s.weightReminder), 'aria-label': 'Lembrete de peso', onclick: () => saveSettings({ weightReminder: !s.weightReminder }) }, h('span')),
       null),
+    row('Avisos dos desafios', h('button.switch', { role: 'switch', 'aria-checked': String(s.challengeNotify !== false), 'aria-label': 'Avisos dos desafios', onclick: () => saveSettings({ challengeNotify: s.challengeNotify === false }) }, h('span')),
+      'Progresso, conclusão e conquistas, sempre positivos'),
     row('Sugerir trocas mais leves', h('button.switch', { role: 'switch', 'aria-checked': String(s.showSwaps !== false), 'aria-label': 'Sugerir trocas mais leves', onclick: () => saveSettings({ showSwaps: s.showSwaps === false }) }, h('span')),
       null));
 

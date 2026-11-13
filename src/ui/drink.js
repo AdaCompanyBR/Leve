@@ -169,7 +169,7 @@ export function drinkSheet({ date = ui.date, type, drink, ml: preset } = {}) {
   }
 
   sheet = openSheet({
-    title: editing ? 'Editar bebida' : 'Outra bebida',
+    title: editing ? 'Editar bebida' : type === 'agua' ? 'Registrar água' : 'Outra bebida',
     action: { label: editing ? 'Salvar' : 'Adicionar', run: () => sheet.body.querySelector('form').requestSubmit() },
     content: h('form.drink-form', { onsubmit: submit, novalidate: true },
       h('div.big-field.drink-amount', amountInput, unitLabel),

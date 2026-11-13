@@ -1,8 +1,8 @@
 // Tela Registrar: campo único (frase livre e busca), código de barras, recentes, favoritos e modelos.
-import { h, icon, int, portionText, segmented, toast, confirmSheet, searchField } from './dom.js';
+import { h, icon, int, portionText, segmented, toast, confirmSheet, searchField, openSheet } from './dom.js';
 import { foodSheet, phraseSheet, manualFoodSheet, barcodeSheet, sourceOf, openEstimate } from './food.js';
 import { ui, MEAL_SHORT, mealByClock, go } from './state.js';
-import { state, recents, foodById, addEntries, removeTemplate, totals } from '../store.js';
+import { state, recents, foodById, addEntries, removeTemplate, totals, MEALS } from '../store.js';
 import { search } from '../lib/search.js';
 import { parsePhrase } from '../lib/parser.js';
 import { todayISO, fmtDate } from '../lib/dates.js';
@@ -25,12 +25,16 @@ const foodRow = (food, opts = {}, sub) => h('li', h('button.food-row', { onclick
 const estimateCta = q => h('button.est-cta', { type: 'button', onclick: () => openEstimate(q) },
   icon('search'), h('span', h('b', `Não achou? Estimar calorias de “${q}”`), h('span', 'Receita típica e média de produtos parecidos')), icon('next'));
 
-export function logScreen() {
-  ui.meal ??= mealByClock();
+/**
+ * Busca de alimentos com a frase livre, os recentes, favoritos e modelos. Usada na aba Registrar e na
+ * janela "Adicionar" do diário alimentar (aba Hoje), para os dois terem exatamente o mesmo fluxo.
+ * `onTemplate`: depois de adicionar um modelo.
+ */
+function searchPanel({ onTemplate = () => go('hoje'), shortcut } = {}) {
   const results = h('div.log-results', { 'aria-live': 'polite' });
   const search_ = searchField({
     placeholder: 'Alimento ou frase, como “2 ovos e 1 pão”', label: 'O que você comeu? Escreva uma frase ou busque um alimento',
-    value: ui.query, onInput: () => paint(), shortcut: '/',
+    value: ui.query, onInput: () => paint(), shortcut,
     onSubmit: v => { if (v.trim()) { rememberSearch(v); phraseSheet(v.trim()); } }, cls: 'log-box',
   });
   const input = search_.input;
@@ -49,7 +53,7 @@ export function logScreen() {
         : h('div.empty.small', h('p.empty-title', 'Nenhum favorito'), h('p.empty-text', 'Abra um alimento e toque em Favoritar para guardá-lo aqui.'));
     } else {
       body = state.templates.length ? h('ul.food-list', state.templates.map(t => h('li.template',
-        h('button.food-row', { onclick: async () => { await addEntries(t.items.map(it => ({ ...it, date: ui.date, meal: ui.meal }))); toast(`${t.name} adicionado`); go('hoje'); } },
+        h('button.food-row', { onclick: async () => { await addEntries(t.items.map(it => ({ ...it, date: ui.date, meal: ui.meal }))); toast(`${t.name} adicionado`); onTemplate(); } },
           h('span.food-text', h('span.food-name', t.name), h('span.food-sub', `${t.items.length} itens`)),
           h('span.food-kcal', h('b', int(totals(t.items).kcal)), ' kcal')),
         h('button.icon-btn.small', { 'aria-label': `Apagar o modelo ${t.name}`, onclick: () => confirmSheet({ title: 'Apagar modelo?', message: `“${t.name}” sai da lista. Os itens já registrados no diário continuam.`, confirmLabel: 'Apagar modelo', onConfirm: () => removeTemplate(t.id) }) }, icon('trash')))))
@@ -84,10 +88,33 @@ export function logScreen() {
     ].filter(Boolean));
   }
 
+  paint();
+  return { field: search_.el, input, results, paint };
+}
+
+/** Janela "Adicionar em <refeição>" do diário da aba Hoje: a mesma busca da aba Registrar. */
+export function addFoodSheet(mealId) {
+  ui.meal = mealId; ui.query = '';
+  const meal = MEALS.find(m => m.id === mealId);
+  let sheet;
+  const panel = searchPanel({ onTemplate: () => sheet.close() });
+  sheet = openSheet({ title: `Adicionar em ${meal?.label ?? 'refeição'}`, wide: true, onClose: () => { ui.query = ''; }, content: [
+    h('div.log-form', panel.field),
+    h('div.log-actions',
+      h('button.btn.secondary.grow', { onclick: () => barcodeSheet() }, icon('barcode'), 'Código de barras'),
+      h('button.btn.secondary.grow', { onclick: () => manualFoodSheet() }, icon('pencil'), 'Manual')),
+    panel.results,
+  ] });
+  return sheet;
+}
+
+export function logScreen() {
+  ui.meal ??= mealByClock();
+  const { field: searchEl, results } = searchPanel({ shortcut: '/' });
   const screen = h('div.screen.log',
     h('header.screen-head',
       h('div', h('p.screen-date', ui.date === todayISO() ? 'Hoje' : fmtDate(ui.date)), h('h1', 'Registrar'))),
-    h('div.log-form', search_.el),
+    h('div.log-form', searchEl),
     h('div.log-grid',
       h('div.col',
         segmented(MEAL_SHORT, ui.meal, id => { ui.meal = id; }, 'Refeição'),
@@ -96,6 +123,5 @@ export function logScreen() {
           h('button.btn.secondary.grow', { onclick: () => manualFoodSheet() }, icon('pencil'), 'Manual')),
         h('p.log-source', 'Valores da tabela TACO (NEPA/UNICAMP) e do Open Food Facts.')),
       h('div.col', results)));
-  paint();
   return screen;
 }

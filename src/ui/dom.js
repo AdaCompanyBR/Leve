@@ -89,6 +89,9 @@ export const ICONS = {
   archive: '<rect x="3.75" y="4.5" width="16.5" height="4.5" rx="1.4"/><path d="M5.5 9v9a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V9M10 12.75h4"/>',
   contrast: '<circle cx="12" cy="12" r="8.25"/><path d="M12 3.75a8.25 8.25 0 0 1 0 16.5z" fill="currentColor" stroke="none"/>',
   user: '<circle cx="12" cy="8" r="3.75"/><path d="M4.75 20c.9-3.6 3.7-5.6 7.25-5.6s6.35 2 7.25 5.6"/>',
+  coffee: '<path d="M4.5 9.5h12v4.25a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/><path d="M16.5 10.5h1.25a2.5 2.5 0 0 1 0 5H16M8.5 3.5c-.6.9-.6 1.9 0 2.75M12 3.5c-.6.9-.6 1.9 0 2.75"/>',
+  plate: '<circle cx="12" cy="12" r="8.25"/><circle cx="12" cy="12" r="4.75"/>',
+  apple: '<path d="M12 7.5c-1.8-1.4-6-1.2-6 3.6 0 4.2 2.7 8.4 4.6 8.4.6 0 1-.4 1.4-.4s.8.4 1.4.4c1.9 0 4.6-4.2 4.6-8.4 0-4.8-4.2-5-6-3.6z"/><path d="M12 7.5c0-2 .8-3.4 2.4-4"/>',
 };
 export const icon = (name, cls) => svg(ICONS[name], cls);
 

@@ -21,6 +21,9 @@ import { startUpdateChecks } from './update.js';
 import { syncChallenges } from './ui/challenges.js';
 import { startEnv, setEnvNotifier } from './env.js';
 import { showAlert } from './ui/environment.js';
+import { drinkSheet } from './ui/drink.js';
+import { activitySheet } from './ui/activity.js';
+import { weightSheet } from './ui/today.js';
 
 // Link de convite (#convite=...): guarda o código antes de o app limpar o endereço.
 captureInvite();
@@ -63,11 +66,40 @@ function buildShell() {
         onclick: () => setCollapsed(!document.documentElement.classList.contains('side-collapsed')) }, icon('sidebar'))),
     h('div.nav-items', items),
     h('div.nav-foot'));
-  const fab = h('button.fab', { type: 'button', 'aria-label': 'Registrar comida', onclick: () => go('registrar', { meal: null }) }, icon('plus'));
+  const fab = h('button.fab', { type: 'button', 'aria-label': 'Ações rápidas', 'aria-haspopup': 'menu', 'aria-expanded': 'false', onclick: () => quickActions(fab) }, icon('plus'));
   root.replaceChildren(h('a.skip', { href: '#conteudo' }, 'Pular para o conteúdo'), nav, main, fab);
   // Cabeçalho de vidro: o título pequeno aparece quando o título grande sai da tela.
   addEventListener('scroll', paintTopbar, { passive: true });
   return { main, nav, fab };
+}
+
+// Menu do botão +: atalhos para os fluxos que já existem (Registrar, janela de bebida, de atividade e de peso).
+function quickActions(fab) {
+  const open = document.querySelector('.qa-layer');
+  if (open) return open.close();
+  const date = ui.tab === 'hoje' ? ui.date : todayISO();
+  const items = [
+    ['fork', 'Adicionar alimento', () => go('registrar', { meal: null })],
+    ['drop', 'Registrar água', () => drinkSheet({ date, type: 'agua' })],
+    ['run', 'Registrar atividade', () => activitySheet({ date })],
+    ['scale', 'Registrar peso', () => weightSheet(date)],
+  ];
+  const close = () => {
+    document.removeEventListener('keydown', onKey);
+    fab.classList.remove('open'); fab.setAttribute('aria-expanded', 'false'); fab.setAttribute('aria-label', 'Ações rápidas');
+    layer.classList.remove('show');
+    setTimeout(() => layer.remove(), 220);
+  };
+  const onKey = e => { if (e.key === 'Escape') { close(); fab.focus(); } };
+  const menu = h('div.qa-menu', { role: 'menu', 'aria-label': 'Ações rápidas' }, items.map(([ic, label, run], i) =>
+    h('button.qa-item', { type: 'button', role: 'menuitem', style: { '--i': String(items.length - 1 - i) }, onclick: () => { close(); run(); } },
+      h('span.qa-label', label), h('span.qa-ic', icon(ic)))));
+  const layer = h('div.qa-layer', { onclick: e => { if (e.target === layer) close(); } }, menu);
+  layer.close = close;
+  document.body.append(layer);
+  document.addEventListener('keydown', onKey);
+  fab.classList.add('open'); fab.setAttribute('aria-expanded', 'true'); fab.setAttribute('aria-label', 'Fechar ações rápidas');
+  requestAnimationFrame(() => { layer.classList.add('show'); menu.querySelector('button')?.focus({ preventScroll: true }); });
 }
 
 function paintTopbar() {
@@ -111,7 +143,7 @@ function render() {
   try { node = tab.screen(); }
   catch (err) { console.error(err); node = errorState('Esta tela não abriu.', 'Seus dados continuam salvos. Tente de novo ou volte para Hoje.'); }
   node.classList.toggle('enter', changed);
-  const title = node.querySelector('.screen-head h1')?.textContent ?? tab.label;
+  const h1 = node.querySelector('.screen-head h1'), title = h1?.dataset.short ?? h1?.textContent ?? tab.label;
   shell.main.replaceChildren(h('div.topbar', { 'aria-hidden': 'true' }, h('span.topbar-title', title)), node);
   // O Líquidos tem o seu próprio + no centro da tela.
   shell.fab.hidden = tab.id === 'registrar' || tab.id === 'liquidos';

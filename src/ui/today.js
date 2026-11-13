@@ -1,4 +1,4 @@
-// Tela Hoje: anel de calorias, macros, refeições, água e "O que cabe?".
+// Tela Hoje: saudação, anel de calorias, macros, insights do dia, diário alimentar, água e "O que cabe?".
 import { h, icon, int, dec1, parseNum, portionText, openSheet, toast, haptic, field } from './dom.js';
 import { createRing } from './ring.js';
 import { foodSheet, undoToast } from './food.js';
@@ -10,10 +10,15 @@ import { activityCard } from './activity.js';
 import { avatar } from './avatar.js';
 import { weightNum, fromWeight, weightUnit, weightRange } from '../lib/units.js';
 import { ui, go } from './state.js';
-import { state, MEALS, getPlan, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, waterGoalOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
+import { state, getPlan, activitiesOn, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, waterGoalOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
 import { toGrams, nutrientsFor } from '../lib/portions.js';
 import { todayISO, addDays, fmtDate } from '../lib/dates.js';
+import { mealSchedule } from '../lib/routine.js';
+import { dayInsights } from '../lib/dayInsights.js';
+import { typeById } from '../lib/activity.js';
+import { env, onEnv } from '../env.js';
+import { addFoodSheet } from './log.js';
 
 const GLASS = 250;
 
@@ -116,46 +121,58 @@ export function todayScreen() {
     !over && budget?.adjusted ? h('p.ring-note', `A meta de hoje considera ${int(budget.carry)} kcal a mais de dias anteriores, diluídas no resto da semana.`) : null,
     plan?.mode === 'menor' ? h('p.ring-note', 'O Leve não define metas de déficit para menores de 18 anos. Procure um médico ou nutricionista.') : null);
 
-  // ----- Macros -----
-  const macro = (label, value, goal) => {
-    const pct = goal ? Math.min(100, (value / goal) * 100) : 0;
-    return h('div.macro',
-      h('div.macro-head', h('span.macro-name', label), h('span.macro-val', h('b', int(value)), goal ? ` de ${int(goal)} g` : ' g')),
-      h('div.bar', { role: 'progressbar', 'aria-label': label, 'aria-valuemin': 0, 'aria-valuemax': goal || 100, 'aria-valuenow': Math.round(value) }, h('span', { style: { width: pct + '%' } })));
-  };
+  // ----- Macros: valores reais do dia contra as metas do plano (sem metas, só o consumido) -----
   const m = plan?.macros;
+  const macro = (k, label, value, goal) => {
+    const pct = goal ? (value / goal) * 100 : 0;
+    const bar = h('span.macro-fill', { style: { width: (lastPct[k] ?? 0) + '%' } });
+    requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = Math.min(100, pct) + '%'; }));
+    lastPct[k] = Math.min(100, pct);
+    return h('div.macro', { 'data-m': k },
+      h('div.macro-head',
+        h('span.macro-name', h('i.macro-dot', { 'aria-hidden': 'true' }), label),
+        h('span.macro-val', goal ? h('span.macro-pct', `${Math.round(pct)}%`) : null, h('b', int(value)), goal ? ` de ${int(goal)} g` : ' g')),
+      h('div.macro-track', { role: 'progressbar', 'aria-label': goal ? `${label}: ${int(value)} de ${int(goal)} gramas, ${Math.round(pct)}% da meta` : `${label}: ${int(value)} gramas`,
+        'aria-valuemin': 0, 'aria-valuemax': goal || 100, 'aria-valuenow': Math.round(value) }, bar));
+  };
   const macrosCard = h('section.card.macros', { 'aria-label': 'Macronutrientes' },
-    macro('Proteína', t.p, m?.protein), macro('Carboidrato', t.c, m?.carbs), macro('Gordura', t.f, m?.fat));
+    h('h3', 'Macronutrientes'),
+    macro('p', 'Proteínas', t.p, m?.protein), macro('c', 'Carboidratos', t.c, m?.carbs), macro('f', 'Gorduras', t.f, m?.fat));
 
-  // ----- Refeições -----
-  const mealSections = MEALS.map(meal => {
+  // ----- Insights do dia -----
+  const insightsCard = isToday ? insightsBlock({ date, t, target, macros: m, entries }) : null;
+
+  // ----- Diário alimentar -----
+  const periods = mealPeriods();
+  const mealSections = DIARY.map(meal => {
     const items = entries.filter(e => e.meal === meal.id);
     const sub = totals(items).kcal;
-    return h('section.meal',
+    return h('section.meal', { 'data-meal': meal.id },
       h('header.meal-head',
-        h('h3', meal.label),
-        items.length ? h('span.meal-kcal', `${int(sub)} kcal`) : null,
+        h('span.meal-ic', { 'aria-hidden': 'true' }, icon(meal.icon)),
+        h('div.meal-title', h('h3', meal.label), h('span.meal-period', { 'aria-label': `Horário: ${periods[meal.id]}` }, icon('clock'), periods[meal.id])),
+        h('span.meal-kcal', items.length ? h('b', int(sub)) : '0', ' kcal'),
         items.length ? h('button.icon-btn.small', { 'aria-label': `Salvar ${meal.label} como modelo`, onclick: () => mealMenu(meal, items) }, icon('more')) : null,
-        h('button.icon-btn.small.tonal', { 'aria-label': `Adicionar em ${meal.label}`, onclick: () => go('registrar', { meal: meal.id }) }, icon('plus'))),
+        h('button.meal-add', { type: 'button', 'aria-label': `Adicionar alimento em ${meal.label}`, onclick: () => addFoodSheet(meal.id) }, icon('plus'))),
       items.length ? h('ul.entries', items.map(e => {
         const row = h('li.entry',
           h('button.entry-main', { onclick: () => foodSheet(foodById(e.foodId), { entry: e }), 'aria-label': `${e.name}, ${portion(e)}, ${int(e.kcal)} kcal. Editar` },
-            h('span.entry-text', h('span.entry-name', shortName(e.name)), h('span.entry-portion', portion(e) + (e.unit === 'g' || e.unit === 'ml' ? '' : `, ≈ ${int(e.grams)} g`))),
-            h('span.entry-kcal', int(e.kcal))),
+            h('span.entry-text', h('span.entry-name', shortName(e.name)),
+              h('span.entry-portion', portion(e) + (e.unit === 'g' || e.unit === 'ml' ? '' : `, ≈ ${int(e.grams)} g`)),
+              h('span.entry-macros', `P ${int(e.p)} g · C ${int(e.c)} g · G ${int(e.f)} g`)),
+            h('span.entry-kcal', h('b', int(e.kcal)), ' kcal')),
           h('span.entry-delete', { 'aria-hidden': 'true' }, icon('trash')));
         swipeToDelete(row, async () => { await removeEntry(e.id); undoToast(e); });
         return row;
-      })) : null);
+      })) : h('p.meal-empty', 'Nenhum alimento registrado'));
   });
   const hasYesterday = dayEntries(addDays(date, -1)).length > 0;
-  const mealsCard = h('section.card.meals', { 'aria-label': 'Refeições' },
-    !entries.length ? h('div.empty',
-      h('p.empty-title', isToday ? 'Nada registrado hoje' : 'Nada registrado neste dia'),
-      h('p.empty-text', 'Escreva o que comeu em uma frase, como “2 ovos e 1 pão francês”.'),
-      h('div.empty-actions',
-        h('button.btn.primary', { onclick: () => go('registrar', { meal: null }) }, 'Registrar refeição'),
-        hasYesterday ? h('button.btn.tonal', { onclick: async () => { const n = await copyPreviousDay(date); toast(`${n} itens copiados`); } }, 'Copiar o dia anterior') : null)) : null,
-    mealSections);
+  const mealsCard = h('section.card.meals.diary', { 'aria-label': 'Diário alimentar' },
+    h('div.card-head.diary-head', h('h3', 'Diário alimentar'), entries.length ? h('span.diary-total', h('b', int(t.kcal)), ' kcal') : null),
+    !entries.length ? h('p.card-sub.diary-hint', 'Toque no + de uma refeição ou escreva o que comeu em uma frase, como “2 ovos e 1 pão francês”.') : null,
+    !entries.length && hasYesterday ? h('button.btn.tonal.compact.diary-copy', { onclick: async () => { const n = await copyPreviousDay(date); toast(`${n} itens copiados`); } }, 'Copiar o dia anterior') : null,
+    h('div.diary-meals', mealSections),
+    entries.length ? h('p.fine.diary-foot', 'Toque num item para editar. Arraste para a esquerda para apagar.') : null);
 
   // ----- Água -----
   const ml = liquidsOn(date).total, goal = waterGoalOn(date);
@@ -202,16 +219,73 @@ export function todayScreen() {
     icon('scale'), h('span.nudge-text', h('b', 'Registrar o peso de hoje'), h('span', 'Leva cinco segundos e melhora a previsão.')), icon('next')) : null;
 
   const title = isToday ? 'Hoje' : date === addDays(todayISO(), -1) ? 'Ontem' : fmtDate(date, { day: 'numeric', month: 'long' });
+  const first = (state.profile?.name ?? '').trim().split(/\s+/)[0];
+  const hr = new Date().getHours();
+  const greeting = `${hr >= 5 && hr < 12 ? 'Bom dia' : hr >= 12 && hr < 18 ? 'Boa tarde' : 'Boa noite'}${first ? `, ${first}` : ''}`;
   return h('div.screen.today',
-    h('header.screen-head',
+    h('header.screen-head.today-head',
       h('div.screen-head-main',
-        h('button.head-avatar', { type: 'button', 'aria-label': 'Abrir o perfil em Ajustes', onclick: () => go('ajustes', { settingsPage: 'perfil' }) }, avatar({ size: 48 })),
-        h('div', h('p.screen-date', fmtDate(date, { weekday: 'long', day: 'numeric', month: 'long' })), h('h1', title))),
+        h('button.head-avatar', { type: 'button', 'aria-label': 'Abrir o perfil em Ajustes', onclick: () => go('ajustes', { settingsPage: 'perfil' }) }, avatar({ size: 44 })),
+        h('div.today-hello',
+          h('h1', { 'data-short': title }, isToday ? greeting : title),
+          h('p.screen-date', isToday ? `Hoje, ${fmtDate(date, { weekday: 'long', day: 'numeric', month: 'long' }).toLowerCase()}` : fmtDate(date, { weekday: 'long', day: 'numeric', month: 'long' })))),
       h('div.day-nav',
         h('button.icon-btn', { 'aria-label': 'Dia anterior', onclick: () => go('hoje', { date: addDays(date, -1) }) }, icon('back')),
+        isToday ? null : h('button.day-today', { type: 'button', onclick: () => go('hoje', { date: todayISO() }) }, 'Hoje'),
         h('button.icon-btn', { 'aria-label': 'Próximo dia', disabled: isToday, onclick: () => go('hoje', { date: addDays(date, 1) }) }, icon('next')))),
     h('div.today-grid',
-      h('div.col.col-hero', ringCard, macrosCard, isToday ? conditionsCard() : null, isToday ? activityCard() : null),
-      h('div.col.col-meals', weightCard, routineCard(date), mealsCard),
+      h('div.col.col-hero', ringCard, macrosCard, insightsCard, isToday ? conditionsCard() : null, isToday ? activityCard() : null),
+      h('div.col.col-meals', weightCard, mealsCard, routineCard(date)),
       h('div.col.col-side', waterCard, swapsCard, fitsCard)));
+}
+
+// Animação das barras: cada barra parte do valor anterior, não do zero, ao redesenhar a tela.
+const lastPct = {};
+
+// Diário alimentar: as quatro refeições do app, na ordem do dia.
+const DIARY = [
+  { id: 'cafe', label: 'Café da manhã', icon: 'coffee' },
+  { id: 'almoco', label: 'Almoço', icon: 'plate' },
+  { id: 'lanches', label: 'Lanche', icon: 'apple' },
+  { id: 'jantar', label: 'Jantar', icon: 'moon' },
+];
+const FALLBACK_PERIOD = { cafe: 'Manhã', almoco: 'Meio-dia', lanches: 'Entre refeições', jantar: 'Noite' };
+const hhmm = t => t.replace(/^0/, '').replace(':00', 'h').replace(':', 'h');
+/** Horário de cada refeição pela rotina da pessoa (hora de acordar e número de refeições). */
+function mealPeriods() {
+  const p = state.profile ?? {};
+  const slots = mealSchedule({ meals: p.meals ?? 4, wake: p.wake ?? '07:00' });
+  const out = { ...FALLBACK_PERIOD };
+  for (const id of Object.keys(out)) {
+    const times = slots.filter(x => x.meal === id).map(x => hhmm(x.time));
+    if (times.length) out[id] = times.length === 1 ? times[0] : `${times.slice(0, -1).join(', ')} e ${times.at(-1)}`;
+  }
+  return out;
+}
+
+/** Insights do dia: frases tiradas dos registros reais e do clima; o cartão some quando não há nada a dizer. */
+function insightsBlock({ date, t, target, macros, entries }) {
+  const card = h('section.card.insights-card', { 'aria-label': 'Insights do dia' });
+  const paint = () => {
+    const now = new Date(), nowHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const acts = activitiesOn(date), done = acts.filter(a => a.status === 'feita');
+    const day = env.ctx?.todayDay;
+    const list = dayInsights({
+      hour: now.getHours(), totals: t, target, macros,
+      mealsLogged: [...new Set(entries.map(e => e.meal))], entries: entries.length,
+      liquids: { ml: liquidsOn(date).total, goal: waterGoalOn(date) },
+      activity: { minutes: done.reduce((n, a) => n + (a.minutes || 0), 0), count: done.length, planned: acts.length - done.length },
+      weather: day ? { max: day.max, now: env.ctx.current?.temp, outdoorLater: acts.some(a => a.status !== 'feita' && (a.outdoor ?? typeById(a.type)?.outdoor) && a.start > nowHHMM) } : null,
+      daysLogged: Array.from({ length: 7 }, (_, i) => addDays(date, -i)).filter(d => dayEntries(d).length).length,
+      fluidRestriction: !!state.settings.fluidRestriction,
+    });
+    card.hidden = !list.length;
+    card.replaceChildren(
+      h('div.card-head', h('h3', h('span.ins-badge', { 'aria-hidden': 'true' }, icon('sparkles')), 'Insights do dia')),
+      h('ul.ins-list', list.map(x => h('li.ins', { 'data-tone': x.tone }, h('span.ins-ic', { 'aria-hidden': 'true' }, icon(x.icon)), h('p', x.text)))),
+      h('p.fine', 'Orientações educativas, a partir dos seus registros. Não substituem médico ou nutricionista.'));
+  };
+  paint();
+  const off = onEnv(() => { if (!card.isConnected) return off(); paint(); });
+  return card;
 }

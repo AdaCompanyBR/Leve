@@ -1,5 +1,5 @@
 // Service worker do Leve: o app abre e funciona sem internet.
-// Ao publicar mudanças, aumente VERSION: é o que renova o que fica guardado para usar sem internet.
+// VERSION renova o que fica guardado para usar sem internet; a publicação troca o número sozinha.
 const VERSION = 'leve-app-v34';
 const SHELL = [
   './img/body/f-lines.webp', './img/body/f-mask.webp', './img/body/m-lines.webp', './img/body/m-mask.webp',
@@ -8,13 +8,14 @@ const SHELL = [
   './src/app.js', './src/db.js', './src/store.js', './src/config.js', './src/auth.js', './src/biometric.js', './src/sync.js',
   './src/lib/adaptive.js', './src/lib/budget.js', './src/lib/calc.js', './src/lib/dates.js', './src/lib/estimate.js', './src/lib/recipes.js', './src/lib/hydration.js',
   './src/lib/parser.js', './src/lib/portions.js', './src/lib/search.js', './src/lib/routine.js', './src/lib/syncrules.js', './src/lib/swaps.js', './src/lib/trend.js',
-  './src/ui/account.js', './src/ui/body.js', './src/ui/friends.js', './src/ui/pull.js', './src/share.js', './src/ui/dom.js', './src/ui/drink.js', './src/ui/estimate.js', './src/ui/food.js', './src/ui/liquids.js', './src/ui/log.js', './src/ui/onboarding.js',
+  './src/ui/account.js', './src/ui/body.js', './src/ui/friends.js', './src/ui/pull.js', './src/share.js', './src/update.js', './src/ui/dom.js', './src/ui/drink.js', './src/ui/estimate.js', './src/ui/food.js', './src/ui/liquids.js', './src/ui/log.js', './src/ui/onboarding.js',
   './src/ui/progress.js', './src/ui/ring.js', './src/ui/settings.js', './src/ui/state.js', './src/ui/routine.js', './src/ui/swaps.js', './src/ui/today.js',
 ];
 
 self.addEventListener('install', event => {
   // cache: 'reload' busca do servidor, sem reaproveitar a memória do navegador (que pode ter a versão antiga).
-  event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
+  // Um arquivo que falhar não impede a instalação: ele é buscado de novo no primeiro uso.
+  event.waitUntil(caches.open(VERSION).then(cache => Promise.allSettled(SHELL.map(u => cache.add(new Request(u, { cache: 'reload' }))))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
@@ -25,6 +26,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET') return;
+  // A versão publicada vai sempre direto à rede (é por ela que o app sabe que há atualização).
+  if (url.origin === location.origin && url.pathname.endsWith('/version.json')) return;
   if (url.origin !== location.origin) {
     // Biblioteca do leitor de código de barras: guarda depois do primeiro uso. Open Food Facts vai direto à rede.
     if (url.hostname === 'cdn.jsdelivr.net') {

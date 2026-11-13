@@ -17,6 +17,7 @@ import * as share from './share.js';
 import { toast } from './ui/dom.js';
 import { captureInvite, checkInvite } from './ui/friends.js';
 import { initPullToRefresh } from './ui/pull.js';
+import { startUpdateChecks } from './update.js';
 
 // Link de convite (#convite=...): guarda o código antes de o app limpar o endereço.
 captureInvite();
@@ -193,6 +194,8 @@ function open() {
 }
 
 start();
+// Nova publicação: o app recarrega sozinho num momento seguro.
+startUpdateChecks();
 
 // Puxar para atualizar: envia o que estiver pendente e recarrega. Com Face ID ligado, recarregar
 // pediria o rosto de novo, então só sincroniza e redesenha.

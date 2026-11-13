@@ -35,8 +35,14 @@ jobs:
       - name: Montar o site (landing na raiz, app em /app/)
         run: |
           mkdir -p _site/app
-          cp -r index.html manifest.webmanifest sw.js css src data icons _site/app/
+          cp -r index.html manifest.webmanifest sw.js css src data icons img _site/app/
           cp -r site/index.html site/sw.js site/img _site/
+          # Versão desta publicação: o app compara com a que abriu e se atualiza sozinho quando muda.
+          echo "{\"v\":\"${GITHUB_SHA}\",\"at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > _site/app/version.json
+          # Cada publicação renova o cache do app (sem depender de alguém lembrar de aumentar o número).
+          sed -i "s/const VERSION = 'leve-app-v[0-9]*';/const VERSION = 'leve-app-v${GITHUB_RUN_NUMBER}${GITHUB_RUN_ATTEMPT}';/" _site/app/sw.js
+          grep -q "leve-app-v${GITHUB_RUN_NUMBER}${GITHUB_RUN_ATTEMPT}" _site/app/sw.js
+          test -f _site/app/img/body/f-lines.webp
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

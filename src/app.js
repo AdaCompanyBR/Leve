@@ -13,6 +13,12 @@ import { reload } from './store.js';
 import * as auth from './auth.js';
 import * as bio from './biometric.js';
 import * as sync from './sync.js';
+import * as share from './share.js';
+import { toast } from './ui/dom.js';
+import { captureInvite, checkInvite } from './ui/friends.js';
+
+// Link de convite (#convite=...): guarda o código antes de o app limpar o endereço.
+captureInvite();
 import { lockScreen, newPasswordSheet, afterLogin, logoutSheet, authScreen, localMode, goToLogin, welcomeScreen, welcomed } from './ui/account.js';
 
 const root = document.getElementById('app');
@@ -160,6 +166,7 @@ addEventListener('keydown', e => {
 
 // Já dentro do app, um link para #entrar ou #criar-conta abre a conta numa sheet.
 addEventListener('hashchange', () => {
+  if (captureInvite()) { if (shell) checkInvite(); return; }
   const want = { '#entrar': 'entrar', '#criar-conta': 'criar' }[location.hash];
   if (!want || !auth.configured()) return;
   if (!auth.current()) goToLogin(want); else history.replaceState(null, '', location.pathname + location.search);
@@ -171,8 +178,15 @@ function open() {
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
   setNavigator(render);
   subscribe(render);
-  auth.onAuth(() => { if (state.profile) render(); else if (shell) paintAccount(shell.nav.querySelector('.nav-foot')); });
+  auth.onAuth(() => {
+    if (state.profile) render(); else if (shell) paintAccount(shell.nav.querySelector('.nav-foot'));
+    // Compartilhamento acompanha a sessão; um convite pendente é oferecido depois de entrar.
+    if (auth.current()) { share.start(); setTimeout(() => state.profile && checkInvite(), 600); } else share.stop();
+  });
+  share.setNotifier(msg => toast(msg));
   render();
+  share.start();
+  setTimeout(() => state.profile && checkInvite(), 600);
   // Pede ao navegador para não apagar os dados sob pressão de espaço.
   navigator.storage?.persist?.().catch(() => {});
 }

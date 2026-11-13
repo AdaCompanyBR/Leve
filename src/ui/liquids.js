@@ -5,6 +5,7 @@ import { ui, go } from './state.js';
 import { state, subscribe, addDrink, removeDrink, restoreDrink, clearLegacyWater, dayDrinks, liquidsOn, waterGoalOn, setWaterGoal, bodyStyle, latestWeight, drinkPresets, savePreset, removePreset, restorePresets } from '../store.js';
 import { drinkSwaps } from './swaps.js';
 import { drinkSheet, typePicker } from './drink.js';
+import { friendsCard } from './friends.js';
 import { bodyFigure, drinkBadge, cupFigure } from './body.js';
 import { drinkById, dayLayers, fillBands, weekDetail, suggestWaterGoal, parseDrinkSpeech, parseAmount } from '../lib/hydration.js';
 import { todayISO, addDays, fmtDate, toISO } from '../lib/dates.js';
@@ -247,5 +248,5 @@ export function liquidsScreen() {
         h('button.icon-btn', { 'aria-label': 'Próximo dia', disabled: isToday, onclick: () => go('liquidos', { date: addDays(date, 1) }) }, icon('next')))),
     h('div.liquids-grid',
       h('div.col.col-hero', hero),
-      h('div.col', listCard, swapsCard, weekCard, goalCard)));
+      h('div.col', listCard, friendsCard(), swapsCard, weekCard, goalCard)));
 }

@@ -119,6 +119,24 @@ export function bodyFigure({ style = 'f', bands = [], level = 0, key = '', label
   return box;
 }
 
+/** Figura pequena e estática (linhas de amigos): o corpo cheio até `level`, numa cor só. */
+export function miniFigure({ style = 'f', level = 0 }) {
+  const who = style === 'm' ? 'm' : 'f';
+  const box = document.createElement('div');
+  box.className = 'mini-figure';
+  box.setAttribute('aria-hidden', 'true');
+  box.style.aspectRatio = `${W} / ${H}`;
+  const fill = document.createElement('div');
+  fill.className = 'mini-fill';
+  fill.style.setProperty('--mask', `url("${ART}${who}-mask.webp")`);
+  fill.style.setProperty('--level', `${(Math.min(1, Math.max(0, level)) * 100).toFixed(1)}%`);
+  const lines = document.createElement('img');
+  Object.assign(lines, { src: `${ART}${who}-lines.webp`, alt: '', draggable: false, decoding: 'async', loading: 'lazy' });
+  lines.className = 'mini-lines';
+  box.append(fill, lines);
+  return box;
+}
+
 /** Ícone de cada bebida (mesma linguagem dos ícones do app). */
 export const DRINK_ICONS = {
   drop: '<path d="M12 3.6c3.1 3.7 5.7 6.8 5.7 10a5.7 5.7 0 0 1-11.4 0c0-3.2 2.6-6.3 5.7-10z"/>',

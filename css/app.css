@@ -1072,3 +1072,59 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .picker-sheet { display: flex; flex-direction: column; margin: 4px calc(-1 * var(--gutter)) 0; }
 .picker-sheet .picker-item { min-height: 52px; padding-left: calc(var(--gutter) - 6px); padding-right: var(--gutter); }
 .picker-sheet .picker-item + .picker-item { background-image: linear-gradient(var(--sep), var(--sep)); background-size: calc(100% - 48px) 1px; background-position: right top; background-repeat: no-repeat; }
+
+/* Amigos e compartilhamento (aba Líquidos) */
+.mini-figure { position: relative; height: 100%; margin: 0 auto; }
+.mini-fill, .mini-lines { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.mini-fill { background: linear-gradient(to top, var(--accent-2) var(--level), var(--person-base) var(--level));
+  -webkit-mask-image: var(--mask); mask-image: var(--mask); -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; mask-mode: alpha; }
+.mini-lines { object-fit: fill; pointer-events: none; user-select: none; -webkit-user-select: none; }
+.friends-card { position: relative; }
+.friends-more { display: inline-flex; align-items: center; gap: 2px; font-size: var(--fs-sub); color: var(--accent-ink); }
+.friends-more .icon { width: 14px; height: 14px; }
+.friends-body { position: relative; display: grid; gap: 4px; margin-top: 8px; }
+.friends-open { position: absolute; inset: 0; z-index: 0; border-radius: var(--r-group); }
+.friends-body .person-row { position: relative; z-index: 1; pointer-events: none; }
+.friends-body .person-row .btn { pointer-events: auto; }
+.person-row { display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 6px 0; }
+.person-row.big { min-height: 132px; padding: 14px 16px 14px 10px; border-radius: 22px; background: var(--surface); }
+.person-fig { flex: none; width: 44px; height: 64px; }
+.person-row.big .person-fig { width: 64px; height: 104px; }
+.person-fig.empty { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; border: 6px solid var(--fill); color: var(--accent-ink); }
+.person-fig.empty .icon { width: 22px; height: 22px; stroke-width: 2.4; }
+.person-info { flex: 1; min-width: 0; }
+.person-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.person-name.muted { flex: 1; color: var(--ink-2); }
+.person-row.big .person-name { font-size: 19px; letter-spacing: -.01em; }
+.person-amount { color: var(--ink-2); font-size: var(--fs-sub); margin-top: 1px; font-variant-numeric: tabular-nums; }
+.person-amount b { color: var(--ink); font-weight: 500; }
+.person-row.big .person-amount { font-size: 17px; }
+.person-bar { height: 6px; margin-top: 8px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.person-bar span { display: block; height: 100%; border-radius: 99px; background: var(--accent); transition: width .5s var(--ease); }
+.person-left { margin-top: 6px; color: var(--ink-2); font-size: var(--fs-sub); }
+.person-left.done { color: var(--green-ink); font-weight: 600; }
+.person-note { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--ink-2); font-size: 13px; }
+.person-note .icon { width: 16px; height: 16px; flex: none; }
+.poke-btn { flex: none; min-height: 36px; padding: 0 16px; border-radius: 999px; font-size: 15px; }
+.person-row.placeholder { padding-left: 2px; }
+.person-row.big.placeholder { min-height: 84px; }
+.friends-list { display: grid; gap: 10px; margin-top: 16px; }
+.friends-list .person-row.placeholder { padding: 14px 16px; border-radius: 22px; background: var(--surface); }
+.friends-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-top: 4px; }
+.friends-head h3 { font: 700 20px/1.25 var(--font-display); letter-spacing: -.01em; }
+.friends-day { color: var(--ink-2); font-size: var(--fs-sub); margin-top: 4px; }
+.friends-list + .btn.block { min-height: 52px; border-radius: 999px; margin-top: 24px; }
+.friends-list ~ .fine { margin-top: 12px; }
+.friends-list ~ .btn.secondary.block { margin-top: 20px; }
+.invite-box { margin-top: 16px; }
+.invite-link { font-size: 15px; }
+.sheet-text.error { color: var(--red-ink); }
+.manage { display: grid; gap: 28px; margin-top: 8px; }
+.manage .set-card .btn.block { margin-top: 12px; min-height: 48px; border-radius: 999px; }
+.manage-empty { padding: 14px 16px; border-radius: var(--r-group); background: var(--surface); color: var(--ink-2); font-size: var(--fs-sub); line-height: 1.4; }
+.manage .set-card > .card-sub { margin-top: 8px; }
+.btn.plain.danger { color: var(--red-ink); }
+.invite-back { margin-top: 16px; }
+.invite-back .set-row { align-items: center; }
+.friends-more { white-space: nowrap; }
+.person-row .person-fig.empty, .person-row.big .person-fig.empty { width: 52px; height: 52px; }

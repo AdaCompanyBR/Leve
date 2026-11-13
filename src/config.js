@@ -16,4 +16,6 @@ export const WEATHER = {
   // Nome da cidade a partir das coordenadas do aparelho (a Open-Meteo não faz esse caminho).
   // Versão gratuita da BigDataCloud, feita para ser chamada direto do aparelho, sem chave.
   reverse: 'https://api.bigdatacloud.net/data/reverse-geocode-client',
+  // Reserva, se o de cima não responder: OpenStreetMap (Nominatim), uso leve e sem chave.
+  reverseBackup: 'https://nominatim.openstreetmap.org/reverse',
 };

@@ -153,12 +153,33 @@ async function permission() {
 }
 
 /** Cidade, estado e país a partir das coordenadas (só as arredondadas saem do aparelho). */
+const cleanState = s => (s || '').replace(/^Estado d[eoa] /, '');
 async function placeFromCoords(lat, lon) {
   try {
     const d = await getJSON(`${WEATHER.reverse}?latitude=${lat}&longitude=${lon}&localityLanguage=pt`, 7000);
     const name = d?.city || d?.locality || '';
-    return name ? { name, admin1: (d.principalSubdivision || '').replace(/^Estado d[eoa] /, ''), country: d.countryName || '' } : null;
-  } catch { return null; }
+    if (name) return { name, admin1: cleanState(d.principalSubdivision), country: d.countryName || '' };
+  } catch { /* tenta a reserva */ }
+  if (!WEATHER.reverseBackup) return null;
+  try {
+    const d = await getJSON(`${WEATHER.reverseBackup}?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&accept-language=pt-BR`, 7000);
+    const a = d?.address ?? {};
+    const name = a.city || a.town || a.municipality || a.village || a.county || '';
+    if (name) return { name, admin1: cleanState(a.state), country: a.country || '' };
+  } catch { /* sem nome */ }
+  return null;
+}
+
+// Localização do aparelho sem nome (salva antes, ou o serviço não respondeu): busca a cidade
+// pelas coordenadas já guardadas, sem ler o GPS de novo. No máximo uma tentativa a cada 10 min.
+let lastNameTry = 0;
+async function ensurePlaceName() {
+  const loc = location();
+  if (!isDevice(loc) || loc.name || Date.now() - lastNameTry < 10 * 60e3) return;
+  lastNameTry = Date.now();
+  const place = await placeFromCoords(loc.lat, loc.lon);
+  const now = location();
+  if (place && isDevice(now) && now.lat === loc.lat && now.lon === loc.lon) await saveSettings({ location: { ...now, ...place } });
 }
 
 async function applyPosition(p) {
@@ -234,11 +255,12 @@ export function startEnv() {
   const c = cache.get();
   if (location() && c?.key === keyOf(location())) rebuild(c);
   refresh();
+  ensurePlaceName();
   // O pedido único espera o cadastro terminar (com o app aberto de verdade, não nas telas de entrada).
   let off = null;
   const kick = () => { if (!state.profile) return; off?.(); off = null; deviceLocate(); };
   off = subscribe(kick); kick();
   setInterval(() => { if (document.visibilityState === 'visible') { refresh(); deviceLocate(); } }, TICK);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refresh(); deviceLocate(); } });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refresh(); deviceLocate().then(ensurePlaceName); } });
   addEventListener('online', () => refresh());
 }

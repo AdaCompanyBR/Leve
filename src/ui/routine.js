@@ -35,10 +35,8 @@ export function routinePreview(routine) {
 export function routineCard(date) {
   const routine = getRoutine();
   if (!routine) return null;
-  if (!state.profile.goal) {
-    return h('button.card.nudge.rt-nudge', { onclick: () => goalWizard() },
-      icon('progress'), h('span.nudge-text', h('b', 'Qual é o seu objetivo?'), h('span', 'Perder peso, ganhar massa, manter ou comer melhor: o Leve monta a sua rotina.')), icon('next'));
-  }
+  // Sem objetivo escolhido, a rotina não aparece em Hoje; o objetivo é escolhido em Ajustes.
+  if (!state.profile.goal) return null;
   const st = routineStatus(date, routine);
   const isToday = date === todayISO();
   const weekly = x => (x.perWeek ? weekCount(d => {

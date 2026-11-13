@@ -1,6 +1,5 @@
 // Tela Hoje: saudação, anel de calorias, macros, insights do dia, diário alimentar, água e "O que cabe?".
 import { h, icon, int, dec1, parseNum, portionText, openSheet, toast, haptic, field } from './dom.js';
-import { createRing } from './ring.js';
 import { foodSheet, undoToast } from './food.js';
 import { daySwaps, swapSheet } from './swaps.js';
 import { drinkSheet } from './drink.js';
@@ -10,13 +9,14 @@ import { activityCard } from './activity.js';
 import { avatar } from './avatar.js';
 import { weightNum, fromWeight, weightUnit, weightRange } from '../lib/units.js';
 import { ui, go } from './state.js';
-import { state, getPlan, activitiesOn, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, waterGoalOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
+import { state, subscribe, getPlan, activitiesOn, dayEntries, totals, budgetFor, addDrink, removeWater, liquidsOn, waterGoalOn, dayDrinks, setWeight, removeEntry, copyPreviousDay, saveTemplate, foodById, latestWeight } from '../store.js';
 import { search } from '../lib/search.js';
 import { toGrams, nutrientsFor } from '../lib/portions.js';
 import { todayISO, addDays, fmtDate } from '../lib/dates.js';
 import { mealSchedule } from '../lib/routine.js';
 import { dayInsights } from '../lib/dayInsights.js';
-import { typeById } from '../lib/activity.js';
+import { typeById, activityKcal } from '../lib/activity.js';
+import { mealPhoto, photoKind, photoUrl, MEAL_PHOTO } from '../lib/foodPhotos.js';
 import { env, onEnv } from '../env.js';
 import { addFoodSheet } from './log.js';
 
@@ -104,75 +104,64 @@ export function todayScreen() {
   const target = budget?.todayTarget ?? plan?.target ?? null;
   const remaining = target != null ? target - t.kcal : null;
 
-  // ----- Anel -----
-  const canvas = h('canvas.ring-canvas', { role: 'img', 'aria-label': target ? `${int(t.kcal)} de ${int(target)} kcal consumidas` : `${int(t.kcal)} kcal consumidas` });
-  requestAnimationFrame(() => createRing(canvas, () => (target ? t.kcal / target : 0)));
+  // ----- Resumo nutricional: consumidas, restantes (em destaque), queimadas, barra do dia e macros -----
+  const kg = latestWeight();
+  const burned = activitiesOn(date).filter(a => a.status === 'feita').reduce((n, a) => n + activityKcal(a, kg), 0);
   const over = remaining != null && remaining < 0;
-  const ringCard = h('section.card.ring-card', { 'aria-label': 'Calorias do dia' },
-    h('div.ring-wrap', canvas,
-      h('div.ring-center',
-        h('span.ring-number', int(target != null ? Math.abs(remaining) : t.kcal)),
-        h('span.ring-label', target == null ? 'kcal consumidas' : over ? 'kcal acima da meta' : plan?.mode === 'superavit' ? 'kcal para a meta' : 'kcal restantes'))),
-    target != null ? h('div.ring-stats',
-      h('div', h('span.stat-value', int(t.kcal)), h('span.stat-label', 'Consumidas')),
-      h('div', h('span.stat-value', int(target)), h('span.stat-label', budget?.adjusted ? 'Meta ajustada' : 'Meta do dia'))) : null,
+  const dayPct = target ? (t.kcal / target) * 100 : 0;
+  const m = plan?.macros;
+  const stat = (cls, value, label) => h('div.sum-stat' + cls, h('span.sum-value', value), h('span.sum-label', label));
+  const macro = (k, label, value, goal) => {
+    const pct = goal ? (value / goal) * 100 : 0;
+    return h('div.sum-macro', { 'data-m': k },
+      h('span.sum-macro-name', h('i.macro-dot', { 'aria-hidden': 'true' }), label),
+      h('span.sum-macro-val', h('b', int(value)), goal ? ` / ${int(goal)} g` : ' g'),
+      h('div.sum-track', { role: 'progressbar', 'aria-label': goal ? `${label}: ${int(value)} de ${int(goal)} gramas` : `${label}: ${int(value)} gramas`,
+        'aria-valuemin': 0, 'aria-valuemax': goal || 100, 'aria-valuenow': Math.round(value) }, animatedFill(k, pct)));
+  };
+  const ringCard = h('section.card.sum-card', { 'aria-label': 'Resumo nutricional do dia' },
+    h('div.sum-stats',
+      stat('', int(t.kcal), 'Consumidas'),
+      stat('.hero' + (over ? '.over' : ''), target == null ? '—' : int(Math.abs(remaining)), target == null ? 'Sem meta' : over ? 'Acima da meta' : plan?.mode === 'superavit' ? 'Para a meta' : 'Restantes'),
+      stat('', int(burned), 'Queimadas')),
+    target != null ? h('div.sum-day',
+      h('div.sum-track.big' + (over ? '.over' : ''), { role: 'progressbar', 'aria-label': `${int(t.kcal)} de ${int(target)} kcal consumidas`, 'aria-valuemin': 0, 'aria-valuemax': Math.round(target), 'aria-valuenow': Math.round(t.kcal) }, animatedFill('kcal', dayPct)),
+      h('div.sum-day-foot', h('span', `${Math.round(dayPct)}% da meta`), h('span', `${budget?.adjusted ? 'Meta ajustada' : 'Meta do dia'}: ${int(target)} kcal`))) : null,
+    h('div.sum-macros', macro('p', 'Proteína', t.p, m?.protein), macro('c', 'Carboidratos', t.c, m?.carbs), macro('f', 'Gorduras', t.f, m?.fat)),
+    burned ? h('p.ring-note', 'Queimadas: estimativa das atividades feitas hoje. A meta já considera o seu nível de atividade, então não muda.') : null,
     over && budget ? h('p.ring-note', 'Um dia acima da meta não desfaz o plano. O saldo da semana equilibra os próximos dias.') : null,
     over && !budget && plan?.mode === 'manutencao' ? h('p.ring-note', 'Um dia acima não muda nada sozinho. O que conta é a média das semanas.') : null,
     !over && budget?.adjusted ? h('p.ring-note', `A meta de hoje considera ${int(budget.carry)} kcal a mais de dias anteriores, diluídas no resto da semana.`) : null,
     plan?.mode === 'menor' ? h('p.ring-note', 'O Leve não define metas de déficit para menores de 18 anos. Procure um médico ou nutricionista.') : null);
 
-  // ----- Macros: valores reais do dia contra as metas do plano (sem metas, só o consumido) -----
-  const m = plan?.macros;
-  const macro = (k, label, value, goal) => {
-    const pct = goal ? (value / goal) * 100 : 0;
-    const bar = h('span.macro-fill', { style: { width: (lastPct[k] ?? 0) + '%' } });
-    requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = Math.min(100, pct) + '%'; }));
-    lastPct[k] = Math.min(100, pct);
-    return h('div.macro', { 'data-m': k },
-      h('div.macro-head',
-        h('span.macro-name', h('i.macro-dot', { 'aria-hidden': 'true' }), label),
-        h('span.macro-val', goal ? h('span.macro-pct', `${Math.round(pct)}%`) : null, h('b', int(value)), goal ? ` de ${int(goal)} g` : ' g')),
-      h('div.macro-track', { role: 'progressbar', 'aria-label': goal ? `${label}: ${int(value)} de ${int(goal)} gramas, ${Math.round(pct)}% da meta` : `${label}: ${int(value)} gramas`,
-        'aria-valuemin': 0, 'aria-valuemax': goal || 100, 'aria-valuenow': Math.round(value) }, bar));
-  };
-  const macrosCard = h('section.card.macros', { 'aria-label': 'Macronutrientes' },
-    h('h3', 'Macronutrientes'),
-    macro('p', 'Proteínas', t.p, m?.protein), macro('c', 'Carboidratos', t.c, m?.carbs), macro('f', 'Gorduras', t.f, m?.fat));
-
   // ----- Insights do dia -----
   const insightsCard = isToday ? insightsBlock({ date, t, target, macros: m, entries }) : null;
 
-  // ----- Diário alimentar -----
+  // ----- Diário alimentar: um cartão com foto para cada refeição -----
   const periods = mealPeriods();
-  const mealSections = DIARY.map(meal => {
+  const mealCards = DIARY.map(meal => {
     const items = entries.filter(e => e.meal === meal.id);
     const sub = totals(items).kcal;
-    return h('section.meal', { 'data-meal': meal.id },
-      h('header.meal-head',
-        h('span.meal-ic', { 'aria-hidden': 'true' }, icon(meal.icon)),
-        h('div.meal-title', h('h3', meal.label), h('span.meal-period', { 'aria-label': `Horário: ${periods[meal.id]}` }, icon('clock'), periods[meal.id])),
-        h('span.meal-kcal', items.length ? h('b', int(sub)) : '0', ' kcal'),
-        items.length ? h('button.icon-btn.small', { 'aria-label': `Salvar ${meal.label} como modelo`, onclick: () => mealMenu(meal, items) }, icon('more')) : null,
-        h('button.meal-add', { type: 'button', 'aria-label': `Adicionar alimento em ${meal.label}`, onclick: () => addFoodSheet(meal.id) }, icon('plus'))),
-      items.length ? h('ul.entries', items.map(e => {
-        const row = h('li.entry',
-          h('button.entry-main', { onclick: () => foodSheet(foodById(e.foodId), { entry: e }), 'aria-label': `${e.name}, ${portion(e)}, ${int(e.kcal)} kcal. Editar` },
-            h('span.entry-text', h('span.entry-name', shortName(e.name)),
-              h('span.entry-portion', portion(e) + (e.unit === 'g' || e.unit === 'ml' ? '' : `, ≈ ${int(e.grams)} g`)),
-              h('span.entry-macros', `P ${int(e.p)} g · C ${int(e.c)} g · G ${int(e.f)} g`)),
-            h('span.entry-kcal', h('b', int(e.kcal)), ' kcal')),
-          h('span.entry-delete', { 'aria-hidden': 'true' }, icon('trash')));
-        swipeToDelete(row, async () => { await removeEntry(e.id); undoToast(e); });
-        return row;
-      })) : h('p.meal-empty', 'Nenhum alimento registrado'));
+    const photo = mealPhoto(meal.id, items.map(e => ({ name: e.name, kcal: e.kcal, food: e.foodId ? foodById(e.foodId) : null })));
+    const names = items.map(e => shortName(e.name).split(',')[0]);
+    return h('article.mcard' + (items.length ? '' : '.is-empty'), { 'data-meal': meal.id },
+      h('button.mcard-open', { type: 'button', 'aria-label': `${meal.label}: ${items.length ? `${items.length} ${items.length === 1 ? 'item' : 'itens'}, ${int(sub)} kcal` : 'nenhum alimento'}. Ver e editar`, onclick: () => mealSheet(meal, date) }),
+      h('div.mcard-photo', { 'data-n': String(photo.srcs.length) },
+        photo.srcs.map(src => h('img', { src, alt: '', loading: 'lazy', decoding: 'async', onerror: e => { e.currentTarget.onerror = null; e.currentTarget.src = photoUrl(MEAL_PHOTO[meal.id] ?? 'prato'); } })),
+        photo.real ? null : h('span.mcard-tag', photo.label),
+        items.length ? h('span.mcard-kcal', h('b', int(sub)), ' kcal') : null,
+        h('span.mcard-ic', { 'aria-hidden': 'true' }, icon(meal.icon))),
+      h('button.mcard-add', { type: 'button', 'aria-label': `Adicionar alimento em ${meal.label}`, onclick: () => addFoodSheet(meal.id) }, icon('plus')),
+      h('div.mcard-body',
+        h('div.mcard-title', h('h3', meal.label), h('span.mcard-time', periods[meal.id])),
+        h('p.mcard-foods', items.length ? (names.length > 2 ? `${names.slice(0, 2).join(', ')} e mais ${names.length - 2}` : names.join(' e ')) : 'Nenhum alimento ainda')));
   });
   const hasYesterday = dayEntries(addDays(date, -1)).length > 0;
-  const mealsCard = h('section.card.meals.diary', { 'aria-label': 'Diário alimentar' },
-    h('div.card-head.diary-head', h('h3', 'Diário alimentar'), entries.length ? h('span.diary-total', h('b', int(t.kcal)), ' kcal') : null),
-    !entries.length ? h('p.card-sub.diary-hint', 'Toque no + de uma refeição ou escreva o que comeu em uma frase, como “2 ovos e 1 pão francês”.') : null,
+  const mealsCard = h('section.diary', { 'aria-label': 'Diário alimentar' },
+    h('div.diary-head', h('h2', 'Diário alimentar'), entries.length ? h('span.diary-total', h('b', int(t.kcal)), ' kcal') : null),
     !entries.length && hasYesterday ? h('button.btn.tonal.compact.diary-copy', { onclick: async () => { const n = await copyPreviousDay(date); toast(`${n} itens copiados`); } }, 'Copiar o dia anterior') : null,
-    h('div.diary-meals', mealSections),
-    entries.length ? h('p.fine.diary-foot', 'Toque num item para editar. Arraste para a esquerda para apagar.') : null);
+    h('div.meal-grid', mealCards),
+    h('p.fine.diary-foot', entries.length ? 'Toque numa refeição para ver, editar ou apagar os itens. Fotos marcadas são ilustrativas.' : 'Toque no + de uma refeição para adicionar. As fotos são ilustrativas até você registrar algo.'));
 
   // ----- Água -----
   const ml = liquidsOn(date).total, goal = waterGoalOn(date);
@@ -234,13 +223,52 @@ export function todayScreen() {
         isToday ? null : h('button.day-today', { type: 'button', onclick: () => go('hoje', { date: todayISO() }) }, 'Hoje'),
         h('button.icon-btn', { 'aria-label': 'Próximo dia', disabled: isToday, onclick: () => go('hoje', { date: addDays(date, 1) }) }, icon('next')))),
     h('div.today-grid',
-      h('div.col.col-hero', ringCard, macrosCard, insightsCard, isToday ? conditionsCard() : null, isToday ? activityCard() : null),
+      h('div.col.col-hero', ringCard, insightsCard, isToday ? conditionsCard() : null, isToday ? activityCard() : null),
       h('div.col.col-meals', weightCard, mealsCard, routineCard(date)),
       h('div.col.col-side', waterCard, swapsCard, fitsCard)));
 }
 
 // Animação das barras: cada barra parte do valor anterior, não do zero, ao redesenhar a tela.
 const lastPct = {};
+function animatedFill(k, pct) {
+  const to = Math.min(100, Math.max(0, pct));
+  const bar = h('span.sum-fill', { style: { width: (lastPct[k] ?? 0) + '%' } });
+  requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = to + '%'; }));
+  lastPct[k] = to;
+  return bar;
+}
+
+/** Janela de uma refeição: os itens com foto, editar (toque), apagar (lixeira ou arrastar) e adicionar. */
+function mealSheet(meal, date) {
+  const body = h('div.msheet');
+  let sheet;
+  const paint = () => {
+    const items = dayEntries(date).filter(e => e.meal === meal.id);
+    const tt = totals(items);
+    body.replaceChildren(
+      h('div.msheet-sum',
+        h('span', h('b', int(tt.kcal)), ' kcal'),
+        h('span', `P ${int(tt.p)} g · C ${int(tt.c)} g · G ${int(tt.f)} g`)),
+      items.length ? h('ul.msheet-list', items.map(e => {
+        const food = e.foodId ? foodById(e.foodId) : null;
+        const row = h('li.entry.msheet-item',
+          h('div.entry-main',
+            h('button.msheet-edit', { type: 'button', onclick: () => foodSheet(food, { entry: e }), 'aria-label': `${e.name}, ${portion(e)}, ${int(e.kcal)} kcal. Editar` },
+              h('span.msheet-thumb' + (food?.img ? '.real' : ''), h('img', { src: food?.img ?? photoUrl(photoKind(e.name, food?.g)), alt: '', loading: 'lazy' })),
+              h('span.entry-text', h('span.entry-name', e.name), h('span.entry-portion', `${portion(e)} · ${int(e.kcal)} kcal`), h('span.entry-macros', `P ${int(e.p)} g · C ${int(e.c)} g · G ${int(e.f)} g`))),
+            h('button.icon-btn.small.msheet-del', { type: 'button', 'aria-label': `Apagar ${e.name}`, onclick: async () => { await removeEntry(e.id); undoToast(e); } }, icon('trash'))),
+          h('span.entry-delete', { 'aria-hidden': 'true' }, icon('trash')));
+        swipeToDelete(row, async () => { await removeEntry(e.id); undoToast(e); });
+        return row;
+      })) : h('p.msheet-empty', 'Nenhum alimento registrado nesta refeição.'),
+      h('button.btn.primary.block', { type: 'button', onclick: () => { sheet.close(); setTimeout(() => addFoodSheet(meal.id), 200); } }, icon('plus'), 'Adicionar alimento'),
+      items.length ? h('button.btn.plain.block', { type: 'button', onclick: () => mealMenu(meal, items) }, 'Salvar como modelo') : null,
+      items.some(e => !(e.foodId && foodById(e.foodId)?.img)) ? h('p.fine', 'Fotos ilustrativas do tipo de alimento. Produtos lidos pelo código de barras mostram a foto real, quando o Open Food Facts tem.') : null);
+  };
+  paint();
+  const off = subscribe(() => { if (!body.isConnected) return off(); paint(); });
+  sheet = openSheet({ title: meal.label, content: body, onClose: () => off() });
+}
 
 // Diário alimentar: as quatro refeições do app, na ordem do dia.
 const DIARY = [

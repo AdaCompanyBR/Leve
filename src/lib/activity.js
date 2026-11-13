@@ -123,3 +123,20 @@ export function nextActivity(list, date, time) {
   return [...list].filter(a => a.status !== 'feita' && (a.date > date || (a.date === date && a.start >= time.slice(0, 5))))
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))[0] ?? null;
 }
+
+// Gasto estimado das atividades feitas, pela tabela de METs (Compendium of Physical Activities):
+// MET × peso (kg) × horas. É só uma estimativa para mostrar na aba Hoje; a meta de calorias não muda,
+// porque ela já considera o nível de atividade escolhido no perfil.
+const METS = {
+  caminhada: { leve: 3.5, moderada: 4.3, intensa: 5 },
+  corrida: { leve: 7, moderada: 9, intensa: 11 },
+  ciclismo: { leve: 5.8, moderada: 7.5, intensa: 10 },
+  'treino-livre': { leve: 4, moderada: 5.5, intensa: 8 },
+  musculacao: { leve: 3.5, moderada: 5, intensa: 6 },
+  outro: { leve: 3, moderada: 4.5, intensa: 6.5 },
+};
+export function activityKcal(a, kg) {
+  if (!kg || !(a?.minutes > 0)) return 0;
+  const met = (METS[a.type] ?? METS.outro)[a.intensity ?? typeById(a.type).intensity] ?? 4.5;
+  return Math.round((met * kg * a.minutes) / 60);
+}

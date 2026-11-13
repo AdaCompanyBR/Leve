@@ -1592,3 +1592,77 @@ section[aria-label="Unidades"] .set-label { flex: 1; min-width: 0; }
 .qa-ic svg { width: 21px; height: 21px; }
 .qa-item:active .qa-label, .qa-item:active .qa-ic { background: var(--hover); }
 @media (prefers-reduced-motion: reduce) { .qa-item, .fab .icon { transition: none; } }
+
+/* ---------- Hoje: resumo nutricional compacto ---------- */
+.today .sum-card { padding: 20px 18px 18px; }
+.sum-stats { display: grid; grid-template-columns: 1fr 1.25fr 1fr; align-items: end; text-align: center; }
+.sum-stat { display: grid; gap: 2px; min-width: 0; }
+.sum-value { font: 600 20px/1.1 var(--font-num); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.sum-label { color: var(--ink-2); font-size: 13px; }
+.sum-stat.hero .sum-value { font: 700 40px/1 var(--font-num); letter-spacing: -.035em; color: var(--accent-ink); }
+.sum-stat.hero .sum-label { color: var(--accent-ink); font-weight: 600; }
+.sum-stat.hero.over .sum-value, .sum-stat.hero.over .sum-label { color: var(--orange-ink); }
+.sum-day { margin-top: 18px; }
+.sum-track { height: 6px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.sum-track.big { height: 10px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.sum-track.big .sum-fill { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 75%, #fff), var(--accent)); }
+.sum-track.big.over .sum-fill { background: var(--orange); }
+.sum-fill { display: block; height: 100%; border-radius: 99px; background: var(--mc, var(--accent)); transition: width .7s cubic-bezier(.22, 1, .36, 1); }
+@media (prefers-reduced-motion: reduce) { .sum-fill { transition: none; } }
+.sum-day-foot { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.sum-macros { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 18px; padding-top: 16px; border-top: .5px solid var(--sep); }
+.sum-macro { display: grid; gap: 4px; min-width: 0; }
+.sum-macro[data-m="p"] { --mc: var(--m-p); } .sum-macro[data-m="c"] { --mc: var(--m-c); } .sum-macro[data-m="f"] { --mc: var(--m-f); }
+.sum-macro .sum-track { background: color-mix(in srgb, var(--mc) 15%, transparent); margin-top: 2px; }
+.sum-macro-name { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sum-macro-val { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sum-macro-val b { font: 600 16px var(--font-num); color: var(--ink); }
+.sum-card .ring-note { margin-top: 14px; }
+
+/* ---------- Hoje: diário alimentar com fotos ---------- */
+.diary { display: grid; gap: 12px; }
+.diary .diary-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px; }
+.diary-head h2 { font: 600 20px/1.2 var(--font-display); letter-spacing: -.02em; }
+.diary .diary-copy { margin: 0; justify-self: start; }
+.meal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 339px) { .meal-grid { grid-template-columns: minmax(0, 1fr); } }
+.mcard { position: relative; background: var(--surface); border-radius: 20px; overflow: hidden; box-shadow: var(--today-shadow); display: flex; flex-direction: column; transition: transform .2s var(--ease); }
+.mcard:has(.mcard-open:active) { transform: scale(.98); }
+.mcard-open { position: absolute; inset: 0; z-index: 2; border-radius: inherit; }
+.mcard-open:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: -3px; }
+.mcard-photo { position: relative; aspect-ratio: 4 / 3; background: var(--fill); overflow: hidden; }
+.mcard-photo { display: grid; grid-template-columns: 1fr; gap: 2px; }
+.mcard-photo img { width: 100%; height: 100%; min-height: 0; object-fit: cover; display: block; }
+.mcard-photo[data-n="2"] { grid-template-columns: 1fr 1fr; }
+.mcard-photo[data-n="3"] { grid-template-columns: 1.6fr 1fr; grid-template-rows: 1fr 1fr; }
+.mcard-photo[data-n="3"] img:first-child { grid-row: 1 / span 2; }
+.mcard.is-empty .mcard-photo img { filter: saturate(.75); opacity: .82; }
+.mcard-tag { position: absolute; left: 8px; bottom: 8px; padding: 2px 8px; border-radius: 99px; background: rgba(0, 0, 0, .45); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: #fff; font-size: 11px; font-weight: 500; letter-spacing: .01em; }
+.mcard-ic { position: absolute; left: 8px; top: 8px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: rgba(255, 255, 255, .9); color: var(--mi, var(--accent-ink)); }
+.mcard-ic svg { width: 16px; height: 16px; }
+.mcard[data-meal="cafe"] { --mi: #D9822B; } .mcard[data-meal="almoco"] { --mi: #2F9E5B; } .mcard[data-meal="lanches"] { --mi: #D64C6B; } .mcard[data-meal="jantar"] { --mi: #6E5BD0; }
+.mcard-add { position: absolute; z-index: 3; right: 8px; top: 8px; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, .18); transition: transform var(--dur) var(--ease); }
+.mcard-add svg { width: 18px; height: 18px; stroke-width: 2.4; }
+.mcard-add:active { transform: scale(.9); }
+.mcard-body { padding: 10px 12px 12px; display: grid; gap: 3px; }
+.mcard-title { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.mcard-title h3 { font: 600 15px/1.2 var(--font); letter-spacing: -.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mcard-kcal { position: absolute; right: 8px; bottom: 8px; padding: 3px 9px; border-radius: 99px; background: rgba(255, 255, 255, .92); color: #3A3A3C; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; box-shadow: 0 1px 4px rgba(0, 0, 0, .12); }
+.mcard-kcal b { color: #1D1D1F; font-size: 14px; font-weight: 700; }
+.mcard-time { color: var(--ink-3); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mcard-foods { color: var(--ink-2); font-size: 13px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+.mcard.is-empty .mcard-foods { color: var(--ink-3); }
+.diary .diary-foot { margin: 0; padding: 0 4px; }
+
+/* Janela da refeição */
+.msheet { display: grid; gap: 14px; }
+.msheet-sum { display: flex; justify-content: space-between; align-items: baseline; color: var(--ink-2); font-size: 14px; }
+.msheet-sum b { color: var(--ink); font: 700 24px var(--font-num); }
+.msheet-list { background: var(--surface-2, var(--fill)); border-radius: 16px; overflow: hidden; }
+.msheet-item .entry-main { display: flex; align-items: center; gap: 4px; padding: 0 6px 0 0; min-height: 64px; background: var(--surface); }
+.msheet-edit { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px 4px 8px 12px; text-align: left; }
+.msheet-thumb { width: 48px; height: 48px; flex: none; border-radius: 12px; overflow: hidden; background: var(--fill); }
+.msheet-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.msheet-item + .msheet-item::before { left: 72px; }
+.msheet-del { color: var(--ink-3); }
+.msheet-empty { color: var(--ink-2); text-align: center; padding: 8px 0; }

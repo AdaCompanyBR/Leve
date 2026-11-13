@@ -219,7 +219,7 @@ async function getDetector() {
 export async function lookupBarcode(code) {
   const cached = foodById('off' + code) ?? state.foods.find(f => f.barcode === code);
   if (cached) return cached;
-  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,product_name_pt,brands,nutriments,serving_quantity`);
+  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,product_name_pt,brands,nutriments,serving_quantity,image_front_small_url`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error('rede');
   const data = await res.json();
@@ -229,7 +229,9 @@ export async function lookupBarcode(code) {
   if (data.status !== 1 || k == null) return null;
   const r1 = n => Math.round((Number(n) || 0) * 10) / 10;
   const name = [p.product_name_pt || p.product_name || 'Produto sem nome', p.brands?.split(',')[0]].filter(Boolean).join(', ');
-  return saveFood({ id: 'off' + code, n: name, k: Math.round(k), p: r1(nm.proteins_100g), c: r1(nm.carbohydrates_100g), f: r1(nm.fat_100g), source: 'off', barcode: code, serving: Number(p.serving_quantity) || undefined });
+  return saveFood({ id: 'off' + code, n: name, k: Math.round(k), p: r1(nm.proteins_100g), c: r1(nm.carbohydrates_100g), f: r1(nm.fat_100g), source: 'off', barcode: code, serving: Number(p.serving_quantity) || undefined,
+    // Foto real do produto, mostrada no diário alimentar.
+    img: /^https:\/\/images\.openfoodfacts\.org\//.test(p.image_front_small_url ?? '') ? p.image_front_small_url : undefined });
 }
 
 export function barcodeSheet() {

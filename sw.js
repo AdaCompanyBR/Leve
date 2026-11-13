@@ -2,13 +2,13 @@
 // VERSION renova o que fica guardado para usar sem internet; a publicação troca o número sozinha.
 const VERSION = 'leve-app-v34';
 const SHELL = [
-  './img/body/f-lines.webp', './img/body/f-mask.webp', './img/body/m-lines.webp', './img/body/m-mask.webp',
+  './img/body/f-lines.webp', './img/body/f-mask.webp', './img/body/m-lines.webp', './img/body/m-mask.webp', './img/food/meal-cafe.webp', './img/food/meal-almoco.webp', './img/food/meal-lanche.webp', './img/food/meal-jantar.webp',
   './', './index.html', './manifest.webmanifest', './css/app.css', './data/taco.json',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
   './src/app.js', './src/db.js', './src/store.js', './src/config.js', './src/auth.js', './src/biometric.js', './src/sync.js',
   './src/lib/adaptive.js', './src/lib/budget.js', './src/lib/calc.js', './src/lib/dates.js', './src/lib/estimate.js', './src/lib/recipes.js', './src/lib/hydration.js',
   './src/lib/parser.js', './src/lib/portions.js', './src/lib/search.js', './src/lib/routine.js', './src/lib/syncrules.js', './src/lib/swaps.js', './src/lib/trend.js',
-  './src/ui/account.js', './src/ui/body.js', './src/ui/friends.js', './src/ui/pull.js', './src/share.js', './src/update.js', './src/env.js', './src/ui/environment.js', './src/lib/environment.js', './src/lib/activity.js', './src/lib/foodContext.js', './src/lib/envHistory.js', './src/lib/dayInsights.js', './src/ui/activity.js', './src/ui/insights.js', './src/ui/avatar.js', './src/lib/units.js', './src/lib/challenges.js', './src/ui/challenges.js', './src/ui/challengeArt.js', './src/ui/dom.js', './src/ui/drink.js', './src/ui/estimate.js', './src/ui/food.js', './src/ui/liquids.js', './src/ui/log.js', './src/ui/onboarding.js',
+  './src/ui/account.js', './src/ui/body.js', './src/ui/friends.js', './src/ui/pull.js', './src/share.js', './src/update.js', './src/env.js', './src/ui/environment.js', './src/lib/environment.js', './src/lib/activity.js', './src/lib/foodContext.js', './src/lib/envHistory.js', './src/lib/dayInsights.js', './src/lib/foodPhotos.js', './src/ui/activity.js', './src/ui/insights.js', './src/ui/avatar.js', './src/lib/units.js', './src/lib/challenges.js', './src/ui/challenges.js', './src/ui/challengeArt.js', './src/ui/dom.js', './src/ui/drink.js', './src/ui/estimate.js', './src/ui/food.js', './src/ui/liquids.js', './src/ui/log.js', './src/ui/onboarding.js',
   './src/ui/progress.js', './src/ui/ring.js', './src/ui/settings.js', './src/ui/state.js', './src/ui/routine.js', './src/ui/swaps.js', './src/ui/today.js',
 ];
 

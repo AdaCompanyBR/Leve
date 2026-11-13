@@ -16,6 +16,7 @@ import * as sync from './sync.js';
 import * as share from './share.js';
 import { toast } from './ui/dom.js';
 import { captureInvite, checkInvite } from './ui/friends.js';
+import { initPullToRefresh } from './ui/pull.js';
 
 // Link de convite (#convite=...): guarda o código antes de o app limpar o endereço.
 captureInvite();
@@ -192,6 +193,15 @@ function open() {
 }
 
 start();
+
+// Puxar para atualizar: envia o que estiver pendente e recarrega. Com Face ID ligado, recarregar
+// pediria o rosto de novo, então só sincroniza e redesenha.
+initPullToRefresh({ onRefresh: async () => {
+  const wait = (p, ms) => Promise.race([p, new Promise(r => setTimeout(r, ms))]);
+  await wait(Promise.all([sync.syncNow(), navigator.serviceWorker?.getRegistration?.().then(r => r?.update())]).catch(() => {}), 4000);
+  if (bio.enabled() && auth.current()) { await wait(share.refresh(), 3000); if (shell) render(); return false; }
+  return true;
+} });
 
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));

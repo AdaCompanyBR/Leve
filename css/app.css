@@ -1128,3 +1128,15 @@ body.sheet-open .fab { opacity: 0; pointer-events: none; }
 .invite-back .set-row { align-items: center; }
 .friends-more { white-space: nowrap; }
 .person-row .person-fig.empty, .person-row.big .person-fig.empty { width: 52px; height: 52px; }
+
+/* Puxar para atualizar */
+.ptr { position: fixed; top: calc(env(safe-area-inset-top) + 8px); left: 50%; z-index: 90; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--glass-strong); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border: .5px solid var(--glass-line); box-shadow: var(--shadow-float);
+  color: var(--ink-2); transform: translate(-50%, -52px); opacity: 0; pointer-events: none; }
+.ptr-icon { display: grid; place-items: center; transition: color var(--dur) var(--ease); }
+.ptr-icon .icon { width: 20px; height: 20px; stroke-width: 2.2; }
+.ptr.armed .ptr-icon { color: var(--accent-ink); }
+.ptr-spin { display: none; width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid var(--track); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+.ptr.loading .ptr-icon { display: none; }
+.ptr.loading .ptr-spin { display: block; }
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

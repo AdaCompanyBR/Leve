@@ -28,11 +28,14 @@ A qualidade do ar vem do modelo CAMS (Copernicus), com resolução de cerca de 4
 
 ## Localização e LGPD
 
-- Guardado em `settings.location`: modo (GPS ou nome), cidade, estado, país, fuso e coordenadas arredondadas para 2 casas (cerca de 1 km). Nada de endereço.
-- O GPS só é pedido quando a pessoa toca em "Usar minha localização". Depois, a posição só é relida (a cada 6 horas no máximo) se o navegador já tiver a permissão, sem perguntar de novo.
-- "Remover localização" apaga a localização e o cache. A permissão do GPS é revogada nos ajustes do navegador, e a tela explica isso.
-- A Open-Meteo não converte coordenadas em cidade. Pelo GPS, a região aparece como "Sua localização"; escolhendo pelo nome, aparece a cidade.
-- Com conta, os ajustes (incluindo a localização) sincronizam entre os aparelhos da pessoa, como o resto dos ajustes.
+- **A localização do aparelho é a fonte principal.** O pedido de acesso aparece uma única vez em cada aparelho, na primeira abertura do app depois do cadastro, sem a pessoa precisar tocar em nada. O estado do pedido fica no próprio aparelho (`leve-geo`), porque a permissão é do aparelho, não da conta.
+- **Depois do pedido,** o app relê a posição sozinho, sem perguntar: ao abrir, ao voltar para o app e a cada 15 minutos com ele aberto. Faz isso só enquanto o navegador mantiver a permissão. Se a pessoa mudou de cidade, a previsão muda junto.
+- **Sem segundo pedido:** se a pessoa negar, ou se o navegador voltar a exigir confirmação, o app não pede de novo sozinho. Ela pode tocar em "Usar a localização do aparelho" ou escolher a cidade pelo nome, que fica como alternativa.
+- **No iPhone,** quem decide se o Safari volta a perguntar é o próprio Safari: Ajustes > Apps > Safari > Localização > Permitir. Com o Leve na Tela de Início, a permissão fica com o app.
+- **O que é guardado** em `settings.location`: o modo (aparelho ou nome) e as coordenadas arredondadas para 2 casas (cerca de 1 km). No modo por nome, também a cidade, o estado, o país e o fuso. Nada de endereço.
+- **Revogar:** "Remover localização" apaga a localização e o cache, e o app para de usar a do aparelho até a pessoa pedir de novo. A permissão em si é revogada nos ajustes do aparelho, e a tela explica isso.
+- **Nome da cidade:** a Open-Meteo não converte coordenadas em cidade. Pela localização do aparelho, a região aparece como "Sua localização".
+- **Sincronização:** com conta, os ajustes (incluindo a localização) sincronizam entre os aparelhos da pessoa. Cada aparelho, ao abrir, passa a usar a própria posição.
 
 ## Regras
 

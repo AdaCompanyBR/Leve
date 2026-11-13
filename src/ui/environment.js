@@ -4,7 +4,7 @@
 import { h, icon, toast, openSheet, busy, searchField } from './dom.js';
 import { state } from '../store.js';
 import { fmtDate } from '../lib/dates.js';
-import { env, onEnv, refresh, location, placeName, useGps, searchPlaces, setManualLocation, clearLocation, GPS_ERRORS } from '../env.js';
+import { env, onEnv, refresh, location, placeName, useGps, searchPlaces, setManualLocation, clearLocation, GPS_ERRORS, geo, isDevice, deviceGranted } from '../env.js';
 import { classify, summary, hydrationTip, bestHours, uvLevel, aqiLevel, uvPeak, rangeText, uvAdvice, dayOutlook, weatherLabel, weatherIcon, isStale } from '../lib/environment.js';
 
 const deg = v => (v == null ? '–' : `${Math.round(v)}°`);
@@ -33,11 +33,17 @@ export function conditionsCard() {
   return live(card, () => {
     const loc = location(), ctx = env.ctx;
     if (!loc) {
+      const msg = {
+        locating: 'Buscando a localização do aparelho…',
+        denied: 'O acesso à localização do aparelho foi negado. Para usar a localização, libere o acesso nos ajustes do navegador, ou escolha a cidade.',
+        unsupported: 'Este aparelho não informa a localização. Escolha a cidade para ver o clima, o índice UV e a qualidade do ar.',
+        error: 'Não deu para descobrir a localização do aparelho agora.',
+      }[geo.state] ?? 'Veja temperatura, índice UV e qualidade do ar da sua região, com orientações para hidratação e atividades ao ar livre.';
       card.replaceChildren(
         h('div.card-head', h('h3', 'Condições de hoje')),
-        h('p.card-sub', 'Veja temperatura, índice UV e qualidade do ar da sua região, com orientações para hidratação e atividades ao ar livre.'),
-        h('div.env-setup',
-          h('button.btn.tonal', { type: 'button', onclick: e => busy(e.currentTarget, gpsFlow) }, icon('locate'), 'Usar minha localização'),
+        h('p.card-sub', msg),
+        geo.state === 'locating' ? null : h('div.env-setup',
+          ['denied', 'unsupported'].includes(geo.state) ? null : h('button.btn.tonal', { type: 'button', onclick: e => busy(e.currentTarget, gpsFlow) }, icon('locate'), geo.state === 'error' ? 'Tentar de novo' : 'Usar a localização do aparelho'),
           h('button.btn.plain', { type: 'button', onclick: () => locationSheet() }, 'Escolher cidade')));
       return;
     }
@@ -153,14 +159,14 @@ export function locationSheet() {
   const search = searchField({ placeholder: 'Buscar cidade', label: 'Buscar cidade', onInput: q => { clearTimeout(timer); timer = setTimeout(() => run(q), 350); }, onSubmit: q => run(q) });
   const sheet = openSheet({ title: 'Localização', content: [
     h('p.sheet-text', 'O Leve usa a sua região para mostrar o clima, o índice UV e a qualidade do ar do dia e para orientar a hidratação e as atividades ao ar livre.'),
-    loc ? h('div.env-kv.place-now', kv('Agora', `${placeName()}${loc.mode === 'gps' ? ' (GPS)' : ''}`)) : null,
-    h('button.btn.tonal.block', { type: 'button', onclick: e => busy(e.currentTarget, async () => { await gpsFlow(); if (location()?.mode === 'gps') sheet.close(); }) }, icon('locate'), 'Usar minha localização atual'),
-    h('p.place-or', 'ou escolha a cidade'),
-    search.el, results,
-    h('p.fine', 'Guardamos só a cidade e as coordenadas aproximadas (cerca de 1 km), nunca o endereço. O GPS só é usado quando você pede; depois, se o navegador já tiver a permissão, o Leve atualiza a posição sem perguntar de novo. Para revogar, remova a localização aqui e a permissão nos ajustes do navegador.'),
+    loc ? h('div.env-kv.place-now', kv('Agora', isDevice(loc) ? 'Localização do aparelho' : `${placeName()} (escolhida pelo nome)`)) : null,
+    isDevice(loc) && deviceGranted() ? null : h('button.btn.tonal.block', { type: 'button', onclick: e => busy(e.currentTarget, async () => { await gpsFlow(); if (isDevice(location())) sheet.close(); }) }, icon('locate'), 'Usar a localização do aparelho'),
+    isDevice(loc) && deviceGranted() ? h('p.fine', 'O Leve usa a localização do aparelho e a atualiza sozinho ao abrir o app, sem perguntar de novo.')
+      : [h('p.place-or', 'Sem acesso à localização do aparelho? Escolha a cidade'), search.el, results],
+    h('p.fine', 'Guardamos só as coordenadas aproximadas (cerca de 1 km), ou a cidade escolhida, nunca o endereço. O pedido de acesso aparece uma única vez neste aparelho. No iPhone, se o Safari voltar a perguntar, vá em Ajustes > Apps > Safari > Localização e escolha Permitir; com o Leve na Tela de Início, a permissão fica com o app. Para revogar, remova a localização aqui e o acesso nos ajustes do aparelho.'),
     loc ? h('button.btn.plain.danger.block', { type: 'button', onclick: async () => { await clearLocation(); sheet.close(); toast('Localização removida'); } }, 'Remover localização') : null,
   ] });
-  setTimeout(() => search.input.focus({ preventScroll: true }), 350);
+  if (!(isDevice(loc) && deviceGranted())) setTimeout(() => search.input.focus({ preventScroll: true }), 350);
   return sheet;
 }
 

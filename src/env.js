@@ -1,17 +1,19 @@
 // Serviço central de contexto ambiental: localização, consulta à Open-Meteo, cache e avisos.
 // Todas as telas leem daqui (env.ctx), sem consultar a API por conta própria.
 //
-// Localização (LGPD): guardamos só o necessário para a previsão: nome da cidade, estado, país,
-// fuso e coordenadas arredondadas para 2 casas (cerca de 1 km), em settings.location. Nada de
-// endereço. O GPS só é pedido quando a pessoa toca em "Usar minha localização"; depois, só é
-// relido sem perguntar se o navegador já tiver a permissão. "Remover localização" apaga tudo.
+// Localização (LGPD): o app usa a localização do aparelho. Pede uma única vez em cada aparelho,
+// na primeira abertura depois do cadastro; depois relê a posição sem perguntar (ao abrir, ao
+// voltar para o app, no máximo a cada 15 minutos), e só enquanto o navegador mantiver a
+// permissão. Nunca dispara um segundo pedido sozinho. Quem negar pode escolher a cidade pelo
+// nome. Guardamos só coordenadas arredondadas para 2 casas (cerca de 1 km), nunca o endereço.
+// "Remover localização" apaga tudo e para de usar a do aparelho.
 import { WEATHER } from './config.js';
-import { state, saveSettings, recordEnvDay, waterGoalOn } from './store.js';
+import { state, subscribe, saveSettings, recordEnvDay, waterGoalOn } from './store.js';
 import { dayRecord } from './lib/envHistory.js';
 import { buildContext, alerts, FORECAST_PARAMS, AIR_PARAMS, query } from './lib/environment.js';
 
 const CACHE = 'leve-env';
-const WX_TTL = 30 * 60e3, AIR_TTL = 60 * 60e3, GPS_TTL = 6 * 3600e3, TICK = 15 * 60e3;
+const WX_TTL = 30 * 60e3, AIR_TTL = 60 * 60e3, GPS_TTL = 15 * 60e3, TICK = 15 * 60e3;
 const round = v => Math.round(v * 100) / 100;
 
 export const env = { ctx: null, loading: false, error: null, airError: null, fetchedAt: null, airAt: null };
@@ -135,41 +137,76 @@ const position = (opts = {}) => new Promise((resolve, reject) => {
 });
 export const GPS_ERRORS = { 1: 'Você não autorizou a localização. Dá para liberar nos ajustes do navegador ou escolher a cidade pelo nome.', 2: 'Não deu para descobrir a sua localização agora.', 3: 'A localização demorou demais. Tente de novo ou escolha a cidade.', unsupported: 'Este navegador não informa a localização. Escolha a cidade pelo nome.' };
 
-/** GPS por pedido da pessoa. Devolve a localização salva. */
-export async function useGps() {
-  const p = await position();
+// Estado do pedido neste aparelho (a permissão é de cada aparelho, não da conta).
+const GEO = 'leve-geo';
+const flags = {
+  get() { try { return JSON.parse(localStorage.getItem(GEO)) ?? {}; } catch { return {}; } },
+  set(v) { try { localStorage.setItem(GEO, JSON.stringify({ ...flags.get(), ...v })); } catch { /* sem armazenamento */ } },
+};
+/** idle | locating | ok | denied | unsupported | error */
+export const geo = { state: 'idle' };
+export const isDevice = loc => loc?.mode === 'device' || loc?.mode === 'gps';
+export const deviceGranted = () => flags.get().granted === true && geo.state !== 'denied';
+
+async function permission() {
+  try { return (await navigator.permissions?.query?.({ name: 'geolocation' }))?.state ?? 'unknown'; } catch { return 'unknown'; }
+}
+
+async function applyPosition(p) {
   const lat = round(p.coords.latitude), lon = round(p.coords.longitude);
   const prev = location();
-  // A Open-Meteo não traduz coordenadas em cidade; a cidade fica como estava se for perto.
-  const near = prev && Math.abs(prev.lat - lat) < 0.15 && Math.abs(prev.lon - lon) < 0.15;
-  await saveSettings({ location: { mode: 'gps', name: near ? prev.name : '', admin1: near ? prev.admin1 : '', country: near ? prev.country : '', lat, lon, tz: null, at: Date.now() } });
-  cache.clear();
-  await refresh({ force: true });
+  const moved = !isDevice(prev) || Math.abs(prev.lat - lat) >= 0.05 || Math.abs(prev.lon - lon) >= 0.05;
+  await saveSettings({ location: { mode: 'device', name: '', admin1: '', country: '', lat, lon, tz: null, at: Date.now() } });
+  if (moved) { cache.clear(); await refresh({ force: true }); }
+}
+
+/**
+ * Localização do aparelho. Sem `userAsked`: pede só se este aparelho nunca perguntou; se já
+ * perguntou, só relê quando a permissão já está dada. Com `userAsked` (botão), pede de novo.
+ */
+let locating = null;
+export function deviceLocate(opts = {}) {
+  if (locating && !opts.userAsked) return locating;
+  locating = locate(opts).finally(() => { locating = null; });
+  return locating;
+}
+async function locate({ userAsked = false } = {}) {
+  if (!navigator.geolocation) { geo.state = 'unsupported'; emit(); if (userAsked) throw Object.assign(new Error('sem gps'), { code: 'unsupported' }); return; }
+  const f = flags.get(), perm = await permission();
+  if (f.off && !userAsked) return;
+  if (perm === 'denied') { flags.set({ asked: true, granted: false }); geo.state = 'denied'; emit(); if (userAsked) throw Object.assign(new Error('negado'), { code: 1 }); return; }
+  const silent = perm === 'granted' || (perm === 'unknown' && f.granted);
+  if (!silent && !userAsked && f.asked) return;   // já perguntou uma vez neste aparelho
+  const loc = location();
+  if (silent && !userAsked && isDevice(loc) && Date.now() - (loc.at ?? 0) < GPS_TTL) return;
+  flags.set({ asked: true, off: false });
+  if (!isDevice(loc) || userAsked) { geo.state = 'locating'; emit(); }
+  try {
+    const p = await position({ timeout: silent ? 10000 : 30000 });
+    flags.set({ granted: true }); geo.state = 'ok';
+    await applyPosition(p);
+    emit();
+  } catch (err) {
+    if (err?.code === 1) { flags.set({ granted: false }); geo.state = 'denied'; } else geo.state = isDevice(loc) ? 'ok' : 'error';
+    emit();
+    if (userAsked) throw err;
+  }
+}
+
+/** Botão "Usar a localização do aparelho". */
+export async function useGps() {
+  await deviceLocate({ userAsked: true });
   return location();
 }
 
-/** Com modo GPS e permissão já dada, relê a posição de tempos em tempos, sem perguntar. */
-async function quietGps() {
-  const loc = location();
-  if (loc?.mode !== 'gps' || Date.now() - (loc.at ?? 0) < GPS_TTL) return;
-  try {
-    const st = await navigator.permissions?.query?.({ name: 'geolocation' });
-    if (st?.state !== 'granted') return;
-    const p = await position({ timeout: 8000 });
-    const lat = round(p.coords.latitude), lon = round(p.coords.longitude);
-    const moved = Math.abs(loc.lat - lat) >= 0.05 || Math.abs(loc.lon - lon) >= 0.05;
-    await saveSettings({ location: { ...loc, lat, lon, at: Date.now(), ...(moved ? { name: '', admin1: '', country: '', tz: null } : {}) } });
-    if (moved) { cache.clear(); await refresh({ force: true }); }
-  } catch { /* sem permissão ou sem sinal: fica a última posição */ }
-}
-
 export async function clearLocation() {
+  flags.set({ off: true });   // revoga: não usa mais a do aparelho até a pessoa pedir
   await saveSettings({ location: null });
   cache.clear();
   env.ctx = null; env.error = null; env.airError = null; emit();
 }
 
-/** Nome para mostrar. Sem cidade (GPS), "Sua localização" e o fuso. */
+/** Nome para mostrar. Pela localização do aparelho, "Sua localização". */
 export function placeName(loc = location(), ctx = env.ctx) {
   if (!loc) return '';
   if (loc.name) return [loc.name, loc.admin1].filter(Boolean).join(', ');
@@ -186,8 +223,11 @@ export function startEnv() {
   const c = cache.get();
   if (location() && c?.key === keyOf(location())) rebuild(c);
   refresh();
-  quietGps();
-  setInterval(() => { if (document.visibilityState === 'visible') refresh(); }, TICK);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refresh(); quietGps(); } });
+  // O pedido único espera o cadastro terminar (com o app aberto de verdade, não nas telas de entrada).
+  let off = null;
+  const kick = () => { if (!state.profile) return; off?.(); off = null; deviceLocate(); };
+  off = subscribe(kick); kick();
+  setInterval(() => { if (document.visibilityState === 'visible') { refresh(); deviceLocate(); } }, TICK);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refresh(); deviceLocate(); } });
   addEventListener('online', () => refresh());
 }

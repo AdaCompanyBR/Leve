@@ -8,7 +8,7 @@ import { goalWizard, routineSheet } from './routine.js';
 import { todayISO } from '../lib/dates.js';
 import { accountCard } from './account.js';
 import * as auth from '../auth.js';
-import { location as envLocation, placeName, ALERT_CATEGORIES, alertOn } from '../env.js';
+import { location as envLocation, placeName, ALERT_CATEGORIES, alertOn, isDevice } from '../env.js';
 import { locationSheet } from './environment.js';
 
 export function applyTheme() {
@@ -113,7 +113,7 @@ export function settingsScreen() {
   // Clima e localização: de onde vem a previsão e quais avisos aparecem.
   const loc = envLocation();
   const envCard = h('section.card.set-card', { 'aria-label': 'Clima e localização' }, h('h3', 'Clima e localização'),
-    row('Localização', valueBtn(loc ? placeName(loc) : 'Não definida', () => locationSheet(), 'Alterar localização'), loc ? (loc.mode === 'gps' ? 'Pelo GPS do aparelho' : 'Escolhida pelo nome') : 'Para o clima, o índice UV e a qualidade do ar do dia'),
+    row('Localização', valueBtn(loc ? placeName(loc) : 'Não definida', () => locationSheet(), 'Alterar localização'), loc ? (isDevice(loc) ? 'Localização do aparelho, atualizada sozinha' : 'Escolhida pelo nome')  : 'Para o clima, o índice UV e a qualidade do ar do dia'),
     ...ALERT_CATEGORIES.map(c => row(`Avisos de ${c.label.toLowerCase()}`, h('button.switch', { role: 'switch', 'aria-checked': String(alertOn(c.id)), 'aria-label': `Avisos de ${c.label.toLowerCase()}`,
       onclick: () => saveSettings({ envAlerts: { ...(s.envAlerts ?? {}), [c.id]: !alertOn(c.id) } }) }, h('span')), c.hint)),
     row('Sugestões de alimentação pelo clima', h('button.switch', { role: 'switch', 'aria-checked': String(s.foodTips !== false), 'aria-label': 'Sugestões de alimentação pelo clima', onclick: () => saveSettings({ foodTips: s.foodTips === false }) }, h('span')),

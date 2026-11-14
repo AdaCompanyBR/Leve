@@ -6,7 +6,7 @@ import { evolution } from '../evolution.js';
 import { STAGES, SPECIAL_TREES, DECORATIONS, VITALITY_STEP } from '../lib/garden.js';
 import { todayISO, fmtDate, diffDays } from '../lib/dates.js';
 import { treeArt } from './gardenArt.js';
-import { gardenCanvas } from './gardenCanvas.js';
+import { gardenIllustration } from './gardenScene.js';
 
 const long = d => fmtDate(d, { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '');
 const SEASON_LABEL = { primavera: 'Primavera', verao: 'Verão', outono: 'Outono', inverno: 'Inverno' };
@@ -23,8 +23,8 @@ export function gardenView() {
 
   const scene = h('section.card.garden-card', { 'aria-label': 'Meu Jardim' },
     h('div.garden-head', h('h2', 'Meu Jardim'), h('span.garden-season', SEASON_LABEL[g.season])),
-    h('div.garden-stage', gardenCanvas({
-      main: cur ? { waterings: cur.waterings, vitality: cur.vitality, id: cur.id } : null,
+    h('div.garden-stage', gardenIllustration({
+      main: cur ? { stage: cur.stage.index, waterings: cur.waterings, vitality: cur.vitality, id: cur.id } : null,
       specials: specials.map(t => ({ kind: t.kind, id: t.id })), memories: g.memories.length, decorations, season: g.season, watering,
     })),
     mainStatus(evo, today));

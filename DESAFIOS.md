@@ -189,7 +189,7 @@ Chegam com os níveis de XP:
   - Voltou a ganhar vitalidade: "Sua árvore está se recuperando!"
   - Secou: "Este ciclo chegou ao fim. Seu jardim guarda a história dessa conquista."
   - Também avisam a fase nova e a árvore especial nova.
-- **Arte:** vetorial, com luz, sombra, camadas de profundidade, balanço da copa, folhas caindo quando a árvore está fraca, brilho na extraordinária e gotas na regada. É leve e funciona sem internet.
+- **Arte:** maquete botânica desenhada por código em Canvas (`src/ui/gardenCanvas.js`). A árvore é procedural, com forma fixa por árvore e crescimento contínuo pelas regadas. Tem luz e sombra, folhas individuais, raízes e terreno natural. A vitalidade muda cor, densidade, folhas caídas e a vivacidade do ambiente. Há balanço da copa, folhas caindo e gotas na regada. É leve e funciona sem internet.
 
 ## Experiência e níveis
 

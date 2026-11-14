@@ -6,7 +6,9 @@ import { CRITERIA, weekDays, streakMessage, inPause, flameTier, MILESTONES, MAX_
 import { XP_RULES, LEVELS } from '../lib/xp.js';
 import { ACHIEVEMENTS, challengeById, evaluate } from '../lib/challenges.js';
 import { todayISO, addDays, weekStart, fmtDate, fromISO } from '../lib/dates.js';
-import { medalArt, flameMark, levelEmblem } from './challengeArt.js';
+import { medalArt, levelEmblem } from './challengeArt.js';
+import { treeArt } from './gardenArt.js';
+import { go } from './state.js';
 import { dataSource, wasJustUnlocked, syncChallenges } from './challenges.js';
 
 const long = d => fmtDate(d, { day: 'numeric', month: 'short' }).replace('.', '');
@@ -91,12 +93,14 @@ function streakCard(evo, today) {
     const label = weekOffset === 0 ? 'Esta semana' : weekOffset === -1 ? 'Semana passada' : `${long(monday)} – ${long(addDays(monday, 6))}`;
     card.replaceChildren(...[
       h('div.stk-top',
-        h('div.stk-flame', flameMark({ size: 56, tier: flameTier(st.current), mode: st.current === 0 ? 'out' : st.todayDone ? 'lit' : 'pending' })),
+        h('button.stk-tree', { type: 'button', 'aria-label': evo.garden.current ? `Sua árvore: ${evo.garden.current.stage.label}, vitalidade ${evo.garden.current.vitality}%. Abrir o jardim` : 'Abrir o jardim', onclick: () => go('progresso', { progressView: 'jardim' }) },
+          evo.garden.current ? treeArt({ stage: evo.garden.current.stage.index, vitality: evo.garden.current.vitality, season: evo.garden.season }, { size: 58 }) : treeArt({ stage: 0, vitality: 100 }, { size: 58 }),
+          evo.garden.current ? h('span.stk-tree-vit', { 'data-low': evo.garden.current.vitality <= 50 ? '1' : null }, `${evo.garden.current.vitality}%`) : null),
         h('div.stk-count',
           h('p.stk-num-line', h('b', st.current), h('span', st.current === 1 ? 'dia seguido' : 'dias seguidos')),
           h('p.stk-msg', paused ? `Em pausa${pauseEnd(cfg, today) ? ` até ${long(pauseEnd(cfg, today))}` : ''}. A ofensiva fica guardada como está.` : streakMessage(st))),
         h('button.stk-adjust', { type: 'button', 'aria-label': 'Ajustar descanso e pausa', onclick: () => streakSettingsSheet() }, icon('settings'))),
-      celebrate ? h('div.stk-burst', { 'aria-hidden': 'true' }, h('span'), h('span'), h('span')) : null,
+      celebrate ? h('div.stk-drops', { 'aria-hidden': 'true' }, h('span'), h('span'), h('span'), h('span')) : null,
       todayPanel(evo, today),
       h('div.stk-week',
         h('div.stk-week-head',

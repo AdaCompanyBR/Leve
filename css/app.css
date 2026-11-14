@@ -1912,3 +1912,101 @@ section[aria-label="Unidades"] .set-label { flex: 1; min-width: 0; }
 .stk-crit li[data-na] { opacity: .6; }
 .stk-result { margin-top: 10px; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
 .stk-today.ok .stk-result { color: var(--accent-ink); font-weight: 500; }
+
+/* ---------- Jardim ---------- */
+:root { --garden-sky-1: #EAF4FF; --garden-sky-2: #F7FAF3; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --garden-sky-1: #1B2433; --garden-sky-2: #1E2620; } }
+:root[data-theme="dark"] { --garden-sky-1: #1B2433; --garden-sky-2: #1E2620; }
+.garden-view { display: grid; gap: 18px; max-width: 760px; padding-bottom: 8px; }
+.garden-card { padding: 0; overflow: hidden; border-radius: 22px; box-shadow: var(--today-shadow); }
+.garden-head { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 18px 0; }
+.garden-head h2 { font: 700 22px/1.2 var(--font-display); letter-spacing: -.02em; }
+.garden-season { padding: 3px 10px; border-radius: 99px; background: var(--fill); color: var(--ink-2); font-size: 12px; font-weight: 600; }
+.garden-stage { position: relative; margin-top: 8px; }
+.garden-scene { display: block; width: 100%; height: auto; }
+.garden-status { display: grid; gap: 10px; padding: 14px 18px 18px; }
+.garden-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.garden-kicker { color: var(--accent-ink); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.garden-title { font: 700 22px/1.2 var(--font-display); letter-spacing: -.02em; }
+.garden-age { display: grid; justify-items: end; }
+.garden-age b { font: 600 20px/1 var(--font-num); }
+.garden-age span { color: var(--ink-2); font-size: 12px; }
+.garden-text { color: var(--ink-2); font-size: 14px; line-height: 1.4; }
+.garden-next { color: var(--ink-3); font-size: 12px; }
+.vit { --vt: #34A853; display: grid; gap: 6px; padding: 12px; border-radius: 14px; background: var(--surface-2); }
+.vit[data-tone="warn"] { --vt: #E0A100; } .vit[data-tone="low"] { --vt: #E5734A; }
+.vit-line { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.vit-line span { display: inline-flex; align-items: center; gap: 6px; }
+.vit-line .icon { width: 15px; height: 15px; color: var(--vt); }
+.vit-line b { color: var(--ink); font: 700 17px var(--font-num); }
+.vit-bar { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; }
+.vit-bar span { height: 8px; border-radius: 3px; background: var(--track); transition: background .5s var(--ease); }
+.vit-bar span.on { background: var(--vt); }
+.vit-note { color: var(--ink-2); font-size: 12px; line-height: 1.35; }
+
+.garden-sec { display: grid; gap: 10px; }
+.garden-sec-head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px; }
+.garden-sec-head h3 { font: 600 20px/1.2 var(--font-display); letter-spacing: -.02em; }
+.garden-sec-head span { color: var(--ink-2); font-size: 13px; }
+.garden-sec-sub { color: var(--ink-2); font-size: 13px; padding: 0 4px; margin-top: -6px; }
+.special-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.special { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px 12px; border-radius: 20px; background: var(--surface); box-shadow: var(--today-shadow); text-align: center; }
+.special:not(.on) .special-art { filter: grayscale(.9) opacity(.55); }
+.special b { font-size: 12.5px; line-height: 1.25; font-weight: 600; }
+.special:not(.on) b { color: var(--ink-2); }
+.special-date { color: var(--accent-ink); font-size: 11px; font-weight: 500; }
+.special-prog { display: grid; justify-items: center; gap: 3px; width: 72%; color: var(--ink-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.special-bar { width: 100%; height: 4px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.special-bar span { display: block; height: 100%; background: #5DB552; border-radius: 99px; }
+.special-sheet { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.special-text { font-size: 16px; line-height: 1.4; max-width: 32ch; }
+.special-req { display: grid; gap: 2px; color: var(--ink); font-size: 14px; }
+.special-req span { color: var(--ink-2); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.special-when { color: var(--accent-ink); font-weight: 500; }
+.special-when.off { color: var(--ink-2); }
+.deco-list { display: grid; border-radius: 18px; background: var(--surface); box-shadow: var(--today-shadow); overflow: hidden; }
+.deco { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 16px; }
+.deco + .deco { border-top: .5px solid var(--sep); }
+.deco-ic { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: var(--fill); color: var(--ink-3); }
+.deco-ic svg { width: 15px; height: 15px; }
+.deco.on .deco-ic { background: color-mix(in srgb, #34A853 16%, transparent); color: #2F8F48; }
+.deco-name { flex: 1; font-size: 15px; }
+.deco:not(.on) .deco-name { color: var(--ink-2); }
+.deco-req { color: var(--ink-3); font-size: 12px; }
+.deco.on .deco-req { color: #2F8F48; font-weight: 500; }
+.memory-list { display: grid; border-radius: 18px; background: var(--surface); box-shadow: var(--today-shadow); overflow: hidden; }
+.memory { display: flex; align-items: center; gap: 12px; padding: 8px 16px; }
+.memory + .memory { border-top: .5px solid var(--sep); }
+.memory .tree-art { flex: none; }
+.memory div { display: grid; gap: 1px; }
+.memory b { font-size: 14px; font-weight: 600; }
+.memory span { color: var(--ink-2); font-size: 12px; }
+.memory:not(.alive) b { color: var(--ink-2); }
+.garden-how { justify-self: center; font-size: 14px; }
+
+/* Movimento: a copa balança, folhas caem quando a árvore está fraca, brilho e regada */
+.tree-canopy { transform-box: view-box; transform-origin: 50% 87%; animation: tree-sway 5s ease-in-out infinite alternate; }
+@keyframes tree-sway { from { transform: rotate(-.9deg); } to { transform: rotate(.9deg); } }
+.tree-falling ellipse { animation: leaf-fall 4.5s ease-in infinite; opacity: 0; }
+@keyframes leaf-fall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 10% { opacity: .9; } 100% { opacity: 0; transform: translate(14px, 90px) rotate(160deg); } }
+.tree-sparkle path { transform-box: fill-box; transform-origin: center; animation: twinkle 2.4s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { opacity: .2; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.1); } }
+.garden-water path { animation: drop-fall 1.1s cubic-bezier(.5, 0, .9, .6) 2 both; }
+@keyframes drop-fall { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(140px); opacity: 0; } }
+.garden-ripple { transform-box: fill-box; transform-origin: center; animation: ripple 1.2s .9s ease-out 2 both; }
+@keyframes ripple { from { transform: scale(.3); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
+.garden-stage.watering .tree-canopy { animation: tree-grow 1s cubic-bezier(.22, 1.4, .36, 1) both, tree-sway 5s 1s ease-in-out infinite alternate; }
+@keyframes tree-grow { from { transform: scale(.94); } to { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .tree-canopy, .tree-falling ellipse, .tree-sparkle path, .garden-water path, .garden-ripple, .garden-stage.watering .tree-canopy { animation: none; } .tree-falling, .garden-water { display: none; } }
+
+/* Conquistas: a árvore no lugar da chama */
+.stk-tree { position: relative; flex: none; width: 58px; height: 64px; margin: -6px 0 0 -6px; border-radius: 16px; }
+.stk-tree .tree-art { display: block; }
+.stk-tree-vit { position: absolute; right: -4px; bottom: 2px; padding: 1px 5px; border-radius: 99px; background: var(--surface); box-shadow: 0 0 0 1px var(--sep); color: #2F8F48; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stk-tree-vit[data-low] { color: #C9622F; }
+.stk-drops { position: absolute; left: 22px; top: 2px; width: 40px; height: 60px; pointer-events: none; }
+.stk-drops span { position: absolute; top: 0; width: 5px; height: 7px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #7CC4F2; opacity: 0; animation: drop-fall-sm .9s ease-in both; }
+.stk-drops span:nth-child(1) { left: 6px; } .stk-drops span:nth-child(2) { left: 16px; animation-delay: .15s; } .stk-drops span:nth-child(3) { left: 26px; animation-delay: .3s; } .stk-drops span:nth-child(4) { left: 12px; animation-delay: .45s; }
+@keyframes drop-fall-sm { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(46px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .stk-drops { display: none; } }
+.progress-tabs .segmented button { padding-left: 4px; padding-right: 4px; }

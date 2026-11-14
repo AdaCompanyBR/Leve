@@ -8,6 +8,7 @@ import { dayTotal } from './lib/hydration.js';
 import { computeXP, levelFor, XP_RULES } from './lib/xp.js';
 import { achievementProgress, ACHIEVEMENTS } from './lib/challenges.js';
 import { todayISO, addDays } from './lib/dates.js';
+import { simulateGarden, mergeHistory, seasonOf } from './lib/garden.js';
 
 const HISTORY_DAYS = 400; // até onde a ofensiva olha para trás
 
@@ -80,7 +81,13 @@ export function evolution(today = todayISO(), evals = {}) {
   const unlocked = Object.keys(state.achievements ?? {}).filter(id => ACHIEVEMENTS.some(a => a.id === id));
   const xp = computeXP({ days: s.days, doneOf: d => doneList(facts(d)), concluded, achievements: unlocked, xpOf });
   const todayProgress = dayProgress(facts(today));
-  return { streak, config, facts, xp, level: levelFor(xp.xp), todayProgress, progress: achievementProgress({ mine: state.myChallenges, evals, streak }), unlocked };
+  // Jardim: a árvore da ofensiva, as especiais (permanentes) e as memórias (árvores secas).
+  const g = simulateGarden({ start: startDate(today), today, days: s.days, doneOf: d => doneList(facts(d)) });
+  const stored = state.evolution?.garden ?? {};
+  const special = { ...g.special, ...(stored.special ?? {}) }; // uma conquista guardada nunca some
+  const memories = [...mergeHistory(g.trees, stored.dead ?? {}).entries()].map(([id, t]) => ({ id, ...t })).sort((a, b) => b.died.localeCompare(a.died));
+  const garden = { ...g, special, memories, season: seasonOf(today) };
+  return { streak, config, facts, xp, level: levelFor(xp.xp), todayProgress, garden, progress: achievementProgress({ mine: state.myChallenges, evals, streak }), unlocked };
 }
 
 /** Dias validados que já passaram do prazo de registro e ainda não estão congelados. */

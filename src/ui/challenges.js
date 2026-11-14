@@ -5,6 +5,7 @@ import { h, icon, int, toast, openSheet, segmented, confirmSheet, busy, picker }
 import { ui, go } from './state.js';
 import { state, foodById, getPlan, waterGoalOn, startChallenge, updateChallenge, saveCheckin, unlockAchievements, saveEvolution } from '../store.js';
 import { evolution, toFreeze } from '../evolution.js';
+import { SPECIAL_TREES } from '../lib/garden.js';
 import { todayISO, addDays, fmtDate, diffDays, weekStart } from '../lib/dates.js';
 import { CHALLENGES, CATEGORIES, categoryById, challengeById, sources, evaluate, trend, adaptiveSuggestion, defaultTarget, startBlock, recommend, campaignFor, ACHIEVEMENTS, earned, SAFETY, DISCOMFORT, addMin } from '../lib/challenges.js';
 import { challengeArt, glyph } from './challengeArt.js';
@@ -91,10 +92,26 @@ async function settleEvolution(evo, today, say) {
   if (evo.level.level !== prev.level) patch.level = evo.level.level;
   const first = prev.level == null; // primeira vez: só guarda, sem avisos de coisas antigas
   if (!first && evo.level.level > prev.level) say(`Você chegou ao nível ${evo.level.level}: ${evo.level.name}!`);
+  // Jardim: guarda a história (árvores secas e especiais) e avisa com cuidado, uma vez por evento.
+  const g = evo.garden, pg = prev.garden ?? {}, cur = g.current;
+  const dead = Object.fromEntries(g.memories.map(t => [t.id, { planted: t.planted, died: t.died, waterings: t.waterings }]));
+  const gardenNow = { vit: cur?.vitality ?? null, tree: cur?.id ?? null, stage: cur?.stage.index ?? null, dead, special: g.special };
+  if (JSON.stringify(gardenNow) !== JSON.stringify({ vit: pg.vit ?? null, tree: pg.tree ?? null, stage: pg.stage ?? null, dead: pg.dead ?? {}, special: pg.special ?? {} })) patch.garden = gardenNow;
+  if (!first) {
+    const newDead = Object.keys(dead).filter(id => !(pg.dead ?? {})[id]);
+    if (newDead.length) say('Este ciclo chegou ao fim. Seu jardim guarda a história dessa conquista.');
+    else if (cur && pg.tree === cur.id && pg.vit != null && cur.vitality < pg.vit) {
+      say(cur.vitality <= 20 && pg.vit > 20 ? 'Sua árvore está muito debilitada. Uma nova regada pode salvá-la.'
+        : cur.vitality <= 50 && pg.vit > 50 ? 'Sua árvore precisa de atenção. Ainda dá tempo de recuperá-la.'
+          : 'Sua árvore está precisando de cuidados.');
+    }
+    for (const id of Object.keys(g.special)) if (!(pg.special ?? {})[id]) say(`Nova árvore especial no seu jardim: ${SPECIAL_TREES.find(t => t.id === id)?.name}!`);
+    if (cur && pg.tree === cur.id && pg.stage != null && cur.stage.index > pg.stage) say(`Sua árvore chegou a uma nova fase: ${cur.stage.label}.`);
+  }
   if (!first && st.todayDone && prev.dayToast !== today) {
     patch.dayToast = today;
-    const nearRecord = st.current < st.best && st.best - st.current <= 2 && st.best >= 5;
-    say(st.current === 1 ? 'Ofensiva acesa! Primeiro dia validado.' : nearRecord ? `Ofensiva mantida! Seu recorde (${st.best} dias) está cada vez mais próximo.` : `Ofensiva mantida! ${st.current} dias seguidos.`);
+    const recovering = cur && pg.vit != null && pg.vit < 100 && cur.vitality > pg.vit;
+    say(recovering ? 'Sua árvore está se recuperando!' : cur?.waterings === 1 ? 'Uma nova árvore foi plantada no seu jardim!' : 'Sua árvore recebeu mais uma regada!');
   } else if (first && st.todayDone) patch.dayToast = today;
   const wk = weekStart(today);
   if (!first && st.consistentWeeks > (prev.weeks ?? 0) && prev.weekToast !== wk) { patch.weekToast = wk; say('Você manteve a sua consistência nesta semana.'); }

@@ -8,6 +8,7 @@ import { todayISO, addDays, diffDays, fmtDate, fromISO } from '../lib/dates.js';
 import { climateHabitsCard } from './insights.js';
 import { challengesView } from './challenges.js';
 import { achievementsView } from './evolution.js';
+import { gardenView } from './garden.js';
 import { segmented } from './dom.js';
 import { ui, go } from './state.js';
 import { weight, weightNum, weightDelta, weightUnit } from '../lib/units.js';
@@ -168,13 +169,13 @@ function indicators() {
       h('div.col', etaCard, adaptiveCard, climateHabitsCard(), historyCard));
 }
 
-/** Aba Progresso: Desafios, Conquistas e os indicadores (peso, saldo, gasto). */
+/** Aba Progresso: Desafios, Conquistas, Jardim e os indicadores (peso, saldo, gasto). */
 export function progressScreen() {
   const view = ui.progressView ?? 'desafios';
-  const tabs = segmented([{ id: 'desafios', label: 'Desafios' }, { id: 'conquistas', label: 'Conquistas' }, { id: 'indicadores', label: 'Indicadores' }], view,
+  const tabs = segmented([{ id: 'desafios', label: 'Desafios' }, { id: 'conquistas', label: 'Conquistas' }, { id: 'jardim', label: 'Jardim' }, { id: 'indicadores', label: 'Indicadores' }], view,
     v => go('progresso', { progressView: v }), 'Seções do Progresso');
   return h('div.screen.progress',
     h('header.screen-head', h('div', h('p.screen-date', fromISO(todayISO()).getFullYear()), h('h1', 'Progresso'))),
     h('div.progress-tabs', tabs),
-    view === 'desafios' ? challengesView() : view === 'conquistas' ? achievementsView() : indicators());
+    view === 'desafios' ? challengesView() : view === 'conquistas' ? achievementsView() : view === 'jardim' ? gardenView() : indicators());
 }

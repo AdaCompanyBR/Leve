@@ -94,7 +94,7 @@ Basta UM destes critérios, cumprido por inteiro. Parcial não vale.
 - **Dias congelados:** passado o prazo, cada dia validado fica guardado em `kv 'evolution'.validated`, com o critério que validou e os cumpridos, e sincroniza com a conta. Mudar a meta ou apagar um registro depois não muda o passado.
 - **Descanso:** a mudança dos dias de descanso vale de hoje em diante (`restHistory`).
 - **Datas:** as datas são locais, do aparelho. Dias futuros nunca entram. O dia de hoje fica "em aberto" até acabar.
-- **Onde a validação roda:** neste app, no aparelho, a partir dos registros sincronizados. As regras são funções puras, sem rede, prontas para rodar também no servidor.
+- **Onde a validação roda:** neste app, no aparelho, a partir dos registros sincronizados. As regras (`streak.js`, `garden.js`) são funções puras e determinísticas, sem rede, prontas para rodar também numa função do servidor (Supabase). Rodar no servidor ainda não está implantado.
 
 ### Descanso, pausa e proteção
 
@@ -104,14 +104,9 @@ Basta UM destes critérios, cumprido por inteiro. Parcial não vale.
 
 ### Na tela
 
-- **Chama própria:** em azul, com um leve tremular. Fica mais fraca quando a ofensiva está viva mas o dia ainda está em aberto, e cinza quando está zerada.
-- **Evolução pelos marcos:**
-  - 7 dias ou mais: ganha halo;
-  - 30 ou mais: halo e aro;
-  - 100 ou mais: núcleo âmbar.
-- **Painel "Hoje":** cada critério mostra o progresso ("1,5 de 2,0 L · 75%", "3 de 4 refeições", "20 de 30 min") e o estado: Pendente, Cumprida, Validou o dia ou Não se aplica. Embaixo, o resultado ("ofensiva mantida com Alimentação") ou o que falta no critério mais perto.
-- **Comemoração:** uma vez por dia, quando a ofensiva é mantida. A chama cresce e ondas suaves saem dela.
-- **Calendário, recordes e proteções:** como antes.
+- **Árvore no cartão da ofensiva:** no lugar da chama, aparece a árvore atual do jardim, com a vitalidade. Tocar nela abre o jardim.
+- **Painel "Hoje":** os três critérios com progresso ("1,5 de 2,0 L · 75%", "3 de 4 refeições", "20 de 30 min") e o estado de cada um (Pendente, Cumprida, Validou o dia ou Não se aplica). Embaixo, o resultado ou o que falta no critério mais perto.
+- **Comemoração:** uma vez por dia, quando a ofensiva é mantida, caem gotas de água sobre a árvore.
 
 ### Marcos
 
@@ -125,6 +120,76 @@ Basta UM destes critérios, cumprido por inteiro. Parcial não vale.
 | 30 dias (bronze) | 200 |
 | 60 dias (prata) | 400 |
 | 100 dias (ouro) | 700 |
+
+## Jardim
+
+Aba Progresso > Jardim (`src/lib/garden.js`, telas em `src/ui/garden.js`, arte em `src/ui/gardenArt.js`). Usa os mesmos dias da ofensiva; nada é marcado em dobro.
+
+### Regada e crescimento
+
+- **Regada:** cada dia validado é uma regada. A primeira regada planta a árvore.
+- **Crescimento:** vem das regadas daquela árvore, então a fase se mantém enquanto ela viver, mesmo que a ofensiva recomece. As fases:
+
+| Regadas | Fase |
+|---|---|
+| 1–3 | germinação |
+| 4–7 | primeiro crescimento |
+| 8–15 | desenvolvimento |
+| 16–30 | fortalecimento |
+| 31–60 | florescimento |
+| 61–100 | madura |
+| mais de 100 | extraordinária |
+
+### Vitalidade
+
+- Começa em 100%.
+- Cada dia completo sem validação tira 10 pontos. "Completo" quer dizer que o prazo de registro já fechou (o dia e o seguinte); por isso a árvore nunca seca e depois "volta" por um registro atrasado.
+- Cada regada interrompe a perda e devolve 10 pontos, até 100%.
+- Descanso, pausa (saúde, viagem) e proteção da ofensiva não tiram vitalidade.
+
+### Árvore seca
+
+- Em 0% a árvore seca de vez e não volta. Ela fica nas Memórias, com o plantio, o fim e as regadas, guardadas em `kv 'evolution'.garden.dead`, que sincroniza com a conta e não se perde ao trocar de aparelho.
+- A próxima regada planta uma nova árvore.
+
+### Árvores especiais
+
+São permanentes e nunca perdem vitalidade. A data de cada uma fica guardada.
+
+| Árvore | Requisito |
+|---|---|
+| Constância | 30 dias seguidos |
+| Vitalidade | 30 dias com a meta de líquidos |
+| Nutrição | 30 dias com todas as refeições |
+| Resistência | 30 dias com a meta de atividade |
+| Superação | recuperar uma árvore de 30% ou menos até 100% |
+| Centenária | 100 dias validados |
+
+### Decorações
+
+Chegam com os níveis de XP:
+
+| Decoração | Nível |
+|---|---|
+| Banco | 2 |
+| Lanterna | 3 |
+| Caminho de pedras | 4 |
+| Canteiro de flores | 5 |
+| Lago | 6 |
+| Ponte | 8 |
+
+### Estações e avisos
+
+- **Estações** (hemisfério sul) mudam de leve o tom da folhagem: flores na primavera, tons quentes no outono e mais frios no inverno.
+- **Avisos:** cada um aparece uma vez, sem culpa.
+  - Dia validado: "Sua árvore recebeu mais uma regada!"
+  - Perdeu vitalidade: "precisando de cuidados".
+  - 50%: "Ainda dá tempo de recuperá-la".
+  - 20%: "Uma nova regada pode salvá-la".
+  - Voltou a ganhar vitalidade: "Sua árvore está se recuperando!"
+  - Secou: "Este ciclo chegou ao fim. Seu jardim guarda a história dessa conquista."
+  - Também avisam a fase nova e a árvore especial nova.
+- **Arte:** vetorial, com luz, sombra, camadas de profundidade, balanço da copa, folhas caindo quando a árvore está fraca, brilho na extraordinária e gotas na regada. É leve e funciona sem internet.
 
 ## Experiência e níveis
 

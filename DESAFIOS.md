@@ -72,22 +72,59 @@ Cada benefício é um par `[ícone, texto]`, mostrado com o ícone na cor da cat
 
 ## Ofensiva
 
-Dias seguidos de rotina saudável (`src/lib/streak.js`, ligada aos registros em `src/evolution.js`). É sempre recalculada dos registros. Não há contador que só sobe.
+Dias seguidos de rotina saudável (`src/lib/streak.js`, ligada aos registros em `src/evolution.js`). A validação é automática e a pessoa não escolhe o critério.
 
-- **Dia cumprido:** pelo menos uma das ações ligadas pela pessoa em Ajustar a ofensiva:
-  - registrar uma refeição;
-  - bater a meta de líquidos;
-  - registrar uma atividade feita;
-  - cumprir metade da rotina do dia.
+### O que valida o dia
 
-  Concluir um desafio no dia também conta. Nenhuma ação é obrigatória, nem atividade física.
-- **Contagem:** cada data conta uma vez, não importa quantos registros houver. As datas seguem o relógio do aparelho. Dias futuros nunca entram.
-- **Hoje sem registro:** fica "em aberto" e não quebra a ofensiva antes de o dia acabar.
-- **Descanso:** até 3 dias por semana. Em dia de descanso, a ofensiva não quebra; se houver registro, o dia conta.
-- **Pausa:** de 3, 7 ou 14 dias, com "Retomar agora". Os dias em pausa não quebram nem somam.
-- **Proteção:** 1 a cada 7 dias cumpridos, no máximo 2. Um dia sem registro é coberto por ela.
-- **Recordes:** ofensiva atual, recorde (guardado em `kv 'evolution'`, nunca diminui), dias ativos e semanas consistentes. Uma semana é consistente com 4 dias cumpridos ou mais, ou com todos os dias que contavam cumpridos, no mínimo 3.
-- **Avisos:** são positivos e aparecem uma vez cada: dia cumprido, recorde perto, semana consistente, nível novo e conquista nova. Na primeira apuração de um histórico antigo, nada é avisado.
+Basta UM destes critérios, cumprido por inteiro. Parcial não vale.
+
+| Critério | Regra |
+|---|---|
+| Hidratação | 100% da meta individual de líquidos do dia (a mesma da aba Líquidos). Com "Orientação médica para limitar líquidos" ligada, não se aplica: o app nunca empurra a beber mais. |
+| Alimentação | Todas as refeições previstas na rotina do dia (3 a 6, conforme o perfil) com pelo menos um item registrado. Uma refeição isolada não vale. Não exige alimento específico nem restrição. |
+| Atividade física | 30 minutos de atividades feitas no dia, a meta diária da rotina (150 min por semana, da OMS). Só contam atividades de 10 minutos ou mais. |
+
+### Integridade
+
+- **Prazo de registro:** valem os registros feitos até o fim do dia seguinte. Não há recuperação de dias antigos.
+  - Bebidas: conta a hora em que foram registradas (`createdAt`).
+  - Itens do diário: conta o `ts`.
+  - Atividades: conta o `updatedAt`.
+- **Sem duplicidade:** a mesma bebida no mesmo minuto, ou a mesma atividade no mesmo horário, conta uma vez. Cada data conta uma vez.
+- **Dias congelados:** passado o prazo, cada dia validado fica guardado em `kv 'evolution'.validated`, com o critério que validou e os cumpridos, e sincroniza com a conta. Mudar a meta ou apagar um registro depois não muda o passado.
+- **Descanso:** a mudança dos dias de descanso vale de hoje em diante (`restHistory`).
+- **Datas:** as datas são locais, do aparelho. Dias futuros nunca entram. O dia de hoje fica "em aberto" até acabar.
+- **Onde a validação roda:** neste app, no aparelho, a partir dos registros sincronizados. As regras são funções puras, sem rede, prontas para rodar também no servidor.
+
+### Descanso, pausa e proteção
+
+- Até 3 dias de descanso por semana.
+- Pausas a partir de hoje, de 3, 7 ou 14 dias, com no máximo 14 dias de pausa a cada 60.
+- 1 proteção a cada 7 dias seguidos, no máximo 2. Ela cobre um dia sem validação.
+
+### Na tela
+
+- **Chama própria:** em azul, com um leve tremular. Fica mais fraca quando a ofensiva está viva mas o dia ainda está em aberto, e cinza quando está zerada.
+- **Evolução pelos marcos:**
+  - 7 dias ou mais: ganha halo;
+  - 30 ou mais: halo e aro;
+  - 100 ou mais: núcleo âmbar.
+- **Painel "Hoje":** cada critério mostra o progresso ("1,5 de 2,0 L · 75%", "3 de 4 refeições", "20 de 30 min") e o estado: Pendente, Cumprida, Validou o dia ou Não se aplica. Embaixo, o resultado ("ofensiva mantida com Alimentação") ou o que falta no critério mais perto.
+- **Comemoração:** uma vez por dia, quando a ofensiva é mantida. A chama cresce e ondas suaves saem dela.
+- **Calendário, recordes e proteções:** como antes.
+
+### Marcos
+
+3, 7, 15, 30, 60 e 100 dias seguidos. Cada um tem medalha e XP:
+
+| Marco | XP |
+|---|---|
+| 3 dias | 20 |
+| 7 dias | 50 |
+| 15 dias | 100 |
+| 30 dias (bronze) | 200 |
+| 60 dias (prata) | 400 |
+| 100 dias (ouro) | 700 |
 
 ## Experiência e níveis
 
@@ -95,18 +132,20 @@ A XP (`src/lib/xp.js`) é recalculada dos registros, então nada vale duas vezes
 
 | Ação | XP |
 |---|---|
-| Dia cumprido da ofensiva | +10 por data |
-| No mesmo dia: meta de líquidos, atividade feita, metade da rotina | +5 cada |
+| Dia validado da ofensiva | +10 por data |
+| Cada critério cumprido por inteiro no dia (hidratação, alimentação, atividade) | +5 cada |
 | Desafio concluído | +50 por desafio iniciado |
-| Conquista desbloqueada | +25 por conquista |
+| Conquista desbloqueada | +25 (os marcos da ofensiva, de 20 a 700) |
 
 Níveis: Semente (0), Broto (100), Muda (250), Raiz (450), Caule (700), Folhagem (1.000), Flor (1.400), Árvore (1.900), Bosque (2.500) e Floresta (3.200). Depois, cada nível pede mais 800 XP.
 
 ## Conquistas
 
-São dezoito, todas por critério cumprido, nunca por começar. Cada uma tem andamento ("10 de 14") e a data em que foi desbloqueada.
+São vinte e uma, todas por critério cumprido, nunca por começar. Cada uma tem andamento ("10 de 14") e a data em que foi desbloqueada.
 
-- **Ofensiva:** Primeiro dia, Uma semana, Duas semanas, Consistência mensal (ouro), Semanas em ritmo, Superação (bronze), Recordista (prata) e 100 dias ativos (ouro).
+- **Ofensiva:**
+  - marcos: Primeiro dia, Três dias, Uma semana, Quinze dias, Um mês (bronze), Dois meses (prata) e Cem dias seguidos (ouro);
+  - outras: Semanas em ritmo, Superação (bronze), Recordista (prata) e 100 dias ativos.
   - Superação: 7 dias seguidos depois de uma interrupção.
   - Recordista: passar a maior ofensiva anterior, desde que ela tivesse pelo menos 3 dias.
 - **Desafios:** Primeiros passos, Persistência, Disciplina, Consistência, Hidratação em dia, Alimentação consciente, Corpo ativo, Bom descanso, Equilíbrio e Colecionador (prata).

@@ -1858,3 +1858,57 @@ section[aria-label="Unidades"] .set-label { flex: 1; min-width: 0; }
 .medal-head h3 { font: 600 13px/1.3 var(--font); letter-spacing: .02em; text-transform: uppercase; color: var(--ink-2); }
 /* Espaço no fim para o botão + não cobrir as últimas medalhas */
 .screen.progress { padding-bottom: 72px; }
+
+/* ---------- Ofensiva: chama, painel de hoje e comemoração ---------- */
+.stk-card { position: relative; overflow: hidden; }
+.stk-flame { flex: none; width: 56px; height: 56px; margin: -4px 0 0 -4px; }
+.flame { display: block; overflow: visible; }
+.flame-halo { fill: var(--accent-wash); }
+.flame-ring { stroke: color-mix(in srgb, var(--accent) 35%, transparent); }
+.flame-body, .flame-outer, .flame-inner { transform-box: fill-box; }
+.flame-outer { transform-origin: 50% 92%; animation: flame-sway 2.6s ease-in-out infinite alternate; }
+.flame-inner { transform-origin: 50% 95%; animation: flame-core 1.7s ease-in-out infinite alternate; }
+.flame-pending .flame-body { opacity: .55; }
+.flame-pending .flame-outer { animation-duration: 3.6s; }
+.flame-out .flame-outer, .flame-out .flame-inner { animation: none; }
+@keyframes flame-sway { 0% { transform: scale(1, 1) skewX(0); } 40% { transform: scale(.98, 1.03) skewX(-1.5deg); } 100% { transform: scale(1.01, .97) skewX(1.2deg); } }
+@keyframes flame-core { 0% { transform: scale(1, 1); } 100% { transform: scale(.94, 1.07); } }
+@media (prefers-reduced-motion: reduce) { .flame-outer, .flame-inner { animation: none; } }
+.stk-top { align-items: center; }
+
+/* Comemoração: a chama cresce e ondas suaves saem dela, uma vez por dia */
+.stk-card.celebrate .stk-flame .flame-body { animation: flame-burst .9s cubic-bezier(.22, 1.5, .36, 1) both; transform-origin: 50% 90%; transform-box: fill-box; }
+@keyframes flame-burst { 0% { transform: scale(.6); } 60% { transform: scale(1.18); } 100% { transform: none; } }
+.stk-burst { position: absolute; left: 46px; top: 46px; width: 0; height: 0; pointer-events: none; }
+.stk-burst span { position: absolute; left: -30px; top: -30px; width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: burst-ring 1.3s cubic-bezier(.22, 1, .36, 1) both; }
+.stk-burst span:nth-child(2) { animation-delay: .18s; }
+.stk-burst span:nth-child(3) { animation-delay: .36s; }
+@keyframes burst-ring { 0% { transform: scale(.4); opacity: .55; } 100% { transform: scale(3.2); opacity: 0; } }
+.stk-card.celebrate .stk-today-pill { animation: pill-in .6s .5s cubic-bezier(.22, 1.4, .36, 1) both; }
+@keyframes pill-in { from { transform: scale(.7); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .stk-burst { display: none; } .stk-card.celebrate .stk-flame .flame-body, .stk-card.celebrate .stk-today-pill { animation: none; } }
+
+/* Painel de hoje: os três critérios */
+.stk-today { margin-top: 14px; padding: 12px 12px 10px; border-radius: 16px; background: var(--surface-2); }
+.stk-today-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: var(--ink-2); }
+.stk-today-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; background: var(--fill); color: var(--ink-2); font-size: 12px; font-weight: 600; letter-spacing: 0; }
+.stk-today.ok .stk-today-pill { background: var(--accent); color: #fff; }
+.stk-today-pill .icon { width: 13px; height: 13px; stroke-width: 2.6; }
+.stk-crit { display: grid; gap: 10px; margin-top: 10px; }
+.stk-crit li { display: flex; align-items: center; gap: 10px; }
+.stk-crit-ic { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 10px; background: var(--surface); color: var(--ink-2); }
+.stk-crit-ic svg { width: 17px; height: 17px; }
+.stk-crit li[data-done] .stk-crit-ic { background: var(--accent-wash); color: var(--accent-ink); }
+.stk-crit li[data-by] .stk-crit-ic { background: var(--accent); color: #fff; }
+.stk-crit-main { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.stk-crit-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.stk-crit-line b { font-size: 14px; font-weight: 600; }
+.stk-crit-st { font-size: 11px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
+.stk-crit li[data-done] .stk-crit-st { color: var(--accent-ink); }
+.stk-crit-bar { height: 4px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.stk-crit-bar span { display: block; height: 100%; border-radius: 99px; background: color-mix(in srgb, var(--accent) 55%, transparent); transition: width .7s cubic-bezier(.22, 1, .36, 1); }
+.stk-crit li[data-done] .stk-crit-bar span { background: var(--accent); }
+.stk-crit-val { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.stk-crit li[data-na] { opacity: .6; }
+.stk-result { margin-top: 10px; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.stk-today.ok .stk-result { color: var(--accent-ink); font-weight: 500; }

@@ -4,7 +4,7 @@
 import { h, icon, int, toast, openSheet, segmented, confirmSheet, busy, picker } from './dom.js';
 import { ui, go } from './state.js';
 import { state, foodById, getPlan, waterGoalOn, startChallenge, updateChallenge, saveCheckin, unlockAchievements, saveEvolution } from '../store.js';
-import { evolution } from '../evolution.js';
+import { evolution, toFreeze } from '../evolution.js';
 import { todayISO, addDays, fmtDate, diffDays, weekStart } from '../lib/dates.js';
 import { CHALLENGES, CATEGORIES, categoryById, challengeById, sources, evaluate, trend, adaptiveSuggestion, defaultTarget, startBlock, recommend, campaignFor, ACHIEVEMENTS, earned, SAFETY, DISCOMFORT, addMin } from '../lib/challenges.js';
 import { challengeArt, glyph } from './challengeArt.js';
@@ -83,6 +83,9 @@ const justUnlocked = new Set();
 export const wasJustUnlocked = id => justUnlocked.has(id);
 async function settleEvolution(evo, today, say) {
   const prev = state.evolution ?? {}, st = evo.streak, patch = {};
+  // Congela os dias validados que já passaram do prazo: o passado não muda depois.
+  const freeze = toFreeze(evo, today);
+  if (Object.keys(freeze).length) patch.validated = { ...(prev.validated ?? {}), ...freeze };
   if (st.best !== prev.best) patch.best = st.best;
   if (evo.xp.xp !== prev.xp) patch.xp = evo.xp.xp;
   if (evo.level.level !== prev.level) patch.level = evo.level.level;
@@ -91,7 +94,7 @@ async function settleEvolution(evo, today, say) {
   if (!first && st.todayDone && prev.dayToast !== today) {
     patch.dayToast = today;
     const nearRecord = st.current < st.best && st.best - st.current <= 2 && st.best >= 5;
-    say(st.current === 1 ? 'Primeiro dia da sua ofensiva. Bom começo!' : nearRecord ? `Seu recorde pessoal (${st.best} dias) está cada vez mais próximo.` : `Você completou mais um dia da sua rotina! ${st.current} dias de ofensiva.`);
+    say(st.current === 1 ? 'Ofensiva acesa! Primeiro dia validado.' : nearRecord ? `Ofensiva mantida! Seu recorde (${st.best} dias) está cada vez mais próximo.` : `Ofensiva mantida! ${st.current} dias seguidos.`);
   } else if (first && st.todayDone) patch.dayToast = today;
   const wk = weekStart(today);
   if (!first && st.consistentWeeks > (prev.weeks ?? 0) && prev.weekToast !== wk) { patch.weekToast = wk; say('Você manteve a sua consistência nesta semana.'); }

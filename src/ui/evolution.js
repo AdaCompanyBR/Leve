@@ -1,12 +1,12 @@
 // Aba Progresso > Conquistas: nível, ofensiva e medalhas. Tudo vem de evolution() (registros reais).
-import { h, icon, int, openSheet, toast, segmented } from './dom.js';
+import { h, icon, int, dec1, openSheet, toast } from './dom.js';
 import { state, saveSettings } from '../store.js';
 import { evolution, streakConfig } from '../evolution.js';
-import { CRITERIA, weekDays, streakMessage, inPause, MAX_SHIELDS, SHIELD_EVERY } from '../lib/streak.js';
+import { CRITERIA, weekDays, streakMessage, inPause, flameTier, MILESTONES, MAX_SHIELDS, SHIELD_EVERY, MAX_REST_DAYS, MAX_PAUSE_DAYS_60, ACTIVITY_GOAL_MIN, MIN_BOUT_MIN } from '../lib/streak.js';
 import { XP_RULES, LEVELS } from '../lib/xp.js';
 import { ACHIEVEMENTS, challengeById, evaluate } from '../lib/challenges.js';
 import { todayISO, addDays, weekStart, fmtDate, fromISO } from '../lib/dates.js';
-import { medalArt, streakMark, levelEmblem } from './challengeArt.js';
+import { medalArt, flameMark, levelEmblem } from './challengeArt.js';
 import { dataSource, wasJustUnlocked, syncChallenges } from './challenges.js';
 
 const long = d => fmtDate(d, { day: 'numeric', month: 'short' }).replace('.', '');
@@ -55,10 +55,10 @@ function xpSheet(evo) {
   openSheet({ title: 'Experiência', content: h('div.xp-sheet',
     h('p.sheet-text', 'A XP vem só de ações reais e é recalculada dos seus registros, então nada vale duas vezes. Abrir o app não conta.'),
     h('ul.xp-rules',
-      rule('Dia cumprido da ofensiva', `+${XP_RULES.day}`, p.days),
-      rule('Metas do dia: líquidos, atividade feita e metade da rotina', `+${XP_RULES.water} cada`, p.goals),
+      rule('Dia validado da ofensiva', `+${XP_RULES.day}`, p.days),
+      rule('Cada critério cumprido no dia: hidratação, alimentação, atividade', `+${XP_RULES.criterion} cada`, p.goals),
       rule('Desafio concluído', `+${XP_RULES.challenge}`, p.challenges),
-      rule('Conquista desbloqueada', `+${XP_RULES.achievement}`, p.achievements)),
+      rule('Conquista desbloqueada (marcos da ofensiva valem de 20 a 700)', `+${XP_RULES.achievement}`, p.achievements)),
     h('p.xp-total', 'Total: ', h('b', XP(evo.xp.xp))),
     h('h3.xp-sub', 'Níveis'),
     h('ol.xp-levels', LEVELS.map(l => h('li' + (evo.level.level >= l.level ? '.on' : ''), h('span.xp-lv', l.level), h('span', l.name), h('span.xp-at', XP(l.at))))),
@@ -68,6 +68,7 @@ function xpSheet(evo) {
 // ---------------------------------------------------------------------------
 // Ofensiva
 
+const CELEBRATED = 'leve-streak-celebrated';
 let weekOffset = 0;
 let lastTodayDone = null; // para animar o dia de hoje só quando ele acaba de ser cumprido
 const WD = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
@@ -80,17 +81,23 @@ function streakCard(evo, today) {
   const firstWeek = weekStart(Object.keys(st.days).sort()[0] ?? today);
   const justDone = st.todayDone && lastTodayDone === false;
   lastTodayDone = st.todayDone;
+  // Comemoração uma vez por dia, quando a ofensiva é mantida (aqui ou ao abrir a aba depois).
+  let celebrate = false;
+  if (st.todayDone) { try { celebrate = localStorage.getItem(CELEBRATED) !== today; localStorage.setItem(CELEBRATED, today); } catch { celebrate = justDone; } }
+  if (celebrate) card.classList.add('celebrate');
   const paint = () => {
     const monday = addDays(weekStart(today), weekOffset * 7);
     const days = weekDays(st.days, monday, today, cfg);
     const label = weekOffset === 0 ? 'Esta semana' : weekOffset === -1 ? 'Semana passada' : `${long(monday)} – ${long(addDays(monday, 6))}`;
-    card.replaceChildren(
+    card.replaceChildren(...[
       h('div.stk-top',
-        streakMark({ size: 44, muted: st.current === 0 }),
+        h('div.stk-flame', flameMark({ size: 56, tier: flameTier(st.current), mode: st.current === 0 ? 'out' : st.todayDone ? 'lit' : 'pending' })),
         h('div.stk-count',
           h('p.stk-num-line', h('b', st.current), h('span', st.current === 1 ? 'dia seguido' : 'dias seguidos')),
           h('p.stk-msg', paused ? `Em pausa${pauseEnd(cfg, today) ? ` até ${long(pauseEnd(cfg, today))}` : ''}. A ofensiva fica guardada como está.` : streakMessage(st))),
-        h('button.stk-adjust', { type: 'button', 'aria-label': 'Ajustar a ofensiva', onclick: () => streakSettingsSheet() }, icon('settings'))),
+        h('button.stk-adjust', { type: 'button', 'aria-label': 'Ajustar descanso e pausa', onclick: () => streakSettingsSheet() }, icon('settings'))),
+      celebrate ? h('div.stk-burst', { 'aria-hidden': 'true' }, h('span'), h('span'), h('span')) : null,
+      todayPanel(evo, today),
       h('div.stk-week',
         h('div.stk-week-head',
           h('span', label),
@@ -103,11 +110,11 @@ function streakCard(evo, today) {
           h('span.stk-dot', dayGlyph(d.state)),
           h('span.stk-num', fromISO(d.date).getDate()))))),
       h('div.stk-stats',
-        statTile('peak', int(st.best), st.best === 1 ? 'dia' : 'dias', 'Maior sequência', `A maior quantidade de dias seguidos que você já cumpriu: ${st.best} ${st.best === 1 ? 'dia' : 'dias'}. Dias de descanso, pausa e proteção não interrompem a sequência.`),
-        statTile('calendar', int(st.totalActive), st.totalActive === 1 ? 'dia' : 'dias', 'Dias ativos', `Todos os dias em que você cumpriu a ofensiva, seguidos ou não: ${st.totalActive}. Diferente da maior sequência, aqui um dia sem registro não zera nada.`),
+        statTile('peak', int(st.best), st.best === 1 ? 'dia' : 'dias', 'Maior sequência', `A maior quantidade de dias seguidos que você já validou: ${st.best} ${st.best === 1 ? 'dia' : 'dias'}. Dias de descanso, pausa e proteção não interrompem a sequência.`),
+        statTile('calendar', int(st.totalActive), st.totalActive === 1 ? 'dia' : 'dias', 'Dias ativos', `Todos os dias validados, seguidos ou não: ${st.totalActive}. Diferente da maior sequência, aqui um dia sem registro não zera nada.`),
         statTile('rings', int(st.consistentWeeks), '', 'Semanas consistentes', 'Semanas (de segunda a domingo) com pelo menos 4 dias cumpridos, ou com todos os dias que contavam cumpridos, no mínimo 3. Descanso e pausa não pesam contra.'),
-        statTile('shield', String(st.shields), `de ${MAX_SHIELDS}`, 'Proteções', `A cada ${SHIELD_EVERY} dias cumpridos você ganha uma proteção (até ${MAX_SHIELDS}). Se um dia passar sem registro, ela cobre esse dia e a ofensiva continua.`)),
-      h('button.stk-how', { type: 'button', onclick: () => rulesSheet(evo) }, 'Como a ofensiva funciona', icon('next')));
+        statTile('shield', String(st.shields), `de ${MAX_SHIELDS}`, 'Proteções', `A cada ${SHIELD_EVERY} dias seguidos validados você ganha uma proteção (até ${MAX_SHIELDS}). Se um dia passar sem validação, ela cobre esse dia e a ofensiva continua.`)),
+      h('button.stk-how', { type: 'button', onclick: () => rulesSheet(evo) }, 'Como a ofensiva funciona', icon('next'))].filter(Boolean));
   };
   paint();
   return card;
@@ -135,63 +142,88 @@ function dayGlyph(st) {
 }
 const pauseEnd = (cfg, today) => cfg.pauses.find(p => today >= p.from && (!p.to || today <= p.to))?.to ?? null;
 
+// Painel "Hoje": os três critérios, o que falta e qual validou o dia.
+function todayPanel(evo, today) {
+  const st = evo.streak, rows = evo.todayProgress;
+  const by = st.by[today];
+  const val = c => c.id === 'agua' ? `${dec1(c.value / 1000)} de ${dec1(c.target / 1000)} L` : c.id === 'refeicoes' ? `${c.value} de ${c.target} refeições` : `${c.value} de ${c.target} min`;
+  const status = c => !c.applicable ? 'Não se aplica' : c.id === by ? 'Validou o dia' : c.done ? 'Cumprida' : 'Pendente';
+  const pending = rows.filter(c => c.applicable && !c.done).sort((a, b) => b.pct - a.pct);
+  const left = c => c.id === 'agua' ? `faltam ${dec1((c.target - c.value) / 1000)} L` : c.id === 'refeicoes' ? `falta${c.target - c.value === 1 ? '' : 'm'} ${c.target - c.value} ${c.target - c.value === 1 ? 'refeição' : 'refeições'}` : `faltam ${c.target - c.value} min`;
+  const name = { agua: 'Hidratação', refeicoes: 'Alimentação', atividade: 'Atividade física' };
+  return h('div.stk-today' + (st.todayDone ? '.ok' : ''),
+    h('div.stk-today-head', h('span', 'Hoje'), h('span.stk-today-pill', st.todayDone ? [icon('check'), 'Ofensiva mantida!'] : 'Cumpra 1 dos 3')),
+    h('ul.stk-crit', rows.map(c => {
+      const def = CRITERIA.find(k => k.id === c.id);
+      return h('li', { 'data-done': c.done ? '1' : null, 'data-by': c.id === by ? '1' : null, 'data-na': c.applicable ? null : '1' },
+        h('span.stk-crit-ic', icon(def.icon)),
+        h('div.stk-crit-main',
+          h('div.stk-crit-line', h('b', def.label), h('span.stk-crit-st', status(c))),
+          h('div.stk-crit-bar', h('span', { style: { width: `${Math.round((c.applicable ? c.pct : 0) * 100)}%` } })),
+          h('span.stk-crit-val', c.applicable ? `${val(c)}${c.id === 'agua' ? ` · ${Math.round(c.pct * 100)}%` : ''}` : 'Orientação médica para limitar líquidos ligada')));
+    })),
+    h('p.stk-result', st.todayDone ? `Resultado: ofensiva mantida com ${name[by] ?? 'um critério'}.`
+      : pending.length ? `Para validar hoje, cumpra um deles por inteiro. Mais perto: ${name[pending[0].id]} (${left(pending[0])}).` : 'Para validar hoje, cumpra um dos critérios por inteiro.'));
+}
+
 function rulesSheet(evo) {
-  const c = evo.config.criteria;
   openSheet({ title: 'Como a ofensiva funciona', content: h('div.rules-sheet',
-    h('p.sheet-text', 'A ofensiva conta os dias seguidos em que você cuidou da sua rotina. Um dia conta quando você cumpre pelo menos uma destas ações:'),
-    h('ul.rules-list', CRITERIA.map(k => h('li' + (c[k.id] === false ? '.off' : ''), icon(c[k.id] === false ? 'minus' : 'check'), h('span', h('b', k.label), h('span', k.hint))))),
+    h('p.sheet-text', 'A ofensiva conta os dias seguidos em que você cumpriu, por inteiro, pelo menos um destes três critérios. A validação é automática, pelos seus registros:'),
+    h('ul.rules-list', CRITERIA.map(k => h('li', icon(k.icon), h('span', h('b', k.label), h('span', k.rule))))),
     h('ul.rules-text',
-      h('li', 'Concluir um desafio no dia também conta.'),
-      h('li', 'Cada dia conta uma vez só, não importa quantos registros você fizer.'),
-      h('li', 'O dia segue o relógio do seu aparelho. Hoje sem registro fica em aberto, sem quebrar nada.'),
-      h('li', 'Dias de descanso e dias em pausa não quebram nem somam.'),
-      h('li', `A cada ${SHIELD_EVERY} dias cumpridos você ganha uma proteção (até ${MAX_SHIELDS}). Se um dia passar sem registro, ela cobre esse dia.`),
-      h('li', 'Atividade física nunca é obrigatória. Descansar também faz parte.')),
-    h('button.btn.tonal.block', { type: 'button', onclick: () => streakSettingsSheet() }, 'Ajustar a ofensiva')) });
+      h('li', 'Basta um critério por dia. Parcial não vale: 75% da água ou 3 de 4 refeições ainda não validam.'),
+      h('li', 'Vale o que foi registrado até o fim do dia seguinte. Depois disso, o dia não muda mais.'),
+      h('li', 'Registros repetidos contam uma vez. Atividades com menos de 10 minutos não entram na soma.'),
+      h('li', 'Dias já validados ficam guardados: mudar a meta depois não muda o passado.'),
+      h('li', 'O dia segue o relógio do seu aparelho. Hoje em aberto não quebra nada até o dia acabar.'),
+      h('li', `Até ${MAX_REST_DAYS} dias de descanso por semana e pausas de até 14 dias não quebram a ofensiva. A mudança vale dali para a frente.`),
+      h('li', `A cada ${SHIELD_EVERY} dias seguidos você ganha uma proteção (até ${MAX_SHIELDS}); ela cobre um dia sem validação.`),
+      h('li', `Marcos: ${MILESTONES.join(', ')} dias seguidos, com medalha e XP.`),
+      h('li', 'As metas são as suas, individuais. Com orientação médica para limitar líquidos, a hidratação não entra. Nada aqui pede beber, comer ou treinar além do seu plano.')),
+    h('button.btn.tonal.block', { type: 'button', onclick: () => streakSettingsSheet() }, 'Descanso e pausa')) });
 }
 
 function streakSettingsSheet() {
   const today = todayISO();
   const body = h('div.stk-settings');
-  const save = async patch => { await saveSettings({ streak: { ...streakConfig(), ...patch } }); paint(); syncChallenges({ notify: false }); };
+  const saveRaw = async patch => { await saveSettings({ streak: { ...(state.settings.streak ?? {}), ...patch } }); paint(); syncChallenges({ notify: false }); };
+  const pausedDays60 = cfg => {
+    let n = 0;
+    for (let i = 0; i < 60; i++) { const d = addDays(today, -i); if (inPause(d, cfg.pauses)) n++; }
+    return n;
+  };
   const paint = () => {
     const cfg = streakConfig();
-    const on = CRITERIA.filter(k => cfg.criteria[k.id] !== false).length;
     const paused = inPause(today, cfg.pauses);
+    const used = pausedDays60(cfg), room = Math.max(0, MAX_PAUSE_DAYS_60 - used);
     body.replaceChildren(
-      h('h3', 'O que conta como dia cumprido'),
-      h('div.set-rows', CRITERIA.map(k => {
-        const val = cfg.criteria[k.id] !== false;
-        return h('div.set-row', h('div.set-label', h('span', k.label), h('span.set-hint', k.hint)),
-          h('button.switch', { role: 'switch', 'aria-checked': String(val), 'aria-label': k.label, onclick: () => {
-            if (val && on === 1) return toast('Deixe pelo menos uma opção ligada.');
-            save({ criteria: { ...cfg.criteria, [k.id]: !val } });
-          } }, h('span')));
-      })),
-      h('p.fine', 'Basta uma por dia. Escolha as que fazem sentido para o seu objetivo.'),
+      h('p.sheet-text', 'O que valida o dia é definido pelo app: hidratação, alimentação ou atividade física, cumpridas por inteiro. Aqui você ajusta só o descanso e a pausa.'),
       h('h3', 'Dias de descanso'),
       h('div.stk-rest', ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((l, i) => {
         const sel = cfg.restDays.includes(i);
         const names = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
         return h('button.stk-rest-day', { type: 'button', 'aria-pressed': String(sel), 'aria-label': `Descanso na ${names[i]}`, onclick: () => {
-          if (!sel && cfg.restDays.length >= 3) return toast('Escolha até 3 dias de descanso por semana.');
-          save({ restDays: sel ? cfg.restDays.filter(x => x !== i) : [...cfg.restDays, i].sort() });
+          if (!sel && cfg.restDays.length >= MAX_REST_DAYS) return toast(`Escolha até ${MAX_REST_DAYS} dias de descanso por semana.`);
+          const days = sel ? cfg.restDays.filter(x => x !== i) : [...cfg.restDays, i].sort();
+          // A mudança vale de hoje em diante: o passado continua como estava.
+          const hist = cfg.restHistory.filter(x => x.from !== today);
+          saveRaw({ restDays: days, restHistory: [...hist, { from: today, days }] });
         } }, l);
       })),
-      h('p.fine', 'Nos dias de descanso, a ofensiva não quebra. Se você registrar algo, o dia conta normalmente.'),
+      h('p.fine', 'Em dia de descanso a ofensiva não quebra. Se você cumprir um critério, o dia conta normalmente. A mudança vale de hoje em diante.'),
       h('h3', 'Pausa'),
       paused
         ? h('div.stk-pause', h('p', `Em pausa${pauseEnd(cfg, today) ? ` até ${long(pauseEnd(cfg, today))}` : ''}.`),
           h('button.btn.tonal', { type: 'button', onclick: () => {
             const pauses = cfg.pauses.map(p => (today >= p.from && (!p.to || today <= p.to)) ? (p.from === today ? null : { ...p, to: addDays(today, -1) }) : p).filter(Boolean);
-            save({ pauses }); toast('Ofensiva retomada. Hoje já conta.');
+            saveRaw({ pauses }); toast('Ofensiva retomada. Hoje já conta.');
           } }, 'Retomar agora'))
         : h('div.stk-pause',
-          h('p', 'Viagem, doença ou só um tempo? A pausa guarda a ofensiva como está.'),
-          h('div.stk-pause-opts', [3, 7, 14].map(n => h('button.btn.tonal', { type: 'button', onclick: () => { save({ pauses: [...cfg.pauses, { from: today, to: addDays(today, n - 1) }] }); toast(`Ofensiva em pausa por ${n} dias.`); } }, `${n} dias`)))));
+          h('p', `Viagem, doença ou só um tempo? A pausa começa hoje e guarda a ofensiva como está. Você pode usar até ${MAX_PAUSE_DAYS_60} dias de pausa a cada 60 dias${used ? ` (restam ${room})` : ''}.`),
+          h('div.stk-pause-opts', [3, 7, 14].map(n => h('button.btn.tonal', { type: 'button', disabled: n > room, onclick: () => { saveRaw({ pauses: [...cfg.pauses, { from: today, to: addDays(today, n - 1) }] }); toast(`Ofensiva em pausa por ${n} dias.`); } }, `${n} dias`)))));
   };
   paint();
-  openSheet({ title: 'Ajustar a ofensiva', content: body });
+  openSheet({ title: 'Descanso e pausa', content: body });
 }
 
 // ---------------------------------------------------------------------------
@@ -218,7 +250,7 @@ function medalsSection(evo, today) {
     h('div.medals-title', h('h2', 'Medalhas'), h('span', `${total} de ${ACHIEVEMENTS.length}`)),
     group('De ofensiva', ACHIEVEMENTS.filter(a => a.group === 'ofensiva')),
     group('De desafios', ACHIEVEMENTS.filter(a => a.group === 'desafios')),
-    h('p.fine.medals-foot', 'Conquistas vêm de dias cumpridos e de desafios concluídos, nunca só de começar. Cada uma vale +25 XP, uma vez.'));
+    h('p.fine.medals-foot', 'Conquistas vêm de dias validados e de desafios concluídos, nunca só de começar. Os marcos da ofensiva valem de 20 a 700 XP; as outras, 25. Cada uma vale uma vez.'));
 }
 
 function medalSheet(a, st, date, pr) {
@@ -231,5 +263,5 @@ function medalSheet(a, st, date, pr) {
       : h('div.medal-progress',
         h('div.lvl-track', h('span', { style: { width: `${(pr.value / pr.target) * 100}%` } })),
         h('p', pr.target > 1 ? `${pr.value} de ${pr.target}` : 'Ainda não desbloqueada')),
-    h('p.fine', `Vale +${XP_RULES.achievement} XP quando desbloqueada.`)) });
+    h('p.fine', `Vale +${a.xp ?? XP_RULES.achievement} XP quando desbloqueada.`)) });
 }

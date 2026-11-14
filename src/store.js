@@ -232,7 +232,7 @@ export async function saveAvatar(dataUrl) { state.avatar = dataUrl || null; awai
 export const bodyStyle = () => state.settings.body ?? (state.profile?.sex === 'm' ? 'm' : 'f');
 export const dayDrinks = date => state.drinks.filter(d => d.date === date).sort((a, b) => a.ts - b.ts);
 export async function addDrink(date, type, ml, extra = {}) {
-  const row = { id: uid(), date, type, ml: Math.round(ml), ts: Date.now(), ...extra };
+  const row = { id: uid(), date, type, ml: Math.round(ml), ts: Date.now(), ...extra, createdAt: Date.now() }; // createdAt: quando foi registrado (ts pode ser o horário escolhido)
   state.drinks = [...state.drinks, row];
   await db.put('drinks', row);
   emit();

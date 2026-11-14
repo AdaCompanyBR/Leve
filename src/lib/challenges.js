@@ -373,14 +373,17 @@ export function campaignFor(today) {
 const ofDays = n => s => ({ value: Math.min(s.streak?.best ?? 0, n), target: n });
 const binary = ok => ({ value: ok ? 1 : 0, target: 1 });
 export const ACHIEVEMENTS = [
-  { id: 'primeiro-dia', group: 'ofensiva', title: 'Primeiro dia', text: 'Completou o primeiro dia da ofensiva.', medal: 'sprout', test: s => (s.streak?.best ?? 0) >= 1, progress: ofDays(1) },
-  { id: 'uma-semana', group: 'ofensiva', title: 'Uma semana', text: 'Manteve 7 dias seguidos de ofensiva.', medal: 'streak', stars: 1, test: s => (s.streak?.best ?? 0) >= 7, progress: ofDays(7) },
-  { id: 'duas-semanas', group: 'ofensiva', title: 'Duas semanas', text: 'Manteve 14 dias seguidos de ofensiva.', medal: 'streak', stars: 2, test: s => (s.streak?.best ?? 0) >= 14, progress: ofDays(14) },
-  { id: 'um-mes', group: 'ofensiva', title: 'Consistência mensal', text: 'Manteve 30 dias seguidos de ofensiva.', medal: 'streak', stars: 3, tier: 'ouro', test: s => (s.streak?.best ?? 0) >= 30, progress: ofDays(30) },
+  { id: 'primeiro-dia', group: 'ofensiva', title: 'Primeiro dia', text: 'Validou o primeiro dia da ofensiva.', medal: 'sprout', test: s => (s.streak?.best ?? 0) >= 1, progress: ofDays(1) },
+  { id: 'tres-dias', group: 'ofensiva', title: 'Três dias', text: 'Manteve 3 dias seguidos de ofensiva.', medal: 'streak', stars: 1, xp: 20, test: s => (s.streak?.best ?? 0) >= 3, progress: ofDays(3) },
+  { id: 'uma-semana', group: 'ofensiva', title: 'Uma semana', text: 'Manteve 7 dias seguidos de ofensiva.', medal: 'streak', stars: 2, xp: 50, test: s => (s.streak?.best ?? 0) >= 7, progress: ofDays(7) },
+  { id: 'quinze-dias', group: 'ofensiva', title: 'Quinze dias', text: 'Manteve 15 dias seguidos de ofensiva.', medal: 'streak', stars: 3, xp: 100, test: s => (s.streak?.best ?? 0) >= 15, progress: ofDays(15) },
+  { id: 'um-mes', group: 'ofensiva', title: 'Um mês', text: 'Manteve 30 dias seguidos de ofensiva.', medal: 'streak', tier: 'bronze', xp: 200, test: s => (s.streak?.best ?? 0) >= 30, progress: ofDays(30) },
+  { id: 'dois-meses', group: 'ofensiva', title: 'Dois meses', text: 'Manteve 60 dias seguidos de ofensiva.', medal: 'streak', tier: 'prata', xp: 400, test: s => (s.streak?.best ?? 0) >= 60, progress: ofDays(60) },
+  { id: 'cem-seguidos', group: 'ofensiva', title: 'Cem dias seguidos', text: 'Manteve 100 dias seguidos de ofensiva.', medal: 'streak', tier: 'ouro', xp: 700, test: s => (s.streak?.best ?? 0) >= 100, progress: ofDays(100) },
   { id: 'semanas', group: 'ofensiva', title: 'Semanas em ritmo', text: 'Teve 4 semanas consistentes.', medal: 'calendar', test: s => (s.streak?.consistentWeeks ?? 0) >= 4, progress: s => ({ value: Math.min(s.streak?.consistentWeeks ?? 0, 4), target: 4 }) },
   { id: 'superacao', group: 'ofensiva', title: 'Superação', text: 'Retomou a rotina e fez 7 dias seguidos depois de uma interrupção.', medal: 'rise', tier: 'bronze', test: s => !!s.streak?.comebackOn, progress: s => binary(!!s.streak?.comebackOn) },
   { id: 'recordista', group: 'ofensiva', title: 'Recordista', text: 'Superou o seu recorde pessoal de ofensiva.', medal: 'peak', tier: 'prata', test: s => !!s.streak?.recordBeatenOn, progress: s => binary(!!s.streak?.recordBeatenOn) },
-  { id: 'cem-dias', group: 'ofensiva', title: '100 dias ativos', text: 'Somou 100 dias cumpridos, seguidos ou não.', medal: 'hundred', tier: 'ouro', test: s => (s.streak?.totalActive ?? 0) >= 100, progress: s => ({ value: Math.min(s.streak?.totalActive ?? 0, 100), target: 100 }) },
+  { id: 'cem-dias', group: 'ofensiva', title: '100 dias ativos', text: 'Somou 100 dias validados, seguidos ou não.', medal: 'hundred', test: s => (s.streak?.totalActive ?? 0) >= 100, progress: s => ({ value: Math.min(s.streak?.totalActive ?? 0, 100), target: 100 }) },
   { id: 'primeiros-passos', group: 'desafios', title: 'Primeiros passos', text: 'Concluiu o primeiro desafio.', medal: 'flag', test: s => s.concluded.length >= 1, progress: s => ({ value: Math.min(s.concluded.length, 1), target: 1 }) },
   { id: 'persistencia', group: 'desafios', title: 'Persistência', text: 'Cumpriu 7 dias de um mesmo desafio.', medal: 'path', test: s => s.maxDays >= 7, progress: s => ({ value: Math.min(s.maxDays, 7), target: 7 }) },
   { id: 'disciplina', group: 'desafios', title: 'Disciplina', text: 'Concluiu um desafio de 14 dias.', medal: 'target', test: s => s.concluded.some(c => c.def.days === 14), progress: s => binary(s.concluded.some(c => c.def.days === 14)) },

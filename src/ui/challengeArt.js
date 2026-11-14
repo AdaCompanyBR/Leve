@@ -73,7 +73,7 @@ export function challengeArt(def, { size = 120, days = true } = {}) {
 
 const M = {
   sprout: '<path d="M12 20.5v-7.5"/><path d="M12 13c0-3.6-2.5-5.8-6.2-5.8 0 3.5 2.5 5.8 6.2 5.8z"/><path d="M12 11.2c0-3 2.1-5 5.3-5 0 3-2.1 5-5.3 5z"/><path d="M8.5 20.5h7"/>',
-  streak: '<path d="M3.6 15.2c2.1 0 2.9-5.2 5.3-5.2s3 5.2 5.4 5.2c1.9 0 3-2.6 4.4-5.6"/><circle cx="19.6" cy="7.1" r="1.25" fill="currentColor" stroke="none"/>',
+  streak: '<path d="M12 2.8c1.1 3.3 5.7 5.9 5.7 12a5.7 5.7 0 0 1-11.4 0c0-2.8 1.5-4.6 2.9-6.2.2 2 1 3.2 2.3 3.8-.4-3.8.2-7.1.5-9.6z"/><path d="M12.3 13.6c1.4 1.3 2.4 2.6 2.4 4.1a2.7 2.7 0 0 1-5.4 0c0-1.2.7-2 1.5-2.8"/>',
   calendar: '<rect x="4" y="5.5" width="16" height="14.5" rx="3"/><path d="M4 10h16M8.5 3.8v3.4M15.5 3.8v3.4"/><path d="m9.3 14.6 1.8 1.8 3.6-3.6"/>',
   rise: '<path d="M3.8 16.5 8.4 12l3.1 3 7.7-7.7"/><path d="M14.6 7.3h4.6v4.6"/>',
   peak: '<path d="M2.8 19.5 9.4 9.2l3.7 5.6 2.4-3.4 5.7 8.1z"/><path d="M15.5 11.4V4.6l3.4 1.4-3.4 1.4"/>',
@@ -129,16 +129,25 @@ export function medalArt(a, { state: st = 'locked', size = 72, fresh = false } =
 }
 
 /**
- * Símbolo da ofensiva: três passos que sobem, ligados por uma linha contínua. Continuidade e avanço,
- * em azul sobre um quadrado claro; cinza quando a ofensiva está em zero.
+ * Chama da ofensiva, desenhada para o app: azul da identidade, núcleo claro e um leve tremular.
+ * tier (pelos marcos): 0 simples · 1 (7+) halo · 2 (30+) halo e aro · 3 (100+) núcleo âmbar.
+ * mode: 'lit' (hoje validado), 'pending' (ofensiva viva, hoje em aberto), 'out' (zerada).
  */
-export function streakMark({ size = 44, muted = false } = {}) {
-  return tpl(`<svg class="streak-mark${muted ? ' muted' : ''}" viewBox="0 0 44 44" width="${size}" height="${size}" aria-hidden="true">
-    <rect width="44" height="44" rx="13" class="sm-bg"/>
-    <path d="M11.5 29.5C15 29.5 16.5 22 22 22s7-7.5 10.5-7.5" fill="none" class="sm-line" stroke-width="2" stroke-linecap="round"/>
-    <circle cx="11.5" cy="29.5" r="3.1" class="sm-dot sm-1"/>
-    <circle cx="22" cy="22" r="3.1" class="sm-dot sm-2"/>
-    <circle cx="32.5" cy="14.5" r="3.6" class="sm-dot sm-3"/>
+const FLAME_OUT = 'M28 5c2.5 7.5 13 13.5 13 27.5a13 13 0 0 1-26 0c0-6.5 3.4-10.6 6.6-14.2.4 4.6 2.4 7.4 5.3 8.6C25.6 19.6 27 12 28 5z';
+const FLAME_IN = 'M28.6 24.6c3.6 3.4 6.4 6.8 6.4 10.8a7 7 0 0 1-14 0c0-3 1.7-5.2 3.8-7.3.5 2.4 1.6 3.8 3.1 4.4-.6-3.2-.1-5.7.7-7.9z';
+export function flameMark({ size = 56, tier = 0, mode = 'lit' } = {}) {
+  const id = 'fl' + (++medalSeq);
+  const out = mode === 'out';
+  const [o1, o2] = out ? ['#D3D6DC', '#AEB3BC'] : ['#78AEF8', '#2F6FDB'];
+  const [i1, i2] = out ? ['#F4F5F7', '#E3E5EA'] : tier >= 3 ? ['#FFE2A8', '#FFB547'] : ['#FFFFFF', '#CFE2FF'];
+  return tpl(`<svg class="flame flame-${mode} flame-t${tier}" viewBox="0 0 56 56" width="${size}" height="${size}" aria-hidden="true">
+    <defs>
+      <linearGradient id="${id}o" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${o1}"/><stop offset="1" stop-color="${o2}"/></linearGradient>
+      <linearGradient id="${id}i" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${i1}"/><stop offset="1" stop-color="${i2}"/></linearGradient>
+    </defs>
+    ${tier >= 1 && !out ? '<circle class="flame-halo" cx="28" cy="31" r="26"/>' : ''}
+    ${tier >= 2 && !out ? '<circle class="flame-ring" cx="28" cy="31" r="23.5" fill="none" stroke-width="1.2"/>' : ''}
+    <g class="flame-body"><path class="flame-outer" d="${FLAME_OUT}" fill="url(#${id}o)"/><path class="flame-inner" d="${FLAME_IN}" fill="url(#${id}i)"/></g>
   </svg>`);
 }
 

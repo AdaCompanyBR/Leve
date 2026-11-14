@@ -2,13 +2,13 @@
 //
 // A XP é sempre RECALCULADA dos registros (não é um contador que só sobe), então uma mesma ação
 // nunca vale duas vezes e corrigir um registro corrige a XP. Regras, mostradas na tela:
-// - Dia cumprido da ofensiva: +10 (uma vez por data).
-// - No mesmo dia, metas pessoais: meta de líquidos +5, atividade feita +5, metade da rotina +5.
+// - Dia validado da ofensiva: +10 (uma vez por data).
+// - No mesmo dia, cada critério cumprido por inteiro: hidratação +5, alimentação +5, atividade +5.
 // - Desafio concluído: +50 (uma vez por desafio iniciado).
-// - Conquista desbloqueada: +25 (uma vez por conquista).
+// - Conquista desbloqueada: +25 (uma vez por conquista); os marcos da ofensiva valem mais (ver ACHIEVEMENTS).
 // Abrir o app não vale nada.
 
-export const XP_RULES = { day: 10, water: 5, activity: 5, routine: 5, challenge: 50, achievement: 25 };
+export const XP_RULES = { day: 10, criterion: 5, challenge: 50, achievement: 25 };
 
 // Nomes de crescimento, do começo ao amadurecimento da rotina.
 export const LEVELS = [
@@ -41,20 +41,17 @@ export function levelFor(xp) {
 
 /**
  * XP total e o detalhamento.
- * days: estados por data (de computeStreak). facts(date): fatos do dia.
- * concluded: ids dos desafios concluídos. achievements: ids das conquistas desbloqueadas.
+ * days: estados por data (de computeStreak). doneOf(date): critérios cumpridos no dia (ids).
+ * concluded: ids dos desafios concluídos. achievements: ids desbloqueados. xpOf(id): XP de cada conquista.
  */
-export function computeXP({ days = {}, facts = () => null, concluded = [], achievements = [] }) {
+export function computeXP({ days = {}, doneOf = () => [], concluded = [], achievements = [], xpOf = () => XP_RULES.achievement }) {
   const parts = { days: 0, goals: 0, challenges: 0, achievements: 0 };
   for (const [date, st] of Object.entries(days)) {
     if (st !== 'done') continue;
     parts.days += XP_RULES.day;
-    const f = facts(date) ?? {};
-    if (f.waterMet) parts.goals += XP_RULES.water;
-    if (f.activity) parts.goals += XP_RULES.activity;
-    if (f.routineHalf) parts.goals += XP_RULES.routine;
+    parts.goals += new Set(doneOf(date)).size * XP_RULES.criterion;
   }
   parts.challenges = new Set(concluded).size * XP_RULES.challenge;
-  parts.achievements = new Set(achievements).size * XP_RULES.achievement;
+  for (const id of new Set(achievements)) parts.achievements += xpOf(id);
   return { xp: parts.days + parts.goals + parts.challenges + parts.achievements, parts };
 }

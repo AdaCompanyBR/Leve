@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conferência do jardim</title>
+<link rel="stylesheet" href="../css/app.css">
+<style>
+  body { background: #F5F5F7; padding: 16px; font: 13px -apple-system, system-ui, sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; } p { color: #6E6E73; margin: 0 0 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  figure { margin: 0; background: #fff; border-radius: 16px; overflow: hidden; }
+  figcaption { padding: 8px 12px; color: #3A3A3C; }
+</style>
+</head>
+<body>
+<h1>Conferência do jardim</h1>
+<p>As 7 fases com 100%, 50% e 10% de vitalidade, usando os arquivos de img/garden/. Fora do app publicado (só local: npm start e /app/tools/garden-preview.html).</p>
+<div class="grid" id="g"></div>
+<script type="module">
+  import { gardenIllustration } from '../src/ui/gardenScene.js';
+  const g = document.getElementById('g');
+  for (let stage = 0; stage < 7; stage++) for (const v of [100, 50, 10]) {
+    const f = document.createElement('figure');
+    f.append(gardenIllustration({ main: { stage, waterings: [2, 5, 10, 20, 40, 80, 120][stage], vitality: v, id: 'preview' }, specials: [], memories: 0, decorations: [], season: 'verao' }));
+    f.append(Object.assign(document.createElement('figcaption'), { textContent: `tree-${stage + 1} · ${v}%` }));
+    g.append(f);
+  }
+</script>
+</body>
+</html>

@@ -1,22 +1,62 @@
 # Arte do Jardim — especificação
 
-O jardim (Progresso › Jardim) já está ligado aos dados: fase da árvore, vitalidade, regadas, árvores especiais, decorações e memórias. Falta só a arte. Basta colocar as imagens em `img/garden/` com os nomes abaixo para o app usá-las sozinho (`src/ui/gardenScene.js`). Enquanto `img/garden/scene.webp` não existir, o app continua com o desenho atual em Canvas.
+O jardim (Progresso › Jardim) já está ligado aos dados: fase da árvore, vitalidade, regadas, árvores especiais, decorações e memórias. Falta só a arte. Basta colocar as imagens em `img/garden/` com os nomes abaixo para o app usá-las sozinho (`src/ui/gardenScene.js`). Enquanto `img/garden/scene` não existir, o app continua com o desenho atual em Canvas.
 
-## Regra de ouro: mesmo quadro, mesma câmera
+## Identidade visual definitiva
 
-Todas as imagens são **camadas do mesmo quadro**, empilhadas umas sobre as outras. Por isso:
+A referência obrigatória é `docs/arte-jardim-referencia.jpg`, escolhida a partir das pranchas aprovadas. É uma referência de aparência, não um arquivo de produção.
 
-- **Tamanho:** 1440 × 944 px, proporção 360 : 236, nítida em telas Retina 3×. Entregar em PNG; o app usa WebP.
-- **Câmera:** a mesma em todas, três quartos (cerca de 35° de cima), focal fixa e sem mover entre os renders.
-- **Luz:** a mesma em todas: sol suave do alto à esquerda, céu claro, *ambient occlusion*, sombras macias.
-- **Base do tronco:** sempre no **mesmo ponto**, x = 720 px e y = 760 px. É o pivô do balanço da copa.
-- **Transparência:** só o `scene` é opaco. As demais camadas têm fundo transparente e trazem só o próprio objeto, com a sombra dele no chão em semitransparência.
+- **Cenário:** jardim ensolarado em 3D estilizado, com:
+  - grama muito detalhada, com variação de tons;
+  - uma árvore grande em primeiro plano à esquerda, emoldurando a cena;
+  - hortênsias lilás à esquerda e hibiscos laranja à direita;
+  - cerca de madeira à direita;
+  - pedras naturais grandes, pedras de caminho no primeiro plano e margaridas brancas;
+  - montanhas azuladas e céu com nuvens ao fundo.
+
+  O **centro fica livre**: é ali, numa clareira de grama, que a árvore da pessoa cresce.
+- **Árvore:** a mesma espécie nas 7 fases (muda, arvoreta, jovem, desenvolvida, consolidada e plenitude com flores rosadas). Cada fase traz o próprio montinho de terra com pedrinhas e grama em volta. O tronco é castanho e a folhagem verde-clara e brilhante, com luz quente.
+- **Enfraquecida:** a mesma pose, com as folhas passando de verde para amarelo e laranja e a copa mais rala. Só na fase 7 enfraquecida restam poucos galhos com folhas laranja.
+
+## Como entregar
+
+Envie os **arquivos individuais**, não uma prancha com todos juntos. Um ZIP serve, desde que tenha estes 15:
+
+```
+img/garden/scene.webp
+img/garden/tree-1.webp … tree-7.webp
+img/garden/tree-1-dry.webp … tree-7-dry.webp
+```
+
+- **Pasta:** o projeto não tem `public/`; os arquivos ficam em `img/garden/`.
+- **Formato:** PNG ou WebP. O app aceita os dois, e o script abaixo converte tudo para WebP.
+- **Cenário (`scene`):** imagem completa e opaca, idealmente 1440 × 944 px (proporção 360 : 236) ou maior. Se vier em outra proporção, o script recorta pelo centro, sem distorcer.
+- **Árvores:** **fundo transparente de verdade**, não um xadrez desenhado. Aceitam dois formatos, e o app detecta sozinho:
+  - **Recorte:** só a árvore com o montinho de terra, aparada rente. É o formato das pranchas e o mais fácil de gerar. O app encaixa o **centro da borda de baixo** do recorte no canteiro (x = 720, y = 800 no quadro 1440 × 944) e usa a altura da fase: 150, 200, 270, 350, 440, 520 e 580 px.
+  - **Quadro inteiro:** 1440 × 944, já na posição, com a base do tronco em x = 720 e y = 760.
+- **Enfraquecida (`tree-N-dry`):** a **mesma árvore, na mesma pose e escala** da saudável, para as duas se sobreporem sem "pular".
+- **Ajustes sem mexer no código:** se o canteiro do cenário final ficar em outro lugar, ou uma fase precisar de outra altura, ajuste em `img/garden/garden.json`:
+
+```json
+{ "anchor": { "x": 720, "y": 800 }, "heights": { "tree-7": 600 }, "assets": { "tree-3": { "x": 726, "y": 802 } } }
+```
+
+## Preparar e conferir
+
+1. `python3 scripts/garden_assets.py <pasta recebida>`: confere os nomes e a transparência, apara os recortes, converte para WebP otimizado em `img/garden/` e avisa se uma versão enfraquecida tem pose diferente da saudável.
+2. `npm start` e abra `/app/tools/garden-preview.html`: mostra as 7 fases com 100%, 50% e 10% de vitalidade, para conferir o encaixe. A página não vai para o app publicado.
+
+## Regra de ouro: mesma câmera e mesma luz
+
+- **Câmera:** a mesma em todas, três quartos, levemente de cima, como na referência. Focal fixa.
+- **Luz:** a mesma em todas: sol quente do alto à esquerda, sombras macias e *ambient occlusion*.
+- **Escala:** coerente entre as fases, com a árvore crescendo de verdade e sem mudar de espécie.
 
 ## Lista de arquivos
 
 | Arquivo | O que é | Fundo |
 |---|---|---|
-| `scene.webp` | Cenário completo **sem a árvore principal**: terreno, grama, flores, plantas, pedras e profundidade | opaco |
+| `scene.webp` | Cenário completo **sem a árvore principal**, com a clareira central livre (ver a referência) | opaco |
 | `seedbed.webp` | Canteiro de terra fértil vazio no lugar da árvore (sem árvore viva) | transparente |
 | `tree-1.webp` | Germinação: muda bonita, caule fino e 4 a 6 folhas bem formadas | transparente |
 | `tree-2.webp` | Primeiro crescimento: arvoreta com os primeiros galhos | transparente |
